@@ -32,3 +32,6 @@ def window2time(window, size=24*60*60):
 
 def datestr2ts(date):
     return time.mktime(time.strptime(date, '%Y-%m-%d'))
+
+def nowts():
+    return int(time.time())
