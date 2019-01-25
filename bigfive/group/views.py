@@ -3,7 +3,6 @@ from flask import Blueprint ,request,jsonify
 
 import json
 
-
 from bigfive.group.utils import *
 
 mod = Blueprint('group',__name__,url_prefix='/group')

@@ -4,3 +4,4 @@
     修改 XXX/site-packages/flask_cache/jinja2ext.py
     from flask.ext.cache import make_template_fragment_key
     为 from flask_cache import make_template_fragment_key
+

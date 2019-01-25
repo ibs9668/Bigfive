@@ -1,3 +1,4 @@
+# coding=utf-8
 from bigfive.config import ES_HOST, ES_PORT
 from bigfive.time_utils import nowts,ts2date,date2ts
 from elasticsearch import Elasticsearch
@@ -7,6 +8,7 @@ es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 
 
 def create_group(data):
+    """创建组"""
     p = Pinyin()
     data['group_name'] = p.get_pinyin(data['group_name'], '')
     data['create_time'] = nowts()
@@ -30,34 +32,41 @@ def create_group(data):
     return data
 
 def delete_group(group_id):
-    # 通过_id删除一条group
+    """通过_id删除一条group"""
     r = es.delete(index='group_information',doc_type='text',id=group_id)
     return r
 
 def search_group(group_name,remark,create_time,page):
-    # 通过group名称,备注,创建时间查询
+    """通过group名称,备注,创建时间查询"""
+
+    # 判断page的合法性
     if page.isdigit():
         page = int(page)
         if page<=0:
             return {'ok':0,'data':[]}
     else:
         return {'ok':0,'data':[]}
+    # 基础查询语句
     query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":10}
+    # 添加组名查询
     if group_name:
         p = Pinyin()
         group_name = p.get_pinyin(group_name, '')
         query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
+    # 添加备注查询
     if remark:
         query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark)}})
+    # 添加时间查询
     if create_time:
         t = date2ts(create_time)
         st = date2ts(ts2date(t-86400))
         et = date2ts(ts2date(t+86400))
         query['query']['bool']['must'].append({"range":{"create_time":{"gte":st,"lt":et}}})
-
     r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition.event'])['hits']['hits']
+    # 结果为空
     if not r:
         return {'ok':0,'data':[]}
+    # 正常返回
     result = []
     for hit in r:
         item = hit['_source']
