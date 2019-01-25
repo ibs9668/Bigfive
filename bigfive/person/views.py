@@ -27,11 +27,11 @@ def user_personality():
     }
     user_index = es.search(index = 'user_ranking', doc_type = 'text', body = query_body)['hits']['hits'][0]["_source"]
     user_information = es.search(index = "user_information", doc_type = "text", body = query_body)["hits"]["hits"][0]["_source"]
-    
+
     user_dict = dict()
     user_dict["user_index"] = user_index
     user_dict["user_information"] = user_information
-    
+
     return json.dumps(user_dict,ensure_ascii=False)
 
 @mod.route('/user_activity',methods=['POST','GET'])  #  1098650354
@@ -58,7 +58,7 @@ def user_activity():
             }
         }
     }
-    activity_table = es.search(index = 'user_activity', doc_type = 'text', body = query_body)['hits']['hits']  
+    activity_table = es.search(index = 'user_activity', doc_type = 'text', body = query_body)['hits']['hits']
     activity_lst = [i["_source"] for i in activity_table]
 
     geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
@@ -79,7 +79,7 @@ def user_activity():
     activity_dict["table"] = activity_lst
     activity_dict["geo_dict"] = geo_dict
     activity_dict["source_location"] = source_location
-   
+
     return json.dumps(activity_dict,ensure_ascii=False)
 
 def user_preference(user_uid):
@@ -198,7 +198,7 @@ def user_influence(user_uid):
     }
 
     es_result = es.search(index="user_influence", doc_type="text", body=query_body)["hits"]["hits"]#默认取第0条一个用户的最新一条
-    
+
     return es_result
 
 def user_emotion(user_uid):
@@ -222,7 +222,7 @@ def user_emotion(user_uid):
     }
 
     es_result = es.search(index="user_emotion", doc_type="text", body=query_body)["hits"]["hits"]#默认取第0条一个用户的最新一条
-    
+
     return es_result
 
 
@@ -275,7 +275,7 @@ def emotion_feature():
     time_list = []
     dict_emo = {}
     for i ,_ in enumerate(user_inf):
-        print _
+        print(_)
         time_list.append(_["_source"]["timestamp"])
         nuetral.append(_["_source"]["nuetral"])
         negtive.append(_["_source"]["negtive"])
