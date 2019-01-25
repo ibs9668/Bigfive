@@ -34,9 +34,15 @@ def delete_group(group_id):
     r = es.delete(index='group_information',doc_type='text',id=group_id)
     return r
 
-def search_group(group_name,remark,create_time):
+def search_group(group_name,remark,create_time,page):
     # 通过group名称,备注,创建时间查询
-    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":0,"size":10}
+    if page.isdigit():
+        page = int(page)
+        if page<=0:
+            return {'ok':0,'data':[]}
+    else:
+        return {'ok':0,'data':[]}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":10}
     if group_name:
         p = Pinyin()
         group_name = p.get_pinyin(group_name, '')
@@ -48,8 +54,17 @@ def search_group(group_name,remark,create_time):
         st = date2ts(ts2date(t-86400))
         et = date2ts(ts2date(t+86400))
         query['query']['bool']['must'].append({"range":{"create_time":{"gte":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query)
-    return r
+
+    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition.event'])['hits']['hits']
+    if not r:
+        return {'ok':0,'data':[]}
+    result = []
+    for hit in r:
+        item = hit['_source']
+        item['create_time'] = ts2date(item['create_time'])
+        result.append(item)
+    return {'data':result,'ok':1}
+
 def get_state():
     # 获取插入组之后计算的状态
     return '计算中'

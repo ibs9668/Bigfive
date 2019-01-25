@@ -32,5 +32,6 @@ def sgroup():
     group_name = request.args.get('gname')
     remark = request.args.get('remark')
     create_time = request.args.get('ctime')
-    result = search_group(group_name,remark,create_time)
+    page = request.args.get('page','1')
+    result = search_group(group_name,remark,create_time,page)
     return json.dumps(result,ensure_ascii=False)
