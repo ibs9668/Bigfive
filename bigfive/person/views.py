@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint, request
 import json
 import time
-from datetime import datetime, timedelta
 from collections import Counter
+from flask import Blueprint, request
+from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, judge_uid_or_nickname, index_to_score_rank, user_emotion, user_influence, \
                                 user_social_contact, user_preference
@@ -116,6 +116,14 @@ def advanced_search():
     result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
     print(result)
     return json.dumps([item['_source'] for item in result], ensure_ascii=False)
+
+
+# 根据uid删除一条记录
+@mod.route('/delete_user/', methods=['POST'])
+def delete_user():
+    uid = request.form.get('uid')
+    result = es.delete(index='user_ranking', doc_type='text', id=uid)
+    return json.dumps(result, ensure_ascii=False)
 
 
 @mod.route('/user_personality', methods=['POST', 'GET'])
