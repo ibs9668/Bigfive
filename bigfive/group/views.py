@@ -14,23 +14,33 @@ def test():
 
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
+    """创建群体"""
     # data = request.form.to_dict()
-    data = request.json
-    result = create_group(data)
-    return json.dumps(result,ensure_ascii=False)
+    try:
+        data = request.json
+        result = create_group(data)
+    except:
+        return jsonify(0)
+    return jsonify(1)
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
-    group_id = request.form.get('gid')
-    result = delete_group(group_id)
-    return json.dumps(result,ensure_ascii=False)
-    # return jsonify({'gid':group_id})
+    """删除群体"""
+
+    # gid = request.form.get('gid')
+    gid = request.json.get('gid')
+    result = delete_group(gid)
+    return jsonify(1)
 
 @mod.route('/search_group/',methods=['GET'])
 def sgroup():
-    group_name = request.args.get('gname')
-    remark = request.args.get('remark')
-    create_time = request.args.get('ctime')
+    """搜索群体"""
+    group_name = request.args.get('gname','')
+    remark = request.args.get('remark','')
+    create_time = request.args.get('ctime','')
     page = request.args.get('page','1')
-    result = search_group(group_name,remark,create_time,page)
+    size = request.args.get('size','10')
+    order_name = request.args.get('oname','create_time')
+    order = request.args.get('order','desc')
+    result = search_group(group_name,remark,create_time,page,size,order_name,order)
     return json.dumps(result,ensure_ascii=False)

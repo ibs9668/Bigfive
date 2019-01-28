@@ -10,11 +10,16 @@ es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 def create_group(data):
     """创建组"""
     p = Pinyin()
-    data['group_name'] = p.get_pinyin(data['group_name'], '')
+    data['group_pinyin'] = p.get_pinyin(data['group_name'], '')
     data['create_time'] = nowts()
-    data['group_id'] = '{}_{}'.format(data['group_name'],data['create_time'])
+    data['group_id'] = '{}_{}'.format(data['group_pinyin'],data['create_time'])
     # 获取计算状态,需要完善
     data['state'] = get_state()
+    for k,v in data['create_condition'].items():
+        if k=='event':
+            continue
+        data['create_condition'][k] = int(v)
+
     # 添加符合组条件的用户id到user_lst,注意使用copy
     create_condition = data['create_condition'].copy()
     del create_condition['event']     # 去除下面不用的字段
@@ -31,27 +36,27 @@ def create_group(data):
     es.index(index='group_information',doc_type='text',body=data)
     return data
 
-def delete_group(group_id):
-    """通过_id删除一条group"""
-    r = es.delete(index='group_information',doc_type='text',id=group_id)
+def delete_group(gid):
+    """通过es的_id删除一条group,不是group_id"""
+    r = es.delete(index='group_information',doc_type='text',id=gid)
     return r
 
-def search_group(group_name,remark,create_time,page):
+def search_group(group_name,remark,create_time,page,size,order_name,order):
     """通过group名称,备注,创建时间查询"""
 
     # 判断page的合法性
     if page.isdigit():
         page = int(page)
         if page<=0:
-            return {'ok':0,'data':[]}
+            return {}
     else:
-        return {'ok':0,'data':[]}
+        return {}
     # 基础查询语句
-    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":10}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*int(size),"size":size,"sort":[]}
+    if order and order_name:
+        query['sort'].append({order_name: {"order": order}})
     # 添加组名查询
     if group_name:
-        p = Pinyin()
-        group_name = p.get_pinyin(group_name, '')
         query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
     # 添加备注查询
     if remark:
@@ -62,17 +67,21 @@ def search_group(group_name,remark,create_time,page):
         st = date2ts(ts2date(t-86400))
         et = date2ts(ts2date(t+86400))
         query['query']['bool']['must'].append({"range":{"create_time":{"gte":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition.event'])['hits']['hits']
+    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state'])
+    total = r['hits']['total']
     # 结果为空
-    if not r:
-        return {'ok':0,'data':[]}
+    if not total:
+        return {}
+    r = r['hits']['hits']
     # 正常返回
     result = []
     for hit in r:
         item = hit['_source']
+        # 为前段返回es的_id字段,为删除功能做支持
+        item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'data':result,'ok':1}
+    return {'rows':result,'total':total}
 
 def get_state():
     # 获取插入组之后计算的状态
