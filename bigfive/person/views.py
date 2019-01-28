@@ -23,8 +23,11 @@ def test():
 def default():
     page = request.args.get('page', default='1')  # 当前页页码
     size = request.args.get('size', default='10')  # 每页展示的条数
-    query = '{"query": {"bool": {"must": [{"match_all": {}}]}}, "from": %s, "size": %s}' % (
-        str((int(page) - 1) * int(size)), str(size))
+    order_name = request.args.get('order_name', default='username')
+    order_type = request.args.get('order_type', default='asc')
+
+    query = '{"query": {"bool": {"must": [{"match_all": {}}]}}, "from": %s, "size": %s, "sort": [{"%s": {"order": "%s"}}]}' % (
+        str((int(page) - 1) * int(size)), str(size), order_name, order_type)
     result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
     print(result)
     return json.dumps([item['_source'] for item in result], ensure_ascii=False)
@@ -36,13 +39,17 @@ def basic_search():
     keyword = request.args.get("keyword")
     page = request.args.get('page', default='1')  # 当前页页码
     size = request.args.get('size', default='10')  # 每页展示的条数
-    query = '{"query": {"bool": {"must": [{"wildcard": {"%s": "%s"}}]}}, "from": %s, "size": %s}'
+    order_name = request.args.get('order_name', default='username')
+    order_type = request.args.get('order_type', default='asc')
+
+    query = '{"query": {"bool": {"must": [{"wildcard": {"%s": "%s"}}]}}, "from": %s, "size": %s, "sort": [{"%s": {"order": "%s"}}]}'
 
     # 判断关键词是昵称还是uid(通过judge_uid_or_nickname函数判断，若为uid返回True，若为昵称返回False)
     # 若为昵称使用"wildcard" : {"username": "*keyword*"}查询
     # 若为uid使用"wildcard" : {"uid": "keyword*"}查询
     query = query % ("uid", keyword + '*', str((int(page) - 1) * int(size)), str(size)) if judge_uid_or_nickname(
-        keyword) else query % ("username", '*' + keyword + '*', str((int(page) - 1) * int(size)), str(size))
+        keyword) else query % ("username", '*' + keyword + '*', str((int(page) - 1) * int(size)), str(size), order_name,
+                               order_type)
     print(query)
 
     result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
@@ -56,6 +63,8 @@ def advanced_search():
     keyword = request.args.get("keyword", default='')
     page = request.args.get('page', default='1')
     size = request.args.get('size', default='10')
+    order_name = request.args.get('order_name', default='username')
+    order_type = request.args.get('order_type', default='asc')
 
     sensitive_index = request.args.get('sensitive_index', default=True)
     machiavellianism_index = request.args.get('machiavellianism_index', default=-1)
@@ -79,7 +88,7 @@ def advanced_search():
     sensitive_query = '"gte":60' if sensitive_index else '"lt": 2153321'
     user_query = '"uid": "%s*"' % keyword if judge_uid_or_nickname(keyword) else '"username": "*%s*"' % keyword
 
-    query = r'{"query":{"bool":{"must":[{"range":{"machiavellianism_index":{"gte":"%s","lt":"%s"}}},{"range":{"narcissism_index":{"gte":"%s","lt":"%s"}}},{"range":{"psychopathy_index":{"gte":"%s","lt":"%s"}}},{"range":{"extroversion_index":{"gte":"%s","lt":"%s"}}},{"range":{"nervousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"openn_index":{"gte":"%s","lt":"%s"}}},{"range":{"agreeableness_index":{"gte":"%s","lt":"%s"}}},{"range":{"conscientiousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"sensitive_index":{%s}}},{"wildcard":{%s}}]}},"from":%s,"size":%s}'
+    query = r'{"query":{"bool":{"must":[{"range":{"machiavellianism_index":{"gte":"%s","lt":"%s"}}},{"range":{"narcissism_index":{"gte":"%s","lt":"%s"}}},{"range":{"psychopathy_index":{"gte":"%s","lt":"%s"}}},{"range":{"extroversion_index":{"gte":"%s","lt":"%s"}}},{"range":{"nervousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"openn_index":{"gte":"%s","lt":"%s"}}},{"range":{"agreeableness_index":{"gte":"%s","lt":"%s"}}},{"range":{"conscientiousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"sensitive_index":{%s}}},{"wildcard":{%s}}]}},"from":%s,"size":%s,"sort": [{"%s": {"order": "%s"}}]}'
     query = query % (
         machiavellianism_rank[0],
         machiavellianism_rank[1],
@@ -109,7 +118,10 @@ def advanced_search():
         user_query,
 
         str((int(page) - 1) * int(size)),
-        str(size)
+        str(size),
+
+        order_name,
+        order_type
     )
     print(query)
 
