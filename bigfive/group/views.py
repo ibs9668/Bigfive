@@ -20,13 +20,16 @@ def cgroup():
         result = create_group(data)
     except:
         return jsonify({'ok':0,'data':[]})
-    return json.dumps(result,ensure_ascii=False)
+    return jsonify({'ok':1,'data':[]})
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
-    group_id = request.form.get('gid')
-    result = delete_group(group_id)
-    return json.dumps(result,ensure_ascii=False)
+    gid = request.form.get('gid')
+    try:
+        result = delete_group(gid)
+    except:
+        return jsonify({'ok':0,'data':[]})
+    return jsonify({'ok':1,'data':[]})
     # return jsonify({'gid':group_id})
 
 @mod.route('/search_group/',methods=['GET'])
