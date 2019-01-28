@@ -20,7 +20,7 @@ def index_to_score_rank(index):
         4: [60, 80],
         5: [80, 101],
     }
-    return index_to_score_rank_dict[index]
+    return index_to_score_rank_dict[int(index)]
 
 
 def user_emotion(user_uid):
