@@ -28,6 +28,7 @@ def portrait_table():
     order_type = request.args.get('order_type', default='asc')
 
     sensitive_index = request.args.get('sensitive_index', default='')
+
     machiavellianism_index = request.args.get('machiavellianism_index', default=0)
     narcissism_index = request.args.get('narcissism_index', default=0)
     psychopathy_index = request.args.get('psychopathy_index', default=0)
@@ -45,9 +46,6 @@ def portrait_table():
     openn_rank = index_to_score_rank(openn_index)
     agreeableness_rank = index_to_score_rank(agreeableness_index)
     conscientiousness_rank = index_to_score_rank(conscientiousness_index)
-
-
-    user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
 
     query = {"query": {"bool": {"must": []}}}
     if machiavellianism_index:
@@ -67,6 +65,7 @@ def portrait_table():
     if conscientiousness_index:
         query['query']['bool']['must'].append({"range": {"conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
+        user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(user_query))
     if sensitive_index:
         sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
