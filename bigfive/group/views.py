@@ -15,8 +15,11 @@ def test():
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
     # data = request.form.to_dict()
-    data = request.json
-    result = create_group(data)
+    try:
+        data = request.json
+        result = create_group(data)
+    except:
+        return jsonify({'ok':0,'data':[]})
     return json.dumps(result,ensure_ascii=False)
 
 @mod.route('/delete_group/',methods=['POST'])
