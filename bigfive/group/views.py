@@ -14,6 +14,7 @@ def test():
 
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
+    """创建群体"""
     # data = request.form.to_dict()
     try:
         data = request.json
@@ -24,6 +25,7 @@ def cgroup():
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
+    """删除群体"""
     gid = request.form.get('gid')
     try:
         result = delete_group(gid)
@@ -34,6 +36,7 @@ def dgroup():
 
 @mod.route('/search_group/',methods=['GET'])
 def sgroup():
+    """搜索群体"""
     group_name = request.args.get('gname')
     remark = request.args.get('remark')
     create_time = request.args.get('ctime')
