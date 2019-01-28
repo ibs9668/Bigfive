@@ -26,6 +26,8 @@ def cgroup():
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
     """删除群体"""
+
+    # gid = request.form.get('gid')
     gid = request.json.get('gid')
     result = delete_group(gid)
     return jsonify(1)
@@ -33,10 +35,12 @@ def dgroup():
 @mod.route('/search_group/',methods=['GET'])
 def sgroup():
     """搜索群体"""
-    group_name = request.args.get('gname')
-    remark = request.args.get('remark')
-    create_time = request.args.get('ctime')
+    group_name = request.args.get('gname','')
+    remark = request.args.get('remark','')
+    create_time = request.args.get('ctime','')
     page = request.args.get('page','1')
     size = request.args.get('size','10')
-    result = search_group(group_name,remark,create_time,page,size)
+    order_name = request.args.get('oname','create_time')
+    order = request.args.get('order','desc')
+    result = search_group(group_name,remark,create_time,page,size,order_name,order)
     return json.dumps(result,ensure_ascii=False)
