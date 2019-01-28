@@ -40,5 +40,7 @@ def sgroup():
     create_time = request.args.get('ctime','')
     page = request.args.get('page','1')
     size = request.args.get('size','10')
-    result = search_group(group_name,remark,create_time,page,size)
+    order_name = request.args.get('oname','create_time')
+    order = request.args.get('order','desc')
+    result = search_group(group_name,remark,create_time,page,size,order_name,order)
     return json.dumps(result,ensure_ascii=False)

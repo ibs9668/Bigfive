@@ -41,7 +41,7 @@ def delete_group(gid):
     r = es.delete(index='group_information',doc_type='text',id=gid)
     return r
 
-def search_group(group_name,remark,create_time,page,size):
+def search_group(group_name,remark,create_time,page,size,order_name,order):
     """通过group名称,备注,创建时间查询"""
 
     # 判断page的合法性
@@ -52,7 +52,9 @@ def search_group(group_name,remark,create_time,page,size):
     else:
         return {}
     # 基础查询语句
-    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":size}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*int(size),"size":size,"sort":[]}
+    if order and order_name:
+        query['query']['bool']['sort'].append({order_name: {"order": order}})
     # 添加组名查询
     if group_name:
         query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
