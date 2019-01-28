@@ -36,18 +36,18 @@ def delete_group(gid):
     r = es.delete(index='group_information',doc_type='text',id=gid)
     return r
 
-def search_group(group_name,remark,create_time,page):
+def search_group(group_name,remark,create_time,page,size):
     """通过group名称,备注,创建时间查询"""
 
     # 判断page的合法性
     if page.isdigit():
         page = int(page)
         if page<=0:
-            return {'ok':0,'data':[]}
+            return {}
     else:
-        return {'ok':0,'data':[]}
+        return {}
     # 基础查询语句
-    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":10}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":size}
     # 添加组名查询
     if group_name:
         p = Pinyin()
@@ -62,10 +62,12 @@ def search_group(group_name,remark,create_time,page):
         st = date2ts(ts2date(t-86400))
         et = date2ts(ts2date(t+86400))
         query['query']['bool']['must'].append({"range":{"create_time":{"gte":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state'])['hits']['hits']
+    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state'])
+    total = r['hits']['total']
     # 结果为空
-    if not r:
-        return {'ok':0,'data':[]}
+    if not total:
+        return {}
+    r = r['hits']['hits']
     # 正常返回
     result = []
     for hit in r:
@@ -74,7 +76,7 @@ def search_group(group_name,remark,create_time,page):
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'data':result,'ok':1}
+    return {'result':result,'total':total}
 
 def get_state():
     # 获取插入组之后计算的状态

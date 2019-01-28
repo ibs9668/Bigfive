@@ -20,8 +20,8 @@ def cgroup():
         data = request.json
         result = create_group(data)
     except:
-        return jsonify({'ok':0,'data':[]})
-    return jsonify({'ok':1,'data':[]})
+        return jsonify(0)
+    return jsonify(1)
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
@@ -30,8 +30,8 @@ def dgroup():
     try:
         result = delete_group(gid)
     except:
-        return jsonify({'ok':0,'data':[]})
-    return jsonify({'ok':1,'data':[]})
+        return jsonify(0)
+    return jsonify(1)
     # return jsonify({'gid':group_id})
 
 @mod.route('/search_group/',methods=['GET'])
@@ -41,5 +41,6 @@ def sgroup():
     remark = request.args.get('remark')
     create_time = request.args.get('ctime')
     page = request.args.get('page','1')
-    result = search_group(group_name,remark,create_time,page)
+    size = request.args.get('size','10')
+    result = search_group(group_name,remark,create_time,page,size)
     return json.dumps(result,ensure_ascii=False)
