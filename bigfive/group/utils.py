@@ -10,9 +10,9 @@ es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 def create_group(data):
     """创建组"""
     p = Pinyin()
-    data['group_name'] = p.get_pinyin(data['group_name'], '')
+    data['group_pinyin'] = p.get_pinyin(data['group_name'], '')
     data['create_time'] = nowts()
-    data['group_id'] = '{}_{}'.format(data['group_name'],data['create_time'])
+    data['group_id'] = '{}_{}'.format(data['group_pinyin'],data['create_time'])
     # 获取计算状态,需要完善
     data['state'] = get_state()
     # 添加符合组条件的用户id到user_lst,注意使用copy
