@@ -15,6 +15,11 @@ def create_group(data):
     data['group_id'] = '{}_{}'.format(data['group_pinyin'],data['create_time'])
     # 获取计算状态,需要完善
     data['state'] = get_state()
+    for k,v in data['create_condition'].items():
+        if k=='event':
+            continue
+        data['create_condition'][k] = int(v)
+
     # 添加符合组条件的用户id到user_lst,注意使用copy
     create_condition = data['create_condition'].copy()
     del create_condition['event']     # 去除下面不用的字段
@@ -74,7 +79,7 @@ def search_group(group_name,remark,create_time,page,size):
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'result':result,'total':total}
+    return {'rows':result,'total':total}
 
 def get_state():
     # 获取插入组之后计算的状态
