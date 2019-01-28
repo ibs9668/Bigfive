@@ -52,7 +52,7 @@ def search_group(group_name,remark,create_time,page,size):
     else:
         return {}
     # 基础查询语句
-    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":size}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*int(size),"size":size}
     # 添加组名查询
     if group_name:
         query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
