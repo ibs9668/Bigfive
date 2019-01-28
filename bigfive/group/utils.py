@@ -50,8 +50,6 @@ def search_group(group_name,remark,create_time,page,size):
     query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":(int(page)-1)*10,"size":size}
     # 添加组名查询
     if group_name:
-        p = Pinyin()
-        group_name = p.get_pinyin(group_name, '')
         query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
     # 添加备注查询
     if remark:
