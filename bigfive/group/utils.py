@@ -76,7 +76,7 @@ def search_group(group_name,remark,create_time,page,size):
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'result':result,'total':total}
+    return {'rows':result,'total':total}
 
 def get_state():
     # 获取插入组之后计算的状态
