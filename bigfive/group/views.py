@@ -16,12 +16,9 @@ def test():
 def cgroup():
     """创建群体"""
     # data = request.form.to_dict()
-    try:
-        data = request.json
-        result = create_group(data)
-    except:
-        error = traceback.format_exc()
-        return jsonify('error':error)
+
+    data = request.json
+    result = create_group(data)
     return jsonify(1)
 
 @mod.route('/delete_group/',methods=['POST'])
