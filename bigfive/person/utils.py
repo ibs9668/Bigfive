@@ -13,7 +13,7 @@ def judge_uid_or_nickname(keyword):
 
 def index_to_score_rank(index):
     index_to_score_rank_dict = {
-        -1: [0, 101],
+        0: [0, 101],
         1: [0, 20],
         2: [20, 40],
         3: [40, 60],
