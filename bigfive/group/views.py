@@ -4,7 +4,7 @@ from flask import Blueprint ,request,jsonify
 import json
 
 from bigfive.group.utils import *
-
+import traceback
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 @mod.route('/test/')
@@ -20,7 +20,8 @@ def cgroup():
         data = request.json
         result = create_group(data)
     except:
-        return jsonify(0)
+        error = traceback.format_exc()
+        return jsonify('error':error)
     return jsonify(1)
 
 @mod.route('/delete_group/',methods=['POST'])
