@@ -67,7 +67,7 @@ def search_group(group_name,remark,create_time,page,size,order_name,order):
         st = date2ts(ts2date(t-86400))
         et = date2ts(ts2date(t+86400))
         query['query']['bool']['must'].append({"range":{"create_time":{"gte":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state'])
+    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition'])
     total = r['hits']['total']
     # 结果为空
     if not total:
@@ -77,7 +77,7 @@ def search_group(group_name,remark,create_time,page,size,order_name,order):
     result = []
     for hit in r:
         item = hit['_source']
-        # 为前段返回es的_id字段,为删除功能做支持
+        # 为前端返回es的_id字段,为删除功能做支持
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
