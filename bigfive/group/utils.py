@@ -63,9 +63,8 @@ def search_group(group_name,remark,create_time,page,size,order_name,order):
         query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark)}})
     # 添加时间查询
     if create_time:
-        t = date2ts(create_time)
-        st = date2ts(ts2date(t-86400))
-        et = date2ts(ts2date(t+86400))
+        st = date2ts(create_time)
+        et = st+86400
         query['query']['bool']['must'].append({"range":{"create_time":{"gt":st,"lt":et}}})
     r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition'])
     total = r['hits']['total']
