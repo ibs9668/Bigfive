@@ -100,7 +100,12 @@ def portrait_table():
     query['size'] = str(size)
     query['sort'] = [{order_name: {"order": order_type}}]
     print(query)
-    result = {'rows': [item['_source'] for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']], 'total': total}
+    result = []
+    for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']:
+        item['_source']['name'] = item['_source']['username']
+        result.append(item['_source'])
+
+    result = {'rows': result, 'total': total}
     return json.dumps(result, ensure_ascii=False)
 
 
