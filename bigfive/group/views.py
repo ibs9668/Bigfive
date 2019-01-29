@@ -44,3 +44,185 @@ def sgroup():
     order = request.args.get('order','desc')
     result = search_group(group_name,remark,create_time,page,size,order_name,order)
     return json.dumps(result,ensure_ascii=False)
+
+
+
+es = Elasticsearch("219.224.134.220:9200", timeout=600)
+
+################################ 宋慧慧负责 ###########################
+
+@mod.route('/group_personality',methods=['POST','GET'])##group_id=mingxing_1548746836
+def group_personality():
+    group_id = request.args.get("group_id")
+    query_body = {
+        "query":{
+            "bool":{
+                "must":{
+                    "term":{"group_id":group_id}
+                }
+            }
+        }
+    }
+    group_index = es.search(index = 'group_ranking', doc_type = 'text', body = query_body)['hits']['hits'][0]["_source"]
+    group_information = es.search(index = "group_information", doc_type = "text", body = query_body)["hits"]["hits"][0]["_source"]
+
+    group_dict = dict()
+    group_dict["group_index"] = group_index
+    group_dict["group_information"] = group_information
+
+    return json.dumps(group_dict,ensure_ascii=False)
+'''
+备注：
+group_index代表的是基本信息+人格雷达图,各字段含义参照我上次发给你的字段备注
+
+group_information代表的是群组名称、群体人数、关键词语等群组介绍信息
+      返回的结果中：群组名称--group_name
+                   群体人数--统计user_lst的长度
+                   关键词语--暂时为空？？
+                   创建人员--去掉此功能字段
+                   群体备注--remark
+'''
+
+
+
+
+@mod.route('/group_activity',methods=['POST','GET'])  # group_id=2
+def group_activity():
+    group_id = request.args.get("group_id")
+
+    day = datetime.today().date() - timedelta(days=30)####接真实数据时改成【6】
+    ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
+
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [{
+                    "range": {
+                    "timestamp": {
+                    "gt": ts,
+                    "lt": int(time.time())                                }
+                        }
+                    },
+                {
+                "term": {"group_id": group_id}
+                }
+                ]
+            }
+        }
+    }
+    activity_table = es.search(index = 'group_activity', doc_type = 'text', body = query_body)['hits']['hits']
+    activity_lst = [i["_source"] for i in activity_table]
+
+    geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
+    geo_dict = dict(Counter(geo_lst))
+
+    query_body2= {
+        "query":{
+            "bool":{
+                "must":{
+                    "term":{"group_id":group_id}
+                }
+            }
+        }
+    }
+    # source_location = es.search(index = 'group_information', doc_type = 'text', body = query_body2)['hits']['hits'][0]["_source"]["belong_home"].split(u"国")[1]
+
+    activity_dict = dict()
+    activity_dict["table"] = activity_lst
+    activity_dict["geo_dict"] = geo_dict
+    # activity_dict["source_location"] = source_location
+
+    return json.dumps(activity_dict,ensure_ascii=False)
+
+
+################################ 李宛星负责 ###########################
+
+@mod.route('/perference_identity', methods=['POST','GET'])
+def perference_identity():
+    group_id=request.args.get('group_id')
+    group_inf = group_preference(group_id)
+
+    identity = group_inf["_source"]["domain"]
+
+    return json.dumps(identity,ensure_ascii=False)
+
+
+@mod.route('/perference_topic', methods=['POST','GET'])
+def perference_topic():
+    group_id=request.args.get('group_id')
+    group_inf = group_preference(group_id)
+
+    topic = group_inf["_source"]["topic"]
+    return json.dumps(topic,ensure_ascii=False)
+
+
+@mod.route('/perference_word', methods=['POST','GET'])
+def perference_word():
+    group_id=request.args.get('group_id')
+    group_inf = group_preference(group_id)
+    word = {}
+    word['sensitive_words'] = group_inf["_source"]["sensitive_words"]
+    word["key_words"] = group_inf["_source"]["key_words"]
+    word["micro_words"] = group_inf["_source"]["micro_words"]
+    return json.dumps(word,ensure_ascii=False)
+
+
+@mod.route('/influence_feature', methods=['POST','GET'])
+def influence_feature():
+    group_id=request.args.get('group_id')
+    group_inf = group_influence(group_id)
+    dict_inf = {}
+    time_list = []
+    activity = []
+    sensitivity = []
+    influence = []
+    warning = []
+    for i ,_ in enumerate(group_inf):
+        time_list.append(_["_source"]["timestamp"])
+        activity.append(_["_source"]["activity"])
+        sensitivity.append(_["_source"]["sensitivity"])
+        influence.append(_["_source"]["influence"])
+        warning.append(_["_source"]["warning"])
+    dict_inf["time"] = time_list
+    dict_inf["activity_line"] = activity
+    dict_inf["sensitivity_line"] = sensitivity
+    dict_inf["influence_line"] = influence
+    dict_inf["warning_line"] = warning
+
+    return json.dumps(dict_inf,ensure_ascii=False)
+
+
+@mod.route('/emotion_feature', methods=['POST','GET'])
+def emotion_feature():
+    group_id=request.args.get('group_id')
+    group_inf = group_emotion(group_id)
+    nuetral = []
+    negtive = []
+    positive =[]
+    time_list = []
+    dict_emo = {}
+    for i ,_ in enumerate(group_inf):
+        time_list.append(_["_source"]["timestamp"])
+        nuetral.append(_["_source"]["nuetral"])
+        negtive.append(_["_source"]["negtive"])
+        positive.append(_["_source"]["positive"])
+    dict_emo["time"] = time_list
+    dict_emo["nuetral_line"] = nuetral
+    dict_emo["negtive_line"] = negtive
+    dict_emo["positive_line"] = positive
+
+    return json.dumps(dict_emo,ensure_ascii=False)
+
+
+
+@mod.route('/social_contact', methods=['POST','GET'])
+def social_contact():
+    group_id=request.args.get('group_id')
+    map_type = request.args.get("type")
+    group_inf = group_social_contact(group_id,map_type)
+
+    social_contact = {}
+    social_contact["node"] = group_inf["_source"]["node"]
+    social_contact["link"] = group_inf["_source"]["link"]
+
+    return json.dumps(social_contact,ensure_ascii=False)
