@@ -7,7 +7,7 @@ es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 # es = Elasticsearch([{'host': '219.224.134.220', 'port': 9200}], timeout=1000)
 
 
-def create_group(data):
+def create_group_information(data):
     """创建组"""
     p = Pinyin()
     data['group_pinyin'] = p.get_pinyin(data['group_name'], '')
@@ -33,15 +33,11 @@ def create_group(data):
     for item in r:
         data['user_lst'].append(item['_source']['uid'])
     # 数据插入
-    es.index(index='group_information',doc_type='text',body=data)
+    es.index(index='group_information',doc_type='text',id=data['group_id'],body=data)
     return data
 
-def delete_group(gid):
-    """通过es的_id删除一条group,不是group_id"""
-    r = es.delete(index='group_information',doc_type='text',id=gid)
-    return r
 
-def search_group(group_name,remark,create_time,page,size,order_name,order):
+def search_group_information(group_name,remark,create_time,page,size,order_name,order):
     """通过group名称,备注,创建时间查询"""
 
     # 判断page的合法性
@@ -82,9 +78,30 @@ def search_group(group_name,remark,create_time,page,size,order_name,order):
         result.append(item)
     return {'rows':result,'total':total}
 
+def delete_by_id(index,doc_type,id):
+    """通过es的_id删除一条记录"""
+    r = es.delete(index=index,doc_type=doc_type,id=id)
+    return r
 def get_state():
     # 获取插入组之后计算的状态
     return '计算中'
+
+def search_group_ranking():
+    query ={"query":{"bool":{"must":[{"match_all":{}}],"must_not":[],"should":[]}},"from":0,"size":1000,"sort":[],"aggs":{}}
+    r = es.search(index='group_ranking',doc_type='text',body=query)
+    total = r['hits']['total']
+    # 结果为空
+    if not total:
+        return {}
+    r = r['hits']['hits']
+    # 正常返回
+    result = []
+    for hit in r:
+        item = hit['_source']
+        # 为前端返回es的_id字段,为删除功能做支持
+        item['id'] = hit['_id']
+        result.append(item)
+    return {'rows':result,'total':total}
 
 def group_preference(group_id):
     query_body = {
