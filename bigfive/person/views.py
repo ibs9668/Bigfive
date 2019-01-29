@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, judge_uid_or_nickname, index_to_score_rank, user_emotion, user_influence, \
-                                user_social_contact, user_preference
+    user_social_contact, user_preference
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -18,63 +18,25 @@ def test():
     return json.dumps(result, ensure_ascii=False)
 
 
-# 进入页面时默认展示的表
+# portrait表格
 @mod.route('/portrait/', methods=['POST', 'GET'])
-def default():
-    page = request.args.get('page', default='1')  # 当前页页码
-    size = request.args.get('size', default='10')  # 每页展示的条数
-    order_name = request.args.get('order_name', default='username')
-    order_type = request.args.get('order_type', default='asc')
-
-    query = '{"query": {"bool": {"must": [{"match_all": {}}]}}, "from": %s, "size": %s, "sort": [{"%s": {"order": "%s"}}]}' % (
-        str((int(page) - 1) * int(size)), str(size), order_name, order_type)
-    result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
-    print(result)
-    return json.dumps([item['_source'] for item in result], ensure_ascii=False)
-
-
-# 基本搜索
-@mod.route('/portrait/basic_search/', methods=['POST', 'GET'])
-def basic_search():
-    keyword = request.args.get("keyword")
-    page = request.args.get('page', default='1')  # 当前页页码
-    size = request.args.get('size', default='10')  # 每页展示的条数
-    order_name = request.args.get('order_name', default='username')
-    order_type = request.args.get('order_type', default='asc')
-
-    query = '{"query": {"bool": {"must": [{"wildcard": {"%s": "%s"}}]}}, "from": %s, "size": %s, "sort": [{"%s": {"order": "%s"}}]}'
-
-    # 判断关键词是昵称还是uid(通过judge_uid_or_nickname函数判断，若为uid返回True，若为昵称返回False)
-    # 若为昵称使用"wildcard" : {"username": "*keyword*"}查询
-    # 若为uid使用"wildcard" : {"uid": "keyword*"}查询
-    query = query % ("uid", keyword + '*', str((int(page) - 1) * int(size)), str(size)) if judge_uid_or_nickname(
-        keyword) else query % ("username", '*' + keyword + '*', str((int(page) - 1) * int(size)), str(size), order_name,
-                               order_type)
-    print(query)
-
-    result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
-    print(result)
-    return json.dumps([item['_source'] for item in result], ensure_ascii=False)
-
-
-# 高级搜索
-@mod.route('/portrait/advanced_search/', methods=['POST', 'GET'])
-def advanced_search():
+def portrait_table():
     keyword = request.args.get("keyword", default='')
     page = request.args.get('page', default='1')
     size = request.args.get('size', default='10')
     order_name = request.args.get('order_name', default='username')
     order_type = request.args.get('order_type', default='asc')
 
-    sensitive_index = request.args.get('sensitive_index', default=True)
-    machiavellianism_index = request.args.get('machiavellianism_index', default=-1)
-    narcissism_index = request.args.get('narcissism_index', default=-1)
-    psychopathy_index = request.args.get('psychopathy_index', default=-1)
-    extroversion_index = request.args.get('extroversion_index', default=-1)
-    nervousness_index = request.args.get('nervousness_index', default=-1)
-    openn_index = request.args.get('openn_index', default=-1)
-    agreeableness_index = request.args.get('agreeableness_index', default=-1)
-    conscientiousness_index = request.args.get('conscientiousness_index', default=-1)
+    sensitive_index = request.args.get('sensitive_index', default='')
+
+    machiavellianism_index = request.args.get('machiavellianism_index', default=0)
+    narcissism_index = request.args.get('narcissism_index', default=0)
+    psychopathy_index = request.args.get('psychopathy_index', default=0)
+    extroversion_index = request.args.get('extroversion_index', default=0)
+    nervousness_index = request.args.get('nervousness_index', default=0)
+    openn_index = request.args.get('openn_index', default=0)
+    agreeableness_index = request.args.get('agreeableness_index', default=0)
+    conscientiousness_index = request.args.get('conscientiousness_index', default=0)
 
     machiavellianism_rank = index_to_score_rank(machiavellianism_index)
     narcissism_rank = index_to_score_rank(narcissism_index)
@@ -85,49 +47,37 @@ def advanced_search():
     agreeableness_rank = index_to_score_rank(agreeableness_index)
     conscientiousness_rank = index_to_score_rank(conscientiousness_index)
 
-    sensitive_query = '"gte":60' if sensitive_index else '"lt": 2153321'
-    user_query = '"uid": "%s*"' % keyword if judge_uid_or_nickname(keyword) else '"username": "*%s*"' % keyword
+    query = {"query": {"bool": {"must": []}}}
+    if machiavellianism_index:
+        query['query']['bool']['must'].append({"range": {"machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
+    if narcissism_index:
+        query['query']['bool']['must'].append({"range": {"narcissism_index": {"gte": str(narcissism_rank[0]), "lt": str(narcissism_rank[1])}}})
+    if psychopathy_index:
+        query['query']['bool']['must'].append({"range": {"psychopathy_index": {"gte": str(psychopathy_rank[0]), "lt": str(psychopathy_rank[1])}}})
+    if extroversion_index:
+        query['query']['bool']['must'].append({"range": {"extroversion_index": {"gte": str(extroversion_rank[0]), "lt": str(extroversion_rank[1])}}})
+    if nervousness_index:
+        query['query']['bool']['must'].append({"range": {"nervousness_index": {"gte": str(nervousness_rank[0]), "lt": str(nervousness_rank[1])}}})
+    if openn_index:
+        query['query']['bool']['must'].append({"range": {"openn_index": {"gte": str(openn_rank[0]), "lt": str(openn_rank[1])}}})
+    if agreeableness_index:
+        query['query']['bool']['must'].append({"range": {"agreeableness_index": {"gte": str(agreeableness_rank[0]), "lt": str(agreeableness_rank[1])}}})
+    if conscientiousness_index:
+        query['query']['bool']['must'].append({"range": {"conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
+    if keyword:
+        user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
+        query['query']['bool']['must'].append(json.loads(user_query))
+    if sensitive_index:
+        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
+        query['query']['bool']['must'].append(json.loads(sensitive_query))
 
-    query = r'{"query":{"bool":{"must":[{"range":{"machiavellianism_index":{"gte":"%s","lt":"%s"}}},{"range":{"narcissism_index":{"gte":"%s","lt":"%s"}}},{"range":{"psychopathy_index":{"gte":"%s","lt":"%s"}}},{"range":{"extroversion_index":{"gte":"%s","lt":"%s"}}},{"range":{"nervousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"openn_index":{"gte":"%s","lt":"%s"}}},{"range":{"agreeableness_index":{"gte":"%s","lt":"%s"}}},{"range":{"conscientiousness_index":{"gte":"%s","lt":"%s"}}},{"range":{"sensitive_index":{%s}}},{"wildcard":{%s}}]}},"from":%s,"size":%s,"sort": [{"%s": {"order": "%s"}}]}'
-    query = query % (
-        machiavellianism_rank[0],
-        machiavellianism_rank[1],
-
-        narcissism_rank[0],
-        narcissism_rank[1],
-
-        psychopathy_rank[0],
-        psychopathy_rank[1],
-
-        extroversion_rank[0],
-        extroversion_rank[1],
-
-        nervousness_rank[0],
-        nervousness_rank[1],
-
-        openn_rank[0],
-        openn_rank[1],
-
-        agreeableness_rank[0],
-        agreeableness_rank[1],
-
-        conscientiousness_rank[0],
-        conscientiousness_rank[1],
-
-        sensitive_query,
-        user_query,
-
-        str((int(page) - 1) * int(size)),
-        str(size),
-
-        order_name,
-        order_type
-    )
+    total = int(es.count(index='user_ranking', doc_type='text', body=query)['count'])
+    query['from'] = str((int(page) - 1) * int(size))
+    query['size'] = str(size)
+    query['sort'] = [{order_name: {"order": order_type}}]
     print(query)
-
-    result = es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']
-    print(result)
-    return json.dumps([item['_source'] for item in result], ensure_ascii=False)
+    result = {'rows': [item['_source'] for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']], 'total': total}
+    return json.dumps(result, ensure_ascii=False)
 
 
 # 根据uid删除一条记录
@@ -203,8 +153,8 @@ def user_activity():
         }
     }
     source_location = \
-    es.search(index='user_information', doc_type='text', body=query_body2)['hits']['hits'][0]["_source"][
-        "belong_home"].split(u"国")[1]
+        es.search(index='user_information', doc_type='text', body=query_body2)['hits']['hits'][0]["_source"][
+            "belong_home"].split(u"国")[1]
 
     activity_dict = dict()
     activity_dict["table"] = activity_lst
