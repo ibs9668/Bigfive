@@ -86,9 +86,11 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     query['sort'] = [{order_name: {"order": order_type}}]
-    print(query)
-    result = {'rows': [item['_source'] for item in
-                       es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']], 'total': total}
+
+    result = {'rows': [], 'total': total}
+    for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']:
+        item['_source']['name'] = item['_source']['username']
+        result['rows'].append(item)
     return result
 
 
