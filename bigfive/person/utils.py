@@ -13,14 +13,14 @@ def judge_uid_or_nickname(keyword):
 
 def index_to_score_rank(index):
     index_to_score_rank_dict = {
-        -1: [0, 101],
+        0: [0, 101],
         1: [0, 20],
         2: [20, 40],
         3: [40, 60],
         4: [60, 80],
         5: [80, 101],
     }
-    return index_to_score_rank_dict[index]
+    return index_to_score_rank_dict[int(index)]
 
 
 def user_emotion(user_uid):
