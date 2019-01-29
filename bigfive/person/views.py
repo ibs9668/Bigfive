@@ -21,7 +21,7 @@ def test():
 # portrait表格
 @mod.route('/portrait/', methods=['POST', 'GET'])
 def portrait_table():
-    keyword = request.args.get("keyword", default='')
+    keyword = request.args.get("keyword", default='').lower()
     page = request.args.get('page', default='1')
     if page == '':
         page = '1'
