@@ -3,7 +3,7 @@
 import json
 import time
 from collections import Counter
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, judge_uid_or_nickname, index_to_score_rank, user_emotion, user_influence, \
@@ -23,20 +23,44 @@ def test():
 def portrait_table():
     keyword = request.args.get("keyword", default='')
     page = request.args.get('page', default='1')
+    if page == '':
+        page = '1'
     size = request.args.get('size', default='10')
+    if size == '':
+        size = '10'
     order_name = request.args.get('order_name', default='username')
+    if order_name == '':
+        order_name = 'username'
     order_type = request.args.get('order_type', default='asc')
+    if order_type == '':
+        order_type = 'asc'
 
     sensitive_index = request.args.get('sensitive_index', default='')
 
     machiavellianism_index = request.args.get('machiavellianism_index', default=0)
+    if machiavellianism_index == '':
+        machiavellianism_index = 0
     narcissism_index = request.args.get('narcissism_index', default=0)
+    if narcissism_index == '':
+        narcissism_index = 0
     psychopathy_index = request.args.get('psychopathy_index', default=0)
+    if psychopathy_index == '':
+        psychopathy_index = 0
     extroversion_index = request.args.get('extroversion_index', default=0)
+    if extroversion_index == '':
+        extroversion_index = 0
     nervousness_index = request.args.get('nervousness_index', default=0)
+    if nervousness_index == '':
+        nervousness_index = 0
     openn_index = request.args.get('openn_index', default=0)
+    if openn_index == '':
+        openn_index = 0
     agreeableness_index = request.args.get('agreeableness_index', default=0)
+    if agreeableness_index == '':
+        agreeableness_index = 0
     conscientiousness_index = request.args.get('conscientiousness_index', default=0)
+    if conscientiousness_index == '':
+        conscientiousness_index = 0
 
     machiavellianism_rank = index_to_score_rank(machiavellianism_index)
     narcissism_rank = index_to_score_rank(narcissism_index)
@@ -83,10 +107,10 @@ def portrait_table():
 # 根据uid删除一条记录
 @mod.route('/delete_user/', methods=['POST'])
 def delete_user():
-    uid = request.form.get('uid')
+    uid = request.json.get('uid')
     result = es.delete(index='user_ranking', doc_type='text', id=uid)
-    return json.dumps(result, ensure_ascii=False)
-
+    # return json.dumps(result, ensure_ascii=False)
+    return jsonify(1)
 
 @mod.route('/user_personality', methods=['POST', 'GET'])
 def user_personality():
