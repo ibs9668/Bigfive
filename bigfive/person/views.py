@@ -45,13 +45,14 @@ def return_portrait_table():
 # 根据uid删除一条记录
 @mod.route('/delete_user/', methods=['POST'])
 def delete_user():
-    uid = request.form.get('uid')
-    result = delete_by_id(index='user_ranking', doc_type='text', id=uid)
+    uid = request.json.get('person_id')
+    result = es.delete(index='user_ranking', doc_type='text', id=uid)
+    # return json.dumps(result, ensure_ascii=False)
     return jsonify(1)
 
-@mod.route('/user_personality', methods=['POST', 'GET'])
+@mod.route('/person_personality', methods=['POST', 'GET'])
 def user_personality():
-    uid = request.args.get("uid")
+    uid = request.args.get("person_id")
 
     query_body = {
         "query": {
@@ -73,9 +74,9 @@ def user_personality():
     return json.dumps(user_dict, ensure_ascii=False)
 
 
-@mod.route('/user_activity', methods=['POST', 'GET'])  # 1098650354
+@mod.route('/person_activity', methods=['POST', 'GET'])  # 1098650354
 def user_activity():
-    uid = request.args.get("uid")
+    uid = request.args.get("person_id")
 
     day = datetime.today().date() - timedelta(days=6)
     ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
@@ -127,7 +128,7 @@ def user_activity():
 
 @mod.route('/perference_identity', methods=['POST', 'GET'])
 def perference_identity():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
     user_inf = user_preference(uid)
     node = []
     link = []
@@ -147,7 +148,7 @@ def perference_identity():
 
 @mod.route('/perference_topic', methods=['POST', 'GET'])
 def perference_topic():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
     user_inf = user_preference(uid)
     topic = user_inf["_source"]["topic"]
     return json.dumps(topic, ensure_ascii=False)
@@ -155,7 +156,7 @@ def perference_topic():
 
 @mod.route('/perference_word', methods=['POST', 'GET'])
 def perference_word():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
     user_inf = user_preference(uid)
     word = {}
     word['sensitive_words'] = user_inf["_source"]["sensitive_words"]
@@ -166,7 +167,7 @@ def perference_word():
 
 @mod.route('/social_contact', methods=['POST', 'GET'])
 def social_contact():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
     map_type = request.args.get("type")
     user_inf = user_social_contact(uid, map_type)
 
@@ -179,7 +180,7 @@ def social_contact():
 
 @mod.route('/influence_feature', methods=['POST', 'GET'])
 def influence_feature():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
     user_inf = user_influence(uid)
     dict_inf = {}
     time_list = []
@@ -204,7 +205,7 @@ def influence_feature():
 
 @mod.route('/emotion_feature', methods=['POST', 'GET'])
 def emotion_feature():
-    uid = request.args.get('uid')
+    uid = request.args.get('person_id')
 
     user_inf = user_emotion(uid)
     nuetral = []

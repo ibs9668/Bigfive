@@ -5,6 +5,12 @@ import json
 
 from bigfive.group.utils import *
 
+import time
+
+from datetime import datetime,timedelta
+
+from collections import Counter
+
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 @mod.route('/test/')
@@ -56,6 +62,8 @@ def delete_ranking():
     gid = request.json.get('gid')
     result = delete_by_id('group_ranking','text',gid)
     return jsonify(1)
+
+
 es = Elasticsearch("219.224.134.220:9200", timeout=600)
 
 ################################ 宋慧慧负责 ###########################
