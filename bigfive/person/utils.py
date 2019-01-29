@@ -92,6 +92,11 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
     return result
 
 
+def delete_by_id(index, doc_type, id):
+    result = es.delete(index=index, doc_type=doc_type, id=id)
+    return result
+
+
 def user_emotion(user_uid):
     query_body = {
         "query": {

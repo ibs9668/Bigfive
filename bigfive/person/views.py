@@ -6,8 +6,7 @@ from collections import Counter
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
-from bigfive.person.utils import es, judge_uid_or_nickname, index_to_score_rank, user_emotion, user_influence, \
-    user_social_contact, user_preference, portrait_table
+from bigfive.person.utils import es, user_emotion, user_influence, user_social_contact, user_preference, portrait_table, delete_by_id
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -46,10 +45,8 @@ def return_portrait_table():
 # 根据uid删除一条记录
 @mod.route('/delete_user/', methods=['POST'])
 def delete_user():
-    uid = request.json.get('uid')
-    result = es.delete(index='user_ranking', doc_type='text', id=uid)
-
-    # return json.dumps(result, ensure_ascii=False)
+    uid = request.form.get('uid')
+    result = delete_by_id(index='user_ranking', doc_type='text', id=uid)
     return jsonify(1)
 
 @mod.route('/user_personality', methods=['POST', 'GET'])
