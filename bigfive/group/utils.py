@@ -87,7 +87,7 @@ def get_state():
     return '计算中'
 
 def search_group_ranking():
-    query ={"query":{"bool":{"must":[{"match_all":{}}],"must_not":[],"should":[]}},"from":0,"size":1000,"sort":[],"aggs":{}}
+    query ={"query":{"bool":{"must":[{"match_all":{}}],"must_not":[],"should":[]}},"from":0,"size":6,"sort":[],"aggs":{}}
     r = es.search(index='group_ranking',doc_type='text',body=query)
     total = r['hits']['total']
     # 结果为空
