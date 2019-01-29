@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, judge_uid_or_nickname, index_to_score_rank, user_emotion, user_influence, \
-    user_social_contact, user_preference
+    user_social_contact, user_preference, portrait_table
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -20,87 +20,26 @@ def test():
 
 # portrait表格
 @mod.route('/portrait/', methods=['POST', 'GET'])
-def portrait_table():
+def return_portrait_table():
     keyword = request.args.get("keyword", default='').lower()
     page = request.args.get('page', default='1')
-    if page == '':
-        page = '1'
     size = request.args.get('size', default='10')
-    if size == '':
-        size = '10'
+
     order_name = request.args.get('order_name', default='username')
-    if order_name == '':
-        order_name = 'username'
     order_type = request.args.get('order_type', default='asc')
-    if order_type == '':
-        order_type = 'asc'
 
     sensitive_index = request.args.get('sensitive_index', default='')
-
     machiavellianism_index = request.args.get('machiavellianism_index', default=0)
-    if machiavellianism_index == '':
-        machiavellianism_index = 0
     narcissism_index = request.args.get('narcissism_index', default=0)
-    if narcissism_index == '':
-        narcissism_index = 0
     psychopathy_index = request.args.get('psychopathy_index', default=0)
-    if psychopathy_index == '':
-        psychopathy_index = 0
     extroversion_index = request.args.get('extroversion_index', default=0)
-    if extroversion_index == '':
-        extroversion_index = 0
     nervousness_index = request.args.get('nervousness_index', default=0)
-    if nervousness_index == '':
-        nervousness_index = 0
     openn_index = request.args.get('openn_index', default=0)
-    if openn_index == '':
-        openn_index = 0
     agreeableness_index = request.args.get('agreeableness_index', default=0)
-    if agreeableness_index == '':
-        agreeableness_index = 0
     conscientiousness_index = request.args.get('conscientiousness_index', default=0)
-    if conscientiousness_index == '':
-        conscientiousness_index = 0
 
-    machiavellianism_rank = index_to_score_rank(machiavellianism_index)
-    narcissism_rank = index_to_score_rank(narcissism_index)
-    psychopathy_rank = index_to_score_rank(psychopathy_index)
-    extroversion_rank = index_to_score_rank(extroversion_index)
-    nervousness_rank = index_to_score_rank(nervousness_index)
-    openn_rank = index_to_score_rank(openn_index)
-    agreeableness_rank = index_to_score_rank(agreeableness_index)
-    conscientiousness_rank = index_to_score_rank(conscientiousness_index)
+    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
 
-    query = {"query": {"bool": {"must": []}}}
-    if machiavellianism_index:
-        query['query']['bool']['must'].append({"range": {"machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
-    if narcissism_index:
-        query['query']['bool']['must'].append({"range": {"narcissism_index": {"gte": str(narcissism_rank[0]), "lt": str(narcissism_rank[1])}}})
-    if psychopathy_index:
-        query['query']['bool']['must'].append({"range": {"psychopathy_index": {"gte": str(psychopathy_rank[0]), "lt": str(psychopathy_rank[1])}}})
-    if extroversion_index:
-        query['query']['bool']['must'].append({"range": {"extroversion_index": {"gte": str(extroversion_rank[0]), "lt": str(extroversion_rank[1])}}})
-    if nervousness_index:
-        query['query']['bool']['must'].append({"range": {"nervousness_index": {"gte": str(nervousness_rank[0]), "lt": str(nervousness_rank[1])}}})
-    if openn_index:
-        query['query']['bool']['must'].append({"range": {"openn_index": {"gte": str(openn_rank[0]), "lt": str(openn_rank[1])}}})
-    if agreeableness_index:
-        query['query']['bool']['must'].append({"range": {"agreeableness_index": {"gte": str(agreeableness_rank[0]), "lt": str(agreeableness_rank[1])}}})
-    if conscientiousness_index:
-        query['query']['bool']['must'].append({"range": {"conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
-    if keyword:
-        user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
-        query['query']['bool']['must'].append(json.loads(user_query))
-    if sensitive_index:
-        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
-        query['query']['bool']['must'].append(json.loads(sensitive_query))
-
-    total = int(es.count(index='user_ranking', doc_type='text', body=query)['count'])
-    query['from'] = str((int(page) - 1) * int(size))
-    query['size'] = str(size)
-    query['sort'] = [{order_name: {"order": order_type}}]
-    print(query)
-    result = {'rows': [item['_source'] for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']], 'total': total}
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -109,6 +48,7 @@ def portrait_table():
 def delete_user():
     uid = request.json.get('uid')
     result = es.delete(index='user_ranking', doc_type='text', id=uid)
+
     # return json.dumps(result, ensure_ascii=False)
     return jsonify(1)
 
