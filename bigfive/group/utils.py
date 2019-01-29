@@ -100,6 +100,7 @@ def search_group_ranking():
         item = hit['_source']
         # 为前端返回es的_id字段,为删除功能做支持
         item['id'] = hit['_id']
+        item['name'] = item['group_name']
         result.append(item)
     return {'rows':result,'total':total}
 
