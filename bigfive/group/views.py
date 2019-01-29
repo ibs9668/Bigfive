@@ -18,7 +18,7 @@ def cgroup():
     # data = request.form.to_dict()
     try:
         data = request.json
-        result = create_group(data)
+        result = create_group_information(data)
     except:
         return jsonify(0)
     return jsonify(1)
@@ -26,10 +26,9 @@ def cgroup():
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
     """删除群体"""
-
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
-    result = delete_group(gid)
+    result = delete_by_id('group_information','text',gid)
     return jsonify(1)
 
 @mod.route('/search_group/',methods=['GET'])
@@ -42,11 +41,21 @@ def sgroup():
     size = request.args.get('size','10')
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
-    result = search_group(group_name,remark,create_time,page,size,order_name,order)
+    result = search_group_information(group_name,remark,create_time,page,size,order_name,order)
     return json.dumps(result,ensure_ascii=False)
 
 
-
+@mod.route('/group_ranking/',methods=['GET'])
+def group_ranking():
+    """群体排名"""
+    result = search_group_ranking()
+    return jsonify(result)
+@mod.route('/delete_group_ranking/',methods=['POST'])
+def delete_ranking():
+    """群体排名"""
+    gid = request.json.get('gid')
+    result = delete_by_id('group_ranking','text',gid)
+    return jsonify(1)
 es = Elasticsearch("219.224.134.220:9200", timeout=600)
 
 ################################ 宋慧慧负责 ###########################
