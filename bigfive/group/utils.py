@@ -1,6 +1,6 @@
 # coding=utf-8
 from bigfive.config import ES_HOST, ES_PORT
-from bigfive.time_utils import nowts,ts2date,date2ts
+from bigfive.time_utils import *
 from elasticsearch import Elasticsearch
 from xpinyin import Pinyin
 es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
@@ -57,10 +57,10 @@ def search_group(group_name,remark,create_time,page,size,order_name,order):
         query['sort'].append({order_name: {"order": order}})
     # 添加组名查询
     if group_name:
-        query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name)}})
+        query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name.lower())}})
     # 添加备注查询
     if remark:
-        query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark)}})
+        query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark.lower())}})
     # 添加时间查询
     if create_time:
         st = date2ts(create_time)
