@@ -82,15 +82,16 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
             sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
         query['query']['bool']['must'].append(json.loads(sensitive_query))
 
-    total = int(es.count(index='user_ranking', doc_type='text', body=query)['count'])
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     query['sort'] = [{order_name: {"order": order_type}}]
 
-    result = {'rows': [], 'total': total}
-    for item in es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']:
+    hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
+
+    result = {'rows': [], 'total': hits['total']}
+    for item in hits['hits']:
         item['_source']['name'] = item['_source']['username']
-        result['rows'].append(item)
+        result['rows'].append(item['_source'])
     return result
 
 
