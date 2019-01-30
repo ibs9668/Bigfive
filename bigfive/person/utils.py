@@ -28,6 +28,8 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     page = page if page else '1'
     size = size if size else '10'
+    if order_name == 'name':
+        order_name = 'username'
     order_name = order_name if order_name else 'username'
     order_type = order_type if order_type else 'asc'
     machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
