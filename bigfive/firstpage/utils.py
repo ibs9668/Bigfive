@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-from elasticsearch import Elasticsearch
-
-from bigfive.config import ES_HOST, ES_PORT
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=600)
+from bigfive.config import es
 
 
 def search_group(keyword, page, size, order_name, order_type):
@@ -28,6 +25,7 @@ def search_group(keyword, page, size, order_name, order_type):
         item['_source']['id'] = item['_id']
         result['rows'].append(item['_source'])
     return result
+
 
 def search_person_and_group(keyword, page, size, person_order_name, group_order_name, person_order_type, group_order_type):
     page = page if page else '1'

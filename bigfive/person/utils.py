@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
+
 import json
 import re
 
-from elasticsearch import Elasticsearch
-
-from bigfive.config import ES_HOST, ES_PORT
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=600)
+from bigfive.config import es
 
 
 def judge_uid_or_nickname(keyword):
