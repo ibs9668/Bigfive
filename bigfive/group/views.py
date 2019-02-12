@@ -129,7 +129,7 @@ def group_activity():
     activity_lst = [i["_source"] for i in activity_table]
 
     geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
-    geo_dict = dict(Counter(geo_lst))
+    geo_dict = dict(Counter(geo_lst[1:]))
 
     query_body2= {
         "query":{
@@ -144,9 +144,9 @@ def group_activity():
 
     activity_dict = dict()
     activity_dict["table"] = activity_lst
+    activity_dict["source_location"] = geo_lst[0]
     activity_dict["geo_dict"] = geo_dict
     # activity_dict["source_location"] = source_location
-    activity_dict["source_location"] = list(geo_dict.keys())[0]
 
     return json.dumps(activity_dict,ensure_ascii=False)
 
