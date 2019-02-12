@@ -19,7 +19,7 @@ def search_group(keyword, page, size, order_name, order_type):
         group_user_query = '{"wildcard":{"group_name": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(group_user_query))
     hits = es.search(index='group_ranking', doc_type='text', body=query)['hits']
-    result = {'rows': [], 'group_total': hits['total']}
+    result = {'rows': [], 'total': hits['total']}
     for item in hits['hits']:
         item['_source']['name'] = item['_source']['group_name']
         item['_source']['id'] = item['_id']
