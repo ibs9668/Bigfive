@@ -202,9 +202,16 @@ def group_social_contact(group_id,map_type):
             "size":1000
     }
 
-    es_result= es.search(index="group_social_contact", doc_type="text", body=query_body)["hits"]["hits"][0]#默认取第0条一个用户的最新一条
-
-    return es_result
+    es_result= es.search(index="group_social_contact", doc_type="text", body=query_body)["hits"]["hits"]#默认取第0条一个用户的最新一条
+    social_contact = {}
+    if es_result:
+        group_inf = es_result[0]
+        social_contact["node"] = group_inf["_source"]["node"]
+        social_contact["link"] = group_inf["_source"]["link"]
+    else:
+        social_contact["node"] = []
+        social_contact["link"] = []
+    return social_contact
 
 
 

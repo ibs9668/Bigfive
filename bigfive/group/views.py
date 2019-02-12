@@ -235,10 +235,5 @@ def emotion_feature():
 def social_contact():
     group_id=request.args.get('group_id')
     map_type = request.args.get("type")
-    group_inf = group_social_contact(group_id,map_type)
-
-    social_contact = {}
-    social_contact["node"] = group_inf["_source"]["node"]
-    social_contact["link"] = group_inf["_source"]["link"]
-
+    social_contact = group_social_contact(group_id,map_type)
     return json.dumps(social_contact,ensure_ascii=False)
