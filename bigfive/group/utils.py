@@ -1,10 +1,9 @@
 # coding=utf-8
-from bigfive.config import ES_HOST, ES_PORT
+
 from bigfive.time_utils import *
-from elasticsearch import Elasticsearch
 from xpinyin import Pinyin
-es = Elasticsearch([{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
-# es = Elasticsearch([{'host': '219.224.134.220', 'port': 9200}], timeout=1000)
+
+from bigfive.config import es
 
 
 def create_group_information(data):

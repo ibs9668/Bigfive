@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
+
 import json
 import re
 
-from elasticsearch import Elasticsearch
-
-from bigfive.config import ES_HOST, ES_PORT
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=600)
+from bigfive.config import es
 
 
 def judge_uid_or_nickname(keyword):
@@ -28,6 +26,8 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     page = page if page else '1'
     size = size if size else '10'
+    if order_name == 'name':
+        order_name = 'username'
     order_name = order_name if order_name else 'username'
     order_type = order_type if order_type else 'asc'
     machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
@@ -82,13 +82,16 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
             sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
         query['query']['bool']['must'].append(json.loads(sensitive_query))
 
-    total = int(es.count(index='user_ranking', doc_type='text', body=query)['count'])
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     query['sort'] = [{order_name: {"order": order_type}}]
-    print(query)
-    result = {'rows': [item['_source'] for item in
-                       es.search(index='user_ranking', doc_type='text', body=query)['hits']['hits']], 'total': total}
+
+    hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
+
+    result = {'rows': [], 'total': hits['total']}
+    for item in hits['hits']:
+        item['_source']['name'] = item['_source']['username']
+        result['rows'].append(item['_source'])
     return result
 
 
