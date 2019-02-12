@@ -115,7 +115,7 @@ def group_activity():
                     "range": {
                     "timestamp": {
                     "gt": ts,
-                    "lt": int(time.time())                                }
+                    "lt": int(time.time())}
                         }
                     },
                 {
@@ -146,7 +146,7 @@ def group_activity():
     activity_dict["table"] = activity_lst
     activity_dict["geo_dict"] = geo_dict
     # activity_dict["source_location"] = source_location
-    activity_dict["source_location"] = geo_dict[0]
+    activity_dict["source_location"] = list(geo_dict.keys())[0]
 
     return json.dumps(activity_dict,ensure_ascii=False)
 
