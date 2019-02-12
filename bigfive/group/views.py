@@ -146,6 +146,7 @@ def group_activity():
     activity_dict["table"] = activity_lst
     activity_dict["geo_dict"] = geo_dict
     # activity_dict["source_location"] = source_location
+    activity_dict["source_location"] = geo_dict[0]
 
     return json.dumps(activity_dict,ensure_ascii=False)
 
@@ -192,7 +193,7 @@ def influence_feature():
     sensitivity = []
     influence = []
     warning = []
-    for i ,_ in enumerate(group_inf):
+    for i,_ in enumerate(group_inf):
         time_list.append(_["_source"]["timestamp"])
         activity.append(_["_source"]["activity"])
         sensitivity.append(_["_source"]["sensitivity"])
