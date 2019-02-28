@@ -170,24 +170,24 @@ def user_social_contact(uid, map_type):
         key = 'source'
         key2 = 'target'
     query_body = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "term": {
-                                "message_type": message_type
-                            }
-                        },
-                        {
-                            "term": {
-                                key: uid
-                            }
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "message_type": message_type
                         }
-                    ]
-                }
-            },
-            "size": 1000,
-        }
+                    },
+                    {
+                        "term": {
+                            key: uid
+                        }
+                    }
+                ]
+            }
+        },
+        "size": 1000,
+    }
     r = []
     r1 = es.search(index="user_social_contact", doc_type="text",
                    body=query_body)["hits"]["hits"]
@@ -255,8 +255,6 @@ def user_preference(user_uid):
     return es_result
 
 # 从es中获取全部入库用户uid列表
-
-
 def get_uidlist_from_es():
     query_body = {
         "query": {"bool": {"must": [{"match_all": {}}]}}, "size": 15000}
@@ -272,8 +270,6 @@ def get_uidlist_from_es():
 情绪计算 一个用户 一天一条数据 每一类型的情感值为此类型微博数量
 输入：用户的uid列表
 '''
-
-
 def cal_sentiment(uid_list):
     for i, _ in enumerate(uid_list):
         for j in ES_INDEX_LIST:
@@ -307,8 +303,6 @@ def cal_sentiment(uid_list):
 '''
 社交计算 输入：需计算的用户uid列表
 '''
-
-
 def cal_social(uid_list):
     for i, _ in enumerate(uid_list):
         for j in ES_INDEX_LIST:
