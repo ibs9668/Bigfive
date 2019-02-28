@@ -2,6 +2,9 @@
 
 import json
 import re
+import time
+
+from elasticsearch.helpers import scan
 
 from bigfive.config import es
 
@@ -22,8 +25,9 @@ def index_to_score_rank(index):
     return index_to_score_rank_dict[int(index)]
 
 
-def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index):
-
+def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index,
+                   narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index,
+                   agreeableness_index, conscientiousness_index):
     page = page if page else '1'
     size = size if size else '10'
     if order_name == 'name':
@@ -103,20 +107,20 @@ def delete_by_id(index, doc_type, id):
 def user_emotion(user_uid):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term": {
-                                    "uid": user_uid
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
 
-                                }
                             }
-                            ]
                         }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
@@ -125,56 +129,190 @@ def user_emotion(user_uid):
     return es_result
 
 
-def user_influence(user_uid):
-    query_body = {
-        "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term":{
-                                    "uid": user_uid
+def get_user_activity(uid):
+    today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
+    result = {}
 
-                                }
+    # ip一天排名
+    one_day_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": str(uid)
+                        }
+                    },
+                    {
+                        "term": {
+                            # "date": "2016-11-13"
+                            "date": str(today)
+                        }
+                    }
+                ]
+            }
+        },
+        "sort": [
+            {
+                "count": {
+                    "order": "desc"
+                }
+            }
+        ]
+    }
+
+    one_day_result_list = []
+    one_day_rank = 1
+    one_day_result = es.search(index='user_activity', doc_type='text', body=one_day_query)['hits']['hits']
+    for one_day_data in one_day_result:
+        item = {'rank': one_day_rank, 'count': one_day_data['_source']['count'], 'ip': one_day_data['_source']['ip']}
+        one_day_result_list.append(item)
+        one_day_rank += 1
+
+    # ip一周排名
+    one_week_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": str(uid)
+                        }
+                    },
+                    {
+                        "range": {
+                            "date": {
+                                # "gte": "2016-11-06",
+                                "gte": a_week_ago,
+                                # "lte": "2016-11-13"
+                                "lte": today
                             }
-                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "size": 0,
+        "aggs": {
+            "ip_count": {
+                "terms": {
+                    "field": "ip"
+                },
+                "aggs": {
+                    "ip_count": {
+                        "stats": {
+                            "field": "count"
                         }
                     }
                 }
-            },
-        "size": 1000
+            }
+        }
     }
 
-    es_result = es.search(index="user_influence", doc_type="text", body=query_body)["hits"]["hits"]  # 默认取第0条一个用户的最新一条
+    one_week_result_list = []
+    one_week_result = es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
+    one_week_dic = {}
+    for one_week_data in one_week_result:
+        one_week_dic[one_week_data['key_as_string']] = one_week_data['ip_count']['sum']
 
-    return es_result
+    l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
+    for i in range(len(l)):
+        item = {'rank': i+1, 'count': int(l[i][1]), 'ip': l[i][0]}
+        one_week_result_list.append(item)
+
+    result['one_day_rank'] = one_day_result_list
+    result['one_week_rank'] = one_week_result_list
+
+    # 活跃度分析
 
 
-def user_social_contact(user_uid,map_type):
+    return result
+
+
+def get_influence_feature(uid):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": str(uid)
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "sort": [
+            {
+                "timestamp": {
+                    "order": "asc"
+                }
+            }
+        ],
+        "size": 1000
+    }
+    result_list = []
+    es_result = scan(client=es, index='user_influence', doc_type='text', query=query)
+    for data in es_result:
+        result_list.append(data['_source'])
+
+    return result_list
+
+
+# def user_influence(user_uid):
+#     query_body = {
+#         "query": {
+#                 "filtered": {
+#                     "filter": {
+#                         "bool": {
+#                             "must": [{
+#                                 "term":{
+#                                     "uid": user_uid
+#
+#                                 }
+#                             }
+#                             ]
+#                         }
+#                     }
+#                 }
+#             },
+#         "size": 1000
+#     }
+#
+#     es_result = es.search(index="user_influence", doc_type="text", body=query_body)["hits"]["hits"]  # 默认取第0条一个用户的最新一条
+#
+#     return es_result
+
+
+def user_social_contact(user_uid, map_type):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
+                            }
+                        },
+                            {
                                 "term": {
-                                    "uid": user_uid
-                                }
-                            },
-                                {
-                                "term":{
                                     "map_type": map_type
                                 }
                             },
-                            ]
-                        }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
-    es_result= es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"][0]#默认取第0条一个用户的最新一条
+    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"][
+        0]  # 默认取第0条一个用户的最新一条
 
     return es_result
 
@@ -182,23 +320,23 @@ def user_social_contact(user_uid,map_type):
 def user_preference(user_uid):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term": {
-                                    "uid": user_uid
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
 
-                                }
                             }
-                            ]
                         }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
-    es_result = es.search(index="user_preference", doc_type="text", body=query_body)["hits"]["hits"][0]#默认取第0条一个用户的最新一条
+    es_result = es.search(index="user_preference", doc_type="text", body=query_body)["hits"]["hits"][
+        0]  # 默认取第0条一个用户的最新一条
     return es_result
-
