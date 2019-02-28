@@ -70,10 +70,6 @@ index_info = {
                     "index":"not_analyzed",
                     "type" : "long"
                 },
-                "compactness_index":{#紧密度
-                    "index":"not_analyzed",
-                    "type" : "long"
-                },
                 "liveness_index":{#活跃度
                     "index":"not_analyzed",
                     "type" : "long"
@@ -86,7 +82,22 @@ index_info = {
                     "index":"not_analyzed",
                     "type" : "long"
                 },
-  
+                "liveness_star":{#活跃度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "importance_star":{#重要度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "sensitive_star":{#敏感度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "influence_star":{#影响力星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
             }
         }
     }

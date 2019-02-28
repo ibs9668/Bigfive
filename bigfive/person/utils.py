@@ -226,7 +226,6 @@ def get_user_activity(uid):
 
     # 活跃度分析
 
-
     return result
 
 

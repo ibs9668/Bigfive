@@ -6,39 +6,25 @@ from xpinyin import Pinyin
 from bigfive.config import es
 
 
-def create_group_information(data):
+def create_group_task(data):
     """创建组"""
     p = Pinyin()
     data['group_pinyin'] = p.get_pinyin(data['group_name'], '')
     data['create_time'] = nowts()
-    data['group_id'] = '{}_{}'.format(data['group_pinyin'],data['create_time'])
-    # 获取计算状态,需要完善
-    data['state'] = get_state()
+    data['create_date'] = ts2date(data['create_time'])
+    group_id = '{}_{}'.format(data['group_pinyin'],data['create_time'])
     for k,v in data['create_condition'].items():
-        if k=='event':
-            continue
         data['create_condition'][k] = int(v)
-
-    # 添加符合组条件的用户id到user_lst,注意使用copy
-    create_condition = data['create_condition'].copy()
-    del create_condition['event']     # 去除下面不用的字段
-    query = {"query": {"bool": {"must": []}},"size": 1000,}
-    # 1 0-20 2 20-40 3 40-60 4 60-80 5 80-100
-    for k,v in create_condition.items():
-        one = {"range": {k: {"gte": (v-1)*20,"lt": v*20}}}
-        query['query']['bool']['must'].append(one)
-    r = es.search(index='user_ranking',doc_type='text',body=query,_source_include=['uid'])['hits']['hits']
-    data['user_lst'] = []
-    for item in r:
-        data['user_lst'].append(item['_source']['uid'])
-    # 数据插入
-    es.index(index='group_information',doc_type='text',id=data['group_id'],body=data)
+    # 计算进度 0未完成 1计算中 2完成
+    data['progress'] = 0
+    # 建立计算任务group_task
+    es.index(index='group_task',doc_type='text',id=group_id,body=data)
     return data
 
 
-def search_group_information(group_name,remark,create_time,page,size,order_name,order):
+def search_group_information(group_name,remark,create_time,page,size,order_name,order,index):
     """通过group名称,备注,创建时间查询"""
-
+    """因为字段基本一样,使用index 用于区分task 和info 表,不再复写该函数"""
     # 判断page的合法性
     if page.isdigit():
         page = int(page)
@@ -58,15 +44,20 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark.lower())}})
     # 添加时间查询
     if create_time:
+        # 转换前端传的日期为时间戳
         st = date2ts(create_time)
         et = st+86400
         query['query']['bool']['must'].append({"range":{"create_time":{"gt":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition'])
-    total = r['hits']['total']
+    if index =='task':
+        index = 'group_task'
+    elif index == 'info':
+        index = 'group_information'
+    else:
+        raise ValueError("index is error!")
+    r = es.search(index=index,doc_type='text',body=query,_source_include=['group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
     # 结果为空
-    if not total:
+    if not r:
         return {}
-    r = r['hits']['hits']
     # 正常返回
     result = []
     for hit in r:
@@ -75,15 +66,17 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'rows':result,'total':total}
+    return {'rows':result,'total':len(result)}
 
 def delete_by_id(index,doc_type,id):
     """通过es的_id删除一条记录"""
+    if index =='task':
+        index = 'group_task'
+    elif index=='info':
+        index = 'group_information'
     r = es.delete(index=index,doc_type=doc_type,id=id)
     return r
-def get_state():
-    # 获取插入组之后计算的状态
-    return '计算中'
+
 
 def search_group_ranking():
     query ={"query":{"bool":{"must":[{"match_all":{}}],"must_not":[],"should":[]}},"from":0,"size":6,"sort":[],"aggs":{}}

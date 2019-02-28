@@ -2,14 +2,11 @@
 from flask import Blueprint ,request,jsonify
 
 import json
+import time
+from datetime import datetime,timedelta
+from collections import Counter
 
 from bigfive.group.utils import *
-
-import time
-
-from datetime import datetime,timedelta
-
-from collections import Counter
 
 mod = Blueprint('group',__name__,url_prefix='/group')
 
@@ -26,7 +23,7 @@ def cgroup():
     # data = request.form.to_dict()
     try:
         data = request.json
-        result = create_group_information(data)
+        result = create_group_task(data)
     except:
         return jsonify(0)
     return jsonify(1)
@@ -37,7 +34,11 @@ def dgroup():
     """删除群体"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
-    result = delete_by_id('group_information','text',gid)
+    index = request.json.get('index')
+    try:
+        result = delete_by_id(index,'text',gid)
+    except:
+        return jsonify(0)
     return jsonify(1)
 
 @mod.route('/search_group/',methods=['GET'])
@@ -50,8 +51,9 @@ def sgroup():
     size = request.args.get('size','10')
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
-    result = search_group_information(group_name,remark,create_time,page,size,order_name,order)
-    return json.dumps(result,ensure_ascii=False)
+    index = request.args.get('index')
+    result = search_group_information(group_name,remark,create_time,page,size,order_name,order,index)
+    return jsonify(result)
 
 
 @mod.route('/group_ranking/',methods=['GET'])
@@ -230,7 +232,6 @@ def emotion_feature():
     dict_emo["positive_line"] = positive
 
     return json.dumps(dict_emo,ensure_ascii=False)
-
 
 
 @mod.route('/social_contact', methods=['POST','GET'])

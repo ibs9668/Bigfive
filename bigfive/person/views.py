@@ -185,15 +185,11 @@ def perference_word():
 
 @mod.route('/social_contact', methods=['POST', 'GET'])
 def social_contact():
+    # type 1 2 3 4 转发 被转发 评论 被评论
     uid = request.args.get('person_id')
     map_type = request.args.get("type")
-    user_inf = user_social_contact(uid, map_type)
-
-    social_contact = {}
-    social_contact["node"] = user_inf["_source"]["node"]
-    social_contact["link"] = user_inf["_source"]["link"]
-
-    return json.dumps(social_contact, ensure_ascii=False)
+    social_contact = user_social_contact(uid, map_type)
+    return jsonify(social_contact)
 
 
 # @mod.route('/influence_feature', methods=['POST', 'GET'])
@@ -224,22 +220,6 @@ def social_contact():
 @mod.route('/emotion_feature', methods=['POST', 'GET'])
 def emotion_feature():
     uid = request.args.get('person_id')
-
-    user_inf = user_emotion(uid)
-    nuetral = []
-    negtive = []
-    positive = []
-    time_list = []
-    dict_emo = {}
-    for i, _ in enumerate(user_inf):
-        print(_)
-        time_list.append(_["_source"]["timestamp"])
-        nuetral.append(_["_source"]["nuetral"])
-        negtive.append(_["_source"]["negtive"])
-        positive.append(_["_source"]["positive"])
-    dict_emo["time"] = time_list
-    dict_emo["nuetral_line"] = nuetral
-    dict_emo["negtive_line"] = negtive
-    dict_emo["positive_line"] = positive
-
-    return json.dumps(dict_emo, ensure_ascii=False)
+    interval = request.args.get('type','day')
+    result = user_emotion(uid,interval)
+    return jsonify(result)
