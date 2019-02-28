@@ -167,13 +167,11 @@ def perference_word():
 
 @mod.route('/social_contact', methods=['POST', 'GET'])
 def social_contact():
+    # type 1 2 3 4 转发 被转发 评论 被评论
     uid = request.args.get('person_id')
     map_type = request.args.get("type")
-    user_inf = user_social_contact(uid, map_type)
+    social_contact = user_social_contact(uid, map_type)
 
-    social_contact = {}
-    social_contact["node"] = user_inf["_source"]["node"]
-    social_contact["link"] = user_inf["_source"]["link"]
 
     return json.dumps(social_contact, ensure_ascii=False)
 

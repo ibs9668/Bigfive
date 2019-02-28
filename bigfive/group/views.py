@@ -2,14 +2,11 @@
 from flask import Blueprint ,request,jsonify
 
 import json
+import time
+from datetime import datetime,timedelta
+from collections import Counter
 
 from bigfive.group.utils import *
-
-import time
-
-from datetime import datetime,timedelta
-
-from collections import Counter
 
 mod = Blueprint('group',__name__,url_prefix='/group')
 
@@ -228,7 +225,6 @@ def emotion_feature():
     dict_emo["positive_line"] = positive
 
     return json.dumps(dict_emo,ensure_ascii=False)
-
 
 
 @mod.route('/social_contact', methods=['POST','GET'])
