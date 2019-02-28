@@ -103,24 +103,25 @@ def delete_by_id(index, doc_type, id):
 def user_emotion(user_uid):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term": {
-                                    "uid": user_uid
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
 
-                                }
                             }
-                            ]
                         }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
-    es_result = es.search(index="user_emotion", doc_type="text", body=query_body)["hits"]["hits"]  # 默认取第0条一个用户的最新一条
+    es_result = es.search(index="user_emotion", doc_type="text", body=query_body)[
+        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
 
     return es_result
 
@@ -128,77 +129,92 @@ def user_emotion(user_uid):
 def user_influence(user_uid):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term":{
-                                    "uid": user_uid
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
 
-                                }
                             }
-                            ]
                         }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
-    es_result = es.search(index="user_influence", doc_type="text", body=query_body)["hits"]["hits"]  # 默认取第0条一个用户的最新一条
+    es_result = es.search(index="user_influence", doc_type="text", body=query_body)[
+        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
 
     return es_result
 
 
-def user_social_contact(user_uid,map_type):
+def user_social_contact(uid, map_type):
+    # map_type 1 2 3 4 转发 被转发 评论 被评论
+    # message_type 1 原创 2 评论 3转发
+    if map_type in ['1','2']:
+        message_type = 3
+    else:
+        message_type = 2
+    if map_type in ['1','3']:
+        key = 'target'
+    else:
+        key = 'source'
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term": {
-                                    "uid": user_uid
-                                }
-                            },
-                                {
-                                "term":{
-                                    "map_type": map_type
-                                }
-                            },
-                            ]
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "message_type": message_type
+                        }
+                    },
+                    {
+                        "term": {
+                            key: uid
                         }
                     }
-                }
-            },
-        "size": 1000
+                ]
+            }
+        },
+        "size": 1000,
     }
 
-    es_result= es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"][0]#默认取第0条一个用户的最新一条
-
-    return es_result
+    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    if es_result:
+        for one in es_result:
+            item = one['_source']
+            node.append({'target':item['target'],'target_name':item['target_name']})
+            link.append({'source':item['source'],'source_name':item['source_name']})
+    social_contact = {'node':node,'link':link}
+    return social_contact
 
 
 def user_preference(user_uid):
     query_body = {
         "query": {
-                "filtered": {
-                    "filter": {
-                        "bool": {
-                            "must": [{
-                                "term": {
-                                    "uid": user_uid
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
 
-                                }
                             }
-                            ]
                         }
+                        ]
                     }
                 }
-            },
+            }
+        },
         "size": 1000
     }
 
-    es_result = es.search(index="user_preference", doc_type="text", body=query_body)["hits"]["hits"][0]#默认取第0条一个用户的最新一条
+    es_result = es.search(index="user_preference", doc_type="text", body=query_body)[
+        "hits"]["hits"][0]  # 默认取第0条一个用户的最新一条
     return es_result
-
