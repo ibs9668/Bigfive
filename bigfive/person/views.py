@@ -202,6 +202,6 @@ def influence_feature():
 @mod.route('/emotion_feature', methods=['POST', 'GET'])
 def emotion_feature():
     uid = request.args.get('person_id')
-    interval = request.args.get('interval')
+    interval = request.args.get('type')
     result = user_emotion(uid,interval)
     return jsonify(result)
