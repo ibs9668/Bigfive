@@ -104,30 +104,63 @@ def delete_by_id(index, doc_type, id):
     return result
 
 
-def user_emotion(user_uid):
+def user_emotion(uid,interval):
     query_body = {
         "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
-                            "term": {
-                                "uid": user_uid
-
-                            }
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": uid
                         }
-                        ]
+                    }
+                ]
+            }
+        },
+        "from": 0,
+        "size": 0,
+        "sort": [],
+        "aggs": {
+            "groupDate": {
+                "date_histogram": {
+                    "field": "date",
+                    "interval": interval,
+                    "format": "yyyy-MM-dd"
+                },
+                "aggs": {
+                    "nuetral": {
+                        "stats": {
+                            "field": "nuetral"
+                        }
+                    },
+                    "negtive": {
+                        "stats": {
+                            "field": "negtive"
+                        }
+                    },
+                    "positive": {
+                        "stats": {
+                            "field": "positive"
+                        }
                     }
                 }
             }
-        },
-        "size": 1000
+        }
     }
 
-    es_result = es.search(index="user_emotion", doc_type="text", body=query_body)[
-        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+    buckets = es.search(index="user_emotion", doc_type="text", body=query_body)['aggregations']['groupDate']['buckets']
+    result = {
+            'time':[],
+            "positive_line": [],
+            "negtive_line": [],
+            "nuetral_line": []
+        }
+    for bucket in buckets:
+        result['time'].append(bucket['key_as_string'],)
+        result["positive_line"].append( bucket['positive']['sum'],)
+        result["negtive_line"].append( bucket['negtive']['sum'],)
+        result["nuetral_line"].append( bucket['nuetral']['sum'])
+    return result
 
 
 def user_influence(user_uid):
@@ -227,7 +260,7 @@ def user_social_contact(uid, map_type):
             node.append(a)
         if b not in node:
             node.append(b)
-        if c not in link and c['source']!=c['target']:
+        if c not in link and c['source'] != c['target']:
             link.append(c)
     social_contact = {'node': node, 'link': link}
     if node:
@@ -260,6 +293,8 @@ def user_preference(user_uid):
     return es_result
 
 # 从es中获取全部入库用户uid列表
+
+
 def get_uidlist_from_es():
     query_body = {
         "query": {"bool": {"must": [{"match_all": {}}]}}, "size": 15000}
@@ -275,6 +310,8 @@ def get_uidlist_from_es():
 情绪计算 一个用户 一天一条数据 每一类型的情感值为此类型微博数量
 输入：用户的uid列表
 '''
+
+
 def cal_sentiment(uid_list):
     for i, _ in enumerate(uid_list):
         for j in ES_INDEX_LIST:
@@ -308,6 +345,8 @@ def cal_sentiment(uid_list):
 '''
 社交计算 输入：需计算的用户uid列表
 '''
+
+
 def cal_social(uid_list):
     for i, _ in enumerate(uid_list):
         for j in ES_INDEX_LIST:
