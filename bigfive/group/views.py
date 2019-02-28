@@ -22,7 +22,7 @@ def cgroup():
     # data = request.form.to_dict()
     try:
         data = request.json
-        result = create_group_information(data)
+        result = create_group_task(data)
     except:
         return jsonify(0)
     return jsonify(1)
@@ -32,7 +32,10 @@ def dgroup():
     """删除群体"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
-    result = delete_by_id('group_information','text',gid)
+    try:
+        result = delete_by_id('group_information','text',gid)
+    except:
+        return jsonify(0)
     return jsonify(1)
 
 @mod.route('/search_group/',methods=['GET'])
