@@ -22,9 +22,9 @@ def create_group_task(data):
     return data
 
 
-def search_group_information(group_name,remark,create_time,page,size,order_name,order):
+def search_group_information(group_name,remark,create_time,page,size,order_name,order,index):
     """通过group名称,备注,创建时间查询"""
-
+    """因为字段基本一样,使用index 用于区分task 和info 表,不再复写该函数"""
     # 判断page的合法性
     if page.isdigit():
         page = int(page)
@@ -47,12 +47,14 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         st = date2ts(create_time)
         et = st+86400
         query['query']['bool']['must'].append({"range":{"create_time":{"gt":st,"lt":et}}})
-    r = es.search(index='group_information',doc_type='text',body=query,_source_include=['group_name,create_time,remark,state,create_condition'])
-    total = r['hits']['total']
+    if index =='task':
+        index = 'group_task'
+    elif index=='info':
+        index = 'group_information'
+    r = es.search(index=index,doc_type='text',body=query,_source_include=['group_name,create_time,remark,progress,create_condition'])['hits']['hits']
     # 结果为空
-    if not total:
+    if not r:
         return {}
-    r = r['hits']['hits']
     # 正常返回
     result = []
     for hit in r:
@@ -61,7 +63,7 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'rows':result,'total':total}
+    return {'rows':result,'total':len(result)}
 
 def delete_by_id(index,doc_type,id):
     """通过es的_id删除一条记录"""
