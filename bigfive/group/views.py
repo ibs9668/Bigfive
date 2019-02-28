@@ -32,7 +32,8 @@ def dgroup():
     """删除群体"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
-    index = request.json.get('index')
+    # index = request.json.get('index')
+    index = 'information'
     try:
         result = delete_by_id(index,'text',gid)
     except:
@@ -65,8 +66,6 @@ def delete_ranking():
     gid = request.json.get('gid')
     result = delete_by_id('group_ranking','text',gid)
     return jsonify(1)
-
-
 
 
 ################################ 宋慧慧负责 ###########################

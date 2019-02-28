@@ -70,12 +70,14 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
 
 def delete_by_id(index,doc_type,id):
     """通过es的_id删除一条记录"""
-    if index =='task':
-        index = 'group_task'
-    elif index=='info':
-        index = 'group_information'
-    r = es.delete(index=index,doc_type=doc_type,id=id)
-    return r
+    # r = es.get(index='group_task',doc_type=doc_type,id=id)
+    # if r['_source']['progress'] != 0:
+    #     r = es.get(index='group_information',doc_type=doc_type,id=id)
+    #     es.delete(index='group_information',doc_type=doc_type,id=id)
+    # else:
+    #     r1 = es.delete(index='group_task',doc_type=doc_type,id=id)
+    r2 = es.delete(index=index,doc_type=doc_type,id=id)
+    return r2
 
 
 def search_group_ranking():
