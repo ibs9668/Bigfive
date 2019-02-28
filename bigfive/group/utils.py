@@ -44,14 +44,17 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark.lower())}})
     # 添加时间查询
     if create_time:
+        # 转换前端传的日期为时间戳
         st = date2ts(create_time)
         et = st+86400
         query['query']['bool']['must'].append({"range":{"create_time":{"gt":st,"lt":et}}})
     if index =='task':
         index = 'group_task'
-    elif index=='info':
+    elif index == 'info':
         index = 'group_information'
-    r = es.search(index=index,doc_type='text',body=query,_source_include=['group_name,create_time,remark,progress,create_condition'])['hits']['hits']
+    else:
+        raise ValueError("index can not be empty")
+    r = es.search(index=index,doc_type='text',body=query,_source_include=['group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
     # 结果为空
     if not r:
         return {}
