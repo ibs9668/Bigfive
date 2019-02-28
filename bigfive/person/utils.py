@@ -230,7 +230,9 @@ def user_social_contact(uid, map_type):
         if c not in link and c['source']!=c['target']:
             link.append(c)
     social_contact = {'node': node, 'link': link}
-    return social_contact
+    if node:
+        return social_contact
+    return {}
 
 
 def user_preference(user_uid):
