@@ -53,7 +53,7 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
     elif index == 'info':
         index = 'group_information'
     else:
-        raise ValueError("index can not be empty")
+        raise ValueError("index is error!")
     r = es.search(index=index,doc_type='text',body=query,_source_include=['group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
     # 结果为空
     if not r:
