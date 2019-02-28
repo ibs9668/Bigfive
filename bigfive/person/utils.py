@@ -5,9 +5,9 @@ import re
 from bigfive.config import es
 from bigfive.time_utils import ts2date, date2ts
 from bigfive.config import es_weibo
-from biffive.config import SENTIMENT_INDEX_LIST
-from biffive.config import ES_INDEX_LIST
-from biffive.config import MESSAGE_TYPE_LIST
+from bigfive.config import SENTIMENT_INDEX_LIST
+from bigfive.config import ES_INDEX_LIST
+from bigfive.config import MESSAGE_TYPE_LIST
 
 
 def judge_uid_or_nickname(keyword):
