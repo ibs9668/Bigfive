@@ -32,8 +32,9 @@ def dgroup():
     """删除群体"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
+    index = request.json.get('index')
     try:
-        result = delete_by_id('group_information','text',gid)
+        result = delete_by_id(index,'text',gid)
     except:
         return jsonify(0)
     return jsonify(1)
