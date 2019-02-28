@@ -221,11 +221,14 @@ def user_social_contact(uid, map_type):
     for one in r:
         item = one['_source']
         a = {'id': item['target'], 'name': item['target_name']}
-        b = {'source': item['source_name'], 'target': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
         if a not in node:
             node.append(a)
-        if b not in link:
-            link.append(b)
+        if b not in node:
+            node.append(b)
+        if c not in link:
+            link.append(c)
     social_contact = {'node': node, 'link': link}
     return social_contact
 
