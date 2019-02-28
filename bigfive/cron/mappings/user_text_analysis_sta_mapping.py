@@ -15,8 +15,7 @@ index_info = {
         "text":{
             "properties":{
                 "timestamp":{#记录时间
-                    "type" : "date",
-                    "index" : "not_analyzed"
+                    "type" : "long"
                 },
                 "uid":{                             
                     "type":"string",
