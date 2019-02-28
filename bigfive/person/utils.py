@@ -161,8 +161,10 @@ def user_social_contact(uid, map_type):
         message_type = 2
     if map_type in ['1','3']:
         key = 'target'
+        key2 = 'source'
     else:
         key = 'source'
+        key2 = 'target'
     query_body = {
         "query": {
             "bool": {
@@ -182,17 +184,44 @@ def user_social_contact(uid, map_type):
         },
         "size": 1000,
     }
-    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
+    r = []
+    r1 = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
     node = []
     link = []
-    if es_result:
-        for one in es_result:
-            item = one['_source']
-            node.append({'id':item['target'],'name':item['target_name']})
-            link.append({'source':item['source_name'],'target':item['target_name']})
+    for one in r1:
+        item = one['_source']
+        query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "message_type": message_type
+                        }
+                    },
+                    {
+                        "term": {
+                            key: item[key2]
+                        }
+                    }
+                ]
+            }
+        },
+        "size": 1000,
+    }
+        r2 = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
+        r+=r2
+    r += r1
+    for one in r:
+        item = one['_source']
+        a = {'id':item['target'],'name':item['target_name']}
+        b = {'source':item['source_name'],'target':item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in link:
+            link.append(b)
     social_contact = {'node':node,'link':link}
     return social_contact
-
 
 def user_preference(user_uid):
     query_body = {
