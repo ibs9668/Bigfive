@@ -6,7 +6,8 @@ from collections import Counter
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
-from bigfive.person.utils import es, user_emotion, user_influence, user_social_contact, user_preference, portrait_table, delete_by_id
+from bigfive.person.utils import es, user_emotion, user_social_contact, user_preference, portrait_table, \
+    delete_by_id, get_influence_feature, get_user_activity
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -50,6 +51,23 @@ def delete_user():
     # return json.dumps(result, ensure_ascii=False)
     return jsonify(1)
 
+
+# 活动特征
+@mod.route('/person_activity', methods=['POST', 'GET'])
+def user_activity():
+    uid = request.args.get('person_id')
+    result = get_user_activity(uid)
+    return json.dumps(result, ensure_ascii=False)
+
+
+# 影响力特征
+@mod.route('/influence_feature', methods=['POST', 'GET'])
+def influence_feature():
+    uid = request.args.get('person_id')
+    result = get_influence_feature(uid)
+    return json.dumps(result, ensure_ascii=False)
+
+
 @mod.route('/person_personality', methods=['POST', 'GET'])
 def user_personality():
     uid = request.args.get("person_id")
@@ -74,56 +92,56 @@ def user_personality():
     return json.dumps(user_dict, ensure_ascii=False)
 
 
-@mod.route('/person_activity', methods=['POST', 'GET'])  # 1098650354
-def user_activity():
-    uid = request.args.get("person_id")
-
-    day = datetime.today().date() - timedelta(days=6)
-    ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
-
-    query_body = {
-        "query": {
-            "bool": {
-                "must": [{
-                    "range": {
-                        "timestamp": {
-                            "gt": ts,
-                            "lt": int(time.time())
-                        }
-                    }
-                },
-                    {
-                        "term": {"uid": uid}
-                    }
-                ]
-            }
-        }
-    }
-    activity_table = es.search(index='user_activity', doc_type='text', body=query_body)['hits']['hits']
-    activity_lst = [i["_source"] for i in activity_table]
-
-    geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
-    geo_dict = dict(Counter(geo_lst))
-
-    query_body2 = {
-        "query": {
-            "bool": {
-                "must": {
-                    "term": {"uid": uid}
-                }
-            }
-        }
-    }
-    source_location = \
-        es.search(index='user_information', doc_type='text', body=query_body2)['hits']['hits'][0]["_source"][
-            "belong_home"].split(u"国")[1]
-
-    activity_dict = dict()
-    activity_dict["table"] = activity_lst
-    activity_dict["geo_dict"] = geo_dict
-    activity_dict["source_location"] = source_location
-
-    return json.dumps(activity_dict, ensure_ascii=False)
+# @mod.route('/person_activity', methods=['POST', 'GET'])  # 1098650354
+# def user_activity():
+#     uid = request.args.get("person_id")
+#
+#     day = datetime.today().date() - timedelta(days=6)
+#     ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
+#
+#     query_body = {
+#         "query": {
+#             "bool": {
+#                 "must": [{
+#                     "range": {
+#                         "timestamp": {
+#                             "gt": ts,
+#                             "lt": int(time.time())
+#                         }
+#                     }
+#                 },
+#                     {
+#                         "term": {"uid": uid}
+#                     }
+#                 ]
+#             }
+#         }
+#     }
+#     activity_table = es.search(index='user_activity', doc_type='text', body=query_body)['hits']['hits']
+#     activity_lst = [i["_source"] for i in activity_table]
+#
+#     geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
+#     geo_dict = dict(Counter(geo_lst))
+#
+#     query_body2 = {
+#         "query": {
+#             "bool": {
+#                 "must": {
+#                     "term": {"uid": uid}
+#                 }
+#             }
+#         }
+#     }
+#     source_location = \
+#         es.search(index='user_information', doc_type='text', body=query_body2)['hits']['hits'][0]["_source"][
+#             "belong_home"].split(u"国")[1]
+#
+#     activity_dict = dict()
+#     activity_dict["table"] = activity_lst
+#     activity_dict["geo_dict"] = geo_dict
+#     activity_dict["source_location"] = source_location
+#
+#     return json.dumps(activity_dict, ensure_ascii=False)
 
 
 @mod.route('/perference_identity', methods=['POST', 'GET'])
@@ -174,29 +192,29 @@ def social_contact():
     return jsonify(social_contact)
 
 
-@mod.route('/influence_feature', methods=['POST', 'GET'])
-def influence_feature():
-    uid = request.args.get('person_id')
-    user_inf = user_influence(uid)
-    dict_inf = {}
-    time_list = []
-    activity = []
-    sensitivity = []
-    influence = []
-    warning = []
-    for i, _ in enumerate(user_inf):
-        time_list.append(_["_source"]["timestamp"])
-        activity.append(_["_source"]["activity"])
-        sensitivity.append(_["_source"]["sensitivity"])
-        influence.append(_["_source"]["influence"])
-        warning.append(_["_source"]["warning"])
-    dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
-
-    return json.dumps(dict_inf, ensure_ascii=False)
+# @mod.route('/influence_feature', methods=['POST', 'GET'])
+# def influence_feature():
+#     uid = request.args.get('person_id')
+#     user_inf = user_influence(uid)
+#     dict_inf = {}
+#     time_list = []
+#     activity = []
+#     sensitivity = []
+#     influence = []
+#     warning = []
+#     for i, _ in enumerate(user_inf):
+#         time_list.append(_["_source"]["timestamp"])
+#         activity.append(_["_source"]["activity"])
+#         sensitivity.append(_["_source"]["sensitivity"])
+#         influence.append(_["_source"]["influence"])
+#         warning.append(_["_source"]["warning"])
+#     dict_inf["time"] = time_list
+#     dict_inf["activity_line"] = activity
+#     dict_inf["sensitivity_line"] = sensitivity
+#     dict_inf["influence_line"] = influence
+#     dict_inf["warning_line"] = warning
+#
+#     return json.dumps(dict_inf, ensure_ascii=False)
 
 
 @mod.route('/emotion_feature', methods=['POST', 'GET'])

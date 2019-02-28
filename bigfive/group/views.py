@@ -16,6 +16,7 @@ def test():
     result = 'This is group!'
     return json.dumps(result,ensure_ascii=False)
 
+
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
     """创建群体"""
@@ -26,6 +27,7 @@ def cgroup():
     except:
         return jsonify(0)
     return jsonify(1)
+
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
