@@ -2,8 +2,12 @@
 
 import json
 import re
-
 from bigfive.config import es
+from bigfive.time_utils import ts2date, date2ts
+from bigfive.config import es_weibo
+from biffive.config import SENTIMENT_INDEX_LIST
+from biffive.config import ES_INDEX_LIST
+from biffive.config import MESSAGE_TYPE_LIST
 
 
 def judge_uid_or_nickname(keyword):
@@ -155,11 +159,11 @@ def user_influence(user_uid):
 def user_social_contact(uid, map_type):
     # map_type 1 2 3 4 转发 被转发 评论 被评论
     # message_type 1 原创 2 评论 3转发
-    if map_type in ['1','2']:
+    if map_type in ['1', '2']:
         message_type = 3
     else:
         message_type = 2
-    if map_type in ['1','3']:
+    if map_type in ['1', '3']:
         key = 'target'
         key2 = 'source'
     else:
@@ -167,61 +171,74 @@ def user_social_contact(uid, map_type):
         key2 = 'target'
     query_body = {
         "query": {
-            "bool": {
-                "must": [
-                    {
-                        "term": {
-                            "message_type": message_type
-                        }
-                    },
-                    {
-                        "term": {
-                            key: uid
-                        }
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "uid": user_uid
+                            }
+                        },
+                            {
+                            "term": {
+                                "map_type": map_type
+                            }
+                        },
+                        ]
                     }
-                ]
+                }
             }
         },
-        "size": 1000,
+        "size": 1000
     }
     r = []
-    r1 = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
+    r1 = es.search(index="user_social_contact", doc_type="text",
+                   body=query_body)["hits"]["hits"]
     node = []
     link = []
     for one in r1:
         item = one['_source']
         query_body = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "term": {
-                            "message_type": message_type
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "message_type": message_type
+                            }
+                        },
+                        {
+                            "term": {
+                                key: item[key2]
+                            }
                         }
-                    },
-                    {
-                        "term": {
-                            key: item[key2]
-                        }
-                    }
-                ]
-            }
-        },
-        "size": 1000,
-    }
-        r2 = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
-        r+=r2
+                    ]
+                }
+            },
+            "size": 1000,
+        }
+        r2 = es.search(index="user_social_contact",
+                       doc_type="text", body=query_body)["hits"]["hits"]
+        r += r2
     r += r1
     for one in r:
         item = one['_source']
-        a = {'id':item['target'],'name':item['target_name']}
-        b = {'source':item['source_name'],'target':item['target_name']}
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'source': item['source_name'], 'target': item['target_name']}
         if a not in node:
             node.append(a)
         if b not in link:
             link.append(b)
-    social_contact = {'node':node,'link':link}
+    social_contact = {'node': node, 'link': link}
     return social_contact
+== == == =
+
+    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)[
+        "hits"]["hits"][0]  # 默认取第0条一个用户的最新一条
+
+    return es_result
+>>>>>> > 61624eca9aaeac01a3d9687670095153463c6496
+
 
 def user_preference(user_uid):
     query_body = {
@@ -246,3 +263,116 @@ def user_preference(user_uid):
     es_result = es.search(index="user_preference", doc_type="text", body=query_body)[
         "hits"]["hits"][0]  # 默认取第0条一个用户的最新一条
     return es_result
+
+# 从es中获取全部入库用户uid列表
+
+
+def get_uidlist_from_es():
+    query_body = {
+        "query": {"bool": {"must": [{"match_all": {}}]}}, "size": 15000}
+    es_result = es.search(index="user_information",
+                          doc_type="text", body=query_body)["hits"]["hits"]
+    uid_list = []
+    for es_item in es_result:
+        uid_list.append(es_item["_id"])
+    #print (uid_list)
+    return uid_list
+
+'''
+情绪计算 一个用户 一天一条数据 每一类型的情感值为此类型微博数量
+输入：用户的uid列表
+'''
+
+
+def cal_sentiment(uid_list):
+    for i, _ in enumerate(uid_list):
+        for j in ES_INDEX_LIST:
+            query_body = {"query": {"bool": {"must": [{"term": {"uid": _}}]}}}
+            sum_r = es_weibo.count(
+                index=j, doc_type="text", body=query_body)["count"]
+            print(sum_r)
+            if sum_r != 0:
+                timestamp = es_weibo.search(index=j, doc_type="text", body=query_body)[
+                    "hits"]["hits"][0]["_source"]["timestamp"]
+                #print (sum_r)
+                #print (timestamp)
+                sentiment_value = []
+                for val in SENTIMENT_INDEX_LIST:
+                    query_body_1 = {"query": {
+                        "bool": {"must": [{"term": {"uid": _}}, {"term": {"sentiment": val}}]}}}
+                    result = es_weibo.count(
+                        index=j, doc_type="text", body=query_body_1)["count"]
+                    sentiment_value.append(result)
+                #print (_,date2ts(ts2date(timestamp)),sentiment_value[0],sentiment_value[1],sum_r-sentiment_value[0]-sentiment_value[1])
+                # 用户uid 时间 中性 积极 消极
+                es.index(index="user_emotion", doc_type="text", id=_ + "_" + str(date2ts(ts2date(timestamp))), body={"timestamp": date2ts(ts2date(
+                    timestamp)), "uid": _, "nuetral":  sentiment_value[0], "positive": sentiment_value[1], "negtive": sum_r - sentiment_value[0] - sentiment_value[1]})
+            else:
+                timestamp = date2ts(j.split("_")[-1])
+                #print (_,timestamp,0,0,0)
+                es.index(index="user_emotion", doc_type="text", id=_ + "_" + str(timestamp), body={
+                         "timestamp": timestamp, "uid": _, "nuetral":  0, "positive": 0, "negtive": 0})
+
+
+'''
+社交计算 输入：需计算的用户uid列表
+'''
+
+
+def cal_social(uid_list):
+    for i, _ in enumerate(uid_list):
+        for j in ES_INDEX_LIST:
+            for val in MESSAGE_TYPE_LIST:
+                query_body = {
+                    "query": {
+                        "bool": {
+                            "must": [{
+                                "term": {
+                                    "uid": _
+                                }},
+                                {
+                                "term": {
+                                    "message_type": val
+                                }
+                            }
+                            ]
+                        }
+
+                    },
+                    "size": 10000
+                }
+                result = es_weibo.search(index=j, doc_type="text", body=query_body)[
+                    "hits"]["hits"]
+                if result:
+                    #print (len(result))
+                    for n in result:
+                        uid_list = []
+                        #print (target_name)
+                        source = n["_source"]["root_uid"]
+                        try:
+                            source_inf = es.get(
+                                index="weibo_user", doc_type="type1", id=source)
+                            if source_inf["found"] == True:
+                                source_name = source_inf["_source"][
+                                    "name"].encode("utf-8")
+                            message_type = val
+                            timestamp = n["_source"]["timestamp"]
+                            target = _
+                            target_inf = es.get(
+                                index="user_information", doc_type="text", id=_)
+                            if target_inf["found"] == True:
+                                target_name = target_inf["_source"][
+                                    "username"].encode("utf-8")
+                            else:
+                                target_name = target
+                            #print (date2ts(ts2date(timestamp)),target,target_name,source,source_name,message_type)
+                            #print ("---")
+                            id_es = str(target) + "_" + str(source) + "_" + \
+                                str(date2ts(ts2date(timestamp))) + \
+                                "_" + str(message_type)
+                            #print (id_es)
+                            es.index(index="user_social_contact", doc_type="text", id=id_es, body={"timestamp": date2ts(ts2date(
+                                timestamp)), "source": source, "target": target, "source_name": source_name, "target_name": target_name, "message_type": message_type})
+                        except:
+                            print("no")
+                        #print (source_name)

@@ -86,18 +86,18 @@ def group_activity(group_id, date, days):
     }
     es.index(index=GROUP_ACTIVITY, doc_type='text', id=str(group_id)+'_'+str(date_end_ts), body=dic)
 
-#计算群组的紧密性、重要度、活跃度与影响力，紧密性根据转发评论关系计算，其他为群组内用户对应指标均值
+#计算群组的重要度、活跃度与影响力，利用群组内用户对应指标在全库中排名的均值计算
 #输入：群组id
-#输出：将该群组的四项属性以星级的形式存入数据库
-def group_social_attribute(group_id):
+#输出：将该群组的三项属性以分数与星级的形式存入数据库
+def group_attribute(group_id):
     uid_list = es.get(index=GROUP_INFORMATION, doc_type='text', id=group_id)['_source']['user_lst']
     iter_count = 0
-    all_user_count = len(uid_list)
+    group_all_user_count = len(uid_list)
     importance_list = []
     influence_list = []
     activeness_list = []
     result = {}
-    while iter_count < all_user_count:   #一下获取多个用户以减少查询次数
+    while iter_count < group_all_user_count:   #一下获取多个用户以减少查询次数
         iter_uid_list = uid_list[iter_count: iter_count + GROUP_ITER_COUNT]
         try:
             iter_user_dict_list = es.mget(index=USER_RANKING, doc_type='text', body={'ids':iter_uid_list})['docs']
@@ -135,6 +135,7 @@ def group_social_attribute(group_id):
         raise e
     #活跃度
     ave_activeness_rank = float(sum(activeness_list)) / len(activeness_list)
+    result['ave_activeness_rank'] = ave_activeness_rank
     if ave_activeness_rank <= GROUP_AVE_ACTIVENESS_RANK_THRESHOLD[0] * all_user_count:
         result['activeness_star'] = 5
     elif ave_activeness_rank > GROUP_AVE_ACTIVENESS_RANK_THRESHOLD[1] * all_user_count:
@@ -143,6 +144,7 @@ def group_social_attribute(group_id):
         result['activeness_star'] = 3
     #影响力
     ave_influence_rank = float(sum(influence_list) / len(influence_list))
+    result['ave_influence_rank'] = ave_influence_rank * 100
     if ave_influence_rank <= GROUP_AVE_INFLUENCE_RANK_THRESHOLD[0] * all_user_count:
         result['influence_star'] = 5
     elif ave_influence_rank > GROUP_AVE_INFLUENCE_RANK_THRESHOLD[1] * all_user_count:
@@ -151,6 +153,7 @@ def group_social_attribute(group_id):
         result['influence_star'] = 3
     #重要度
     ave_importance_rank = float(sum(importance_list) / len(importance_list))
+    result['ave_importance_rank'] = ave_importance_rank
     if ave_importance_rank <= GROUP_AVE_IMPORTANCE_RANK_THRESHOLD[0] * all_user_count:
         result['importance_star'] = 5
     elif ave_importance_rank > GROUP_AVE_IMPORTANCE_RANK_THRESHOLD[1] * all_user_count:
@@ -181,7 +184,85 @@ def get_index_rank(attr_value, attr_name):
         result = 0
     return result
 
+#计算群组的紧密性，根据转发评论用户之间的边计算
+#输入：群组id
+#输出：将该群组的四项属性以星级的形式存入数据库
+def group_density_attribute(group_id, date, days):
+    date_end_ts = date2ts(date)
+    date_start_ts = date_end_ts - 24*3600*days
+    uid_list = es.get(index=GROUP_INFORMATION, doc_type='text', id=group_id)['_source']['user_lst']
+    iter_count = 0
+    group_all_user_count = len(uid_list)
+    all_in_record = []
+    result = {}
+    for uid in userlist:
+        query_body = {
+            'query':{
+                'filtered':{
+                    'filter':{
+                        'bool':{
+                            'must':[
+                                'term':{'target':uid},
+                                {"range":{
+                                    "timestamp":{
+                                        "gt":date_start_ts,
+                                        "lte":date_end_ts
+                                    }
+                                }}
+                            ]
+                        }
+                        
+                    }
+                }
+            },
+            'size':10000
+        }
+        es.count(index=USER_SOCIAL_CONTACT, doc_type='text', body=query_body)
+        #取出来的为用户在一段时间内的转发与评论的数量
+        user_retweet_result = {}    #{ruid1:count1, ruid2:count2}
+        user_comment_result = {}
+
+        filter_in_dict = filter_union_dict([user_retweet_result, user_comment_result], uid_list, 'in')
+        uid_in_record = [[uid, ruid, filter_in_dict[ruid]] for ruid in filter_in_dict if uid != ruid]
+        all_in_record.extend(uid_in_record)   #[[uid1, ruid1,count1],[uid1,ruid2,count2],[uid2,ruid2,count3],...]
+
+    in_inter_edge_count = len(all_in_record)
+    in_density = float(in_inter_edge_count) / (len(uid_list) * (len(uid_list) - 1))
+    result['in_density'] = in_density * 100
+    #紧密度
+    if in_density <= GROUP_DENSITY_THRESHOLD[0]:
+        result['density_star'] = 1
+    elif in_density > GROUP_DENSITY_THRESHOLD[1]:
+        result['density_star'] = 5
+    else:
+        result['density_star'] = 3
+    return result
+
+#输入转发与评论列表，利用输入的过滤用户列表进行合并与筛选
+def filter_union_dict(objs, filter_uid_list, mark):
+    _keys = set(sum([obj.keys() for obj in objs], []))   #合并uid并去重
+    if mark == 'in&out':
+        _in_total = {}
+        _in_keys = _keys & set(filter_uid_list)
+        for _key in _in_keys:
+            _in_total[_key] = sum([int(obj.get(_key,0)) for obj in objs])   #计算转发评论总和
+        _out_total = {} 
+        _out_keys = _keys - set(filter_uid_list)
+        for _key in _out_keys:
+            _out_total[_key] = sum([int(obj.get(_key, 0)) for obj in objs])       
+        return _in_total, _out_total
+    elif mark == 'out':
+        _out_total = {}
+        _out_keys = _keys - set(filter_uid_list)
+        for _key in _out_keys:
+            _out_total[_key] = sum([int(obj.get(_key, 0)) for obj in objs])
+        return _out_total
+    elif mark == 'in':
+        _in_total = {}
+        _in_keys = _keys & set(filter_uid_list)
+        for _key in _in_keys:
+            _in_total[_key] = sum([int(obj.get(_key,0)) for obj in objs])
 
 if __name__=='__main__':
     # group_activity('2','2019-01-23',7)
-    print(group_social_attribute('2'))
+    print(group_attribute('2'))
