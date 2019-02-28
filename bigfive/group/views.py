@@ -16,23 +16,30 @@ def test():
     result = 'This is group!'
     return json.dumps(result,ensure_ascii=False)
 
+
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
     """创建群体"""
     # data = request.form.to_dict()
     try:
         data = request.json
-        result = create_group_information(data)
+        result = create_group_task(data)
     except:
         return jsonify(0)
     return jsonify(1)
+
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
     """删除群体"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
-    result = delete_by_id('group_information','text',gid)
+    # index = request.json.get('index')
+    index = 'information'
+    try:
+        result = delete_by_id(index,'text',gid)
+    except:
+        return jsonify(0)
     return jsonify(1)
 
 @mod.route('/search_group/',methods=['GET'])
@@ -45,8 +52,9 @@ def sgroup():
     size = request.args.get('size','10')
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
-    result = search_group_information(group_name,remark,create_time,page,size,order_name,order)
-    return json.dumps(result,ensure_ascii=False)
+    index = request.args.get('index')
+    result = search_group_information(group_name,remark,create_time,page,size,order_name,order,index)
+    return jsonify(result)
 
 
 @mod.route('/group_ranking/',methods=['GET'])
@@ -60,8 +68,6 @@ def delete_ranking():
     gid = request.json.get('gid')
     result = delete_by_id('group_ranking','text',gid)
     return jsonify(1)
-
-
 
 
 ################################ 宋慧慧负责 ###########################
