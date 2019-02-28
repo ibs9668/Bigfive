@@ -231,13 +231,6 @@ def user_social_contact(uid, map_type):
             link.append(b)
     social_contact = {'node': node, 'link': link}
     return social_contact
-== == == =
-
-    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)[
-        "hits"]["hits"][0]  # 默认取第0条一个用户的最新一条
-
-    return es_result
->>>>>> > 61624eca9aaeac01a3d9687670095153463c6496
 
 
 def user_preference(user_uid):
