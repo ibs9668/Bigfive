@@ -227,7 +227,7 @@ def user_social_contact(uid, map_type):
             node.append(a)
         if b not in node:
             node.append(b)
-        if c not in link:
+        if c not in link and c['source']!=c['target']:
             link.append(c)
     social_contact = {'node': node, 'link': link}
     return social_contact
