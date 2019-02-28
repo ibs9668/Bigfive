@@ -48,8 +48,9 @@ def sgroup():
     size = request.args.get('size','10')
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
-    result = search_group_information(group_name,remark,create_time,page,size,order_name,order)
-    return json.dumps(result,ensure_ascii=False)
+    index = request.args.get('index')
+    result = search_group_information(group_name,remark,create_time,page,size,order_name,order,index)
+    return jsonify(result)
 
 
 @mod.route('/group_ranking/',methods=['GET'])
