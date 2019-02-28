@@ -170,27 +170,24 @@ def user_social_contact(uid, map_type):
         key = 'source'
         key2 = 'target'
     query_body = {
-        "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
+            "query": {
+                "bool": {
+                    "must": [
+                        {
                             "term": {
-                                "uid": user_uid
+                                "message_type": message_type
                             }
                         },
-                            {
+                        {
                             "term": {
-                                "map_type": map_type
+                                key: uid
                             }
-                        },
-                        ]
-                    }
+                        }
+                    ]
                 }
-            }
-        },
-        "size": 1000
-    }
+            },
+            "size": 1000,
+        }
     r = []
     r1 = es.search(index="user_social_contact", doc_type="text",
                    body=query_body)["hits"]["hits"]
