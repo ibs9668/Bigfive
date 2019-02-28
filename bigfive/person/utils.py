@@ -182,15 +182,14 @@ def user_social_contact(uid, map_type):
         },
         "size": 1000,
     }
-
     es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"]
     node = []
     link = []
     if es_result:
         for one in es_result:
             item = one['_source']
-            node.append({'target':item['target'],'target_name':item['target_name']})
-            link.append({'source':item['source'],'source_name':item['source_name']})
+            node.append({'id':item['target'],'name':item['target_name']})
+            link.append({'source':item['source_name'],'target':item['target_name']})
     social_contact = {'node':node,'link':link}
     return social_contact
 
