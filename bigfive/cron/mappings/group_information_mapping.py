@@ -52,6 +52,11 @@ index_info = {
                 "user_lst":{#用户列表
                     "index":"not_analyzed",
                     "type" : "array"
+                },
+                 ,
+                "group_pinyin": {#拼音
+                    "index":"not_analyzed",
+                    "type" : "string"
                 }
             }
         }
