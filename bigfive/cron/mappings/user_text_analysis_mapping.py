@@ -5,7 +5,7 @@ es = Elasticsearch("219.224.134.220:9200")
 index_name = "user_text_analysis"
 
 
-#用户活动特征  user_activity
+#用户活动特征  user_text_analysis
 index_info = {
     "settings": {
         "number_of_shards": 3,  

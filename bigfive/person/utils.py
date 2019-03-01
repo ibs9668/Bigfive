@@ -104,29 +104,63 @@ def delete_by_id(index, doc_type, id):
     return result
 
 
-def user_emotion(user_uid):
+def user_emotion(uid,interval):
     query_body = {
         "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
-                            "term": {
-                                "uid": user_uid
-
-                            }
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": uid
                         }
-                        ]
+                    }
+                ]
+            }
+        },
+        "from": 0,
+        "size": 0,
+        "sort": [],
+        "aggs": {
+            "groupDate": {
+                "date_histogram": {
+                    "field": "date",
+                    "interval": interval,
+                    "format": "yyyy-MM-dd"
+                },
+                "aggs": {
+                    "nuetral": {
+                        "stats": {
+                            "field": "nuetral"
+                        }
+                    },
+                    "negtive": {
+                        "stats": {
+                            "field": "negtive"
+                        }
+                    },
+                    "positive": {
+                        "stats": {
+                            "field": "positive"
+                        }
                     }
                 }
             }
-        },
-        "size": 1000
+        }
     }
 
-    es_result = es.search(index="user_emotion", doc_type="text", body=query_body)["hits"]["hits"]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+    buckets = es.search(index="user_emotion", doc_type="text", body=query_body)['aggregations']['groupDate']['buckets']
+    result = {
+            'time':[],
+            "positive_line": [],
+            "negtive_line": [],
+            "nuetral_line": []
+        }
+    for bucket in buckets:
+        result['time'].append(bucket['key_as_string'],)
+        result["positive_line"].append( bucket['positive']['sum'],)
+        result["negtive_line"].append( bucket['negtive']['sum'],)
+        result["nuetral_line"].append( bucket['nuetral']['sum'])
+    return result
 
 
 def get_user_activity(uid):
@@ -286,34 +320,83 @@ def get_influence_feature(uid):
 #     return es_result
 
 
-def user_social_contact(user_uid, map_type):
+def user_social_contact(uid, map_type):
+    # map_type 1 2 3 4 转发 被转发 评论 被评论
+    # message_type 1 原创 2 评论 3转发
+    if map_type in ['1', '2']:
+        message_type = 3
+    else:
+        message_type = 2
+    if map_type in ['1', '3']:
+        key = 'target'
+        key2 = 'source'
+    else:
+        key = 'source'
+        key2 = 'target'
     query_body = {
         "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
-                            "term": {
-                                "uid": user_uid
-                            }
-                        },
-                            {
-                                "term": {
-                                    "map_type": map_type
-                                }
-                            },
-                        ]
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "message_type": message_type
+                        }
+                    },
+                    {
+                        "term": {
+                            key: uid
+                        }
                     }
-                }
+                ]
             }
         },
-        "size": 1000
+        "size": 1000,
     }
-
-    es_result = es.search(index="user_social_contact", doc_type="text", body=query_body)["hits"]["hits"][
-        0]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+    r = []
+    r1 = es.search(index="user_social_contact", doc_type="text",
+                   body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    for one in r1:
+        item = one['_source']
+        query_body = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "message_type": message_type
+                            }
+                        },
+                        {
+                            "term": {
+                                key: item[key2]
+                            }
+                        }
+                    ]
+                }
+            },
+            "size": 1000,
+        }
+        r2 = es.search(index="user_social_contact",
+                       doc_type="text", body=query_body)["hits"]["hits"]
+        r += r2
+    r += r1
+    for one in r:
+        item = one['_source']
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in node:
+            node.append(b)
+        if c not in link and c['source'] != c['target']:
+            link.append(c)
+    social_contact = {'node': node, 'link': link}
+    if node:
+        return social_contact
+    return {}
 
 
 def user_preference(user_uid):
