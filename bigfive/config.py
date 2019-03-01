@@ -57,10 +57,18 @@ TOPIC_LIST = ['art','computer','economic','education','environment','medicine',\
             'military','politics','sports','traffic','life',\
             'anti-corruption','employment','fear-of-violence','house',\
             'law','peace','religion','social-security']
+zh_TOPIC_LIST = ['文体类_娱乐','科技类','经济类','教育类','民生类_环保','民生类_健康',\
+        '军事类','政治类_外交','文体类_体育','民生类_交通','其他类',\
+        '政治类_反腐','民生类_就业','政治类_暴恐','民生类_住房','民生类_法律',\
+        '政治类_地区和平','政治类_宗教','民生类_社会保障']
+#用户领域种类
 txt_labels = ['university', 'homeadmin', 'abroadadmin', 'homemedia', 'abroadmedia', 'folkorg', \
           'lawyer', 'politician', 'mediaworker', 'activer', 'grassroot', 'business']
 labels = ['university', 'homeadmin', 'abroadadmin', 'homemedia', 'abroadmedia', 'folkorg', \
           'lawyer', 'politician', 'mediaworker', 'activer', 'grassroot', 'other', 'business']
+zh_labels = ['高校', '境内机构', '境外机构', '媒体', '境外媒体', '民间组织', '法律机构及人士', \
+             '政府机构及人士', '媒体人士', '活跃人士', '草根', '其他', '商业人士']
+
 outlist = [u'海外', u'香港', u'台湾', u'澳门']
 lawyerw = [u'律师', u'法律', u'法务', u'辩护']
 STATUS_THRE = 4000
