@@ -20,6 +20,7 @@ def user_attribute(uid):
     return liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star
 
 #计算对于库中的用户每天所发布微博的关键词、微话题和敏感词列表，便于统计
+#不保证一个用户一天一条，如果未发布微博则没有记录
 def word_analysis_daily(theday):
     keywords_dict = {}
     hastag_dict = {}
@@ -70,7 +71,6 @@ def word_analysis_daily(theday):
                 "from":weibo_iter_num * USER_WEIBO_ITER_COUNT
             }
             res = es_weibo.search(index=weibo_index,doc_type='text',body=weibo_query_body)['hits']['hits']
-            print(len(res))
             es_result.extend(res)
             iter_get_weibo = len(res)
             weibo_iter_num += 1
@@ -134,6 +134,7 @@ def word_analysis_daily(theday):
         sensitive_dict = {}
 
 #对于单个uid进行每天的过去指定时间窗口的关键词、微话题和敏感词全量统计
+#保证一个用户一天一条
 def word_analysis(uid, date, days):
     date_end_ts = date2ts(date)
     date_start_ts = date_end_ts - 24*3600*days
