@@ -225,6 +225,7 @@ def get_user_activity(uid):
     result['one_week_rank'] = one_week_result_list
 
     # 活跃度分析
+    # geo_query =
 
     return result
 
