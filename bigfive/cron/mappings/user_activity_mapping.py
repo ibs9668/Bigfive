@@ -19,6 +19,7 @@ index_info = {
             }
         }
     },
+
     "mappings":{
         "text":{
             "properties":{
@@ -32,26 +33,22 @@ index_info = {
                     
                 },
                 
-                "ip":{  #IP地址                         
+                "ip":{  #ip                         
                     "type":"ip",
                     "index":"not_analyzed"
                     
                 },                              
-                "location":{#地点
+                "geo":{#地理位置
                     "type":"string",
-                    "analyzer": "my_analyzer"
+                    "index": "not_analyzed"
                     
                 },
-                "sensitive_ip":{#敏感IP
-                    "type":"ip",
+                "count":{#统计次数
+                    "type":"long",
                     "index":"not_analyzed"
                     
-                },
-                "sensitive_location":{ #敏感地址
-                    "type":"string",
-                    "analyzer": "my_analyzer"
-                    
                 }
+                
                 
             }
         }
@@ -60,7 +57,7 @@ index_info = {
 
 
 
-
+# es.indices.delete(index = index_name)
 exist_indice = es.indices.exists(index = index_name)
 
 print(exist_indice)
