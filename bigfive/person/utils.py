@@ -104,7 +104,7 @@ def delete_by_id(index, doc_type, id):
     return result
 
 
-def user_emotion(uid,interval):
+def user_emotion(uid, interval):
     query_body = {
         "query": {
             "bool": {
@@ -150,16 +150,16 @@ def user_emotion(uid,interval):
 
     buckets = es.search(index="user_emotion", doc_type="text", body=query_body)['aggregations']['groupDate']['buckets']
     result = {
-            'time':[],
-            "positive_line": [],
-            "negtive_line": [],
-            "nuetral_line": []
-        }
+        'time': [],
+        "positive_line": [],
+        "negtive_line": [],
+        "nuetral_line": []
+    }
     for bucket in buckets:
-        result['time'].append(bucket['key_as_string'],)
-        result["positive_line"].append( bucket['positive']['sum'],)
-        result["negtive_line"].append( bucket['negtive']['sum'],)
-        result["nuetral_line"].append( bucket['nuetral']['sum'])
+        result['time'].append(bucket['key_as_string'], )
+        result["positive_line"].append(bucket['positive']['sum'], )
+        result["negtive_line"].append(bucket['negtive']['sum'], )
+        result["nuetral_line"].append(bucket['nuetral']['sum'])
     return result
 
 
@@ -180,8 +180,8 @@ def get_user_activity(uid):
                     },
                     {
                         "term": {
-                            # "date": "2016-11-13"
-                            "date": str(today)
+                            "date": "2016-11-21"
+                            # "date": str(today)
                         }
                     }
                 ]
@@ -217,10 +217,10 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                # "gte": "2016-11-06",
-                                "gte": a_week_ago,
-                                # "lte": "2016-11-13"
-                                "lte": today
+                                "gte": "2016-11-14",
+                                # "gte": a_week_ago,
+                                "lte": "2016-11-21"
+                                # "lte": today
                             }
                         }
                     }
@@ -244,21 +244,89 @@ def get_user_activity(uid):
         }
     }
 
+    print(one_week_query)
     one_week_result_list = []
     one_week_result = es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
     one_week_dic = {}
     for one_week_data in one_week_result:
-        one_week_dic[one_week_data['key_as_string']] = one_week_data['ip_count']['sum']
+        one_week_dic[one_week_data['key']] = one_week_data['ip_count']['sum']
 
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(len(l)):
-        item = {'rank': i+1, 'count': int(l[i][1]), 'ip': l[i][0]}
+        item = {'rank': i + 1, 'count': int(l[i][1]), 'ip': l[i][0]}
         one_week_result_list.append(item)
+
+    # 活跃度分析
+    geo_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": str(uid)
+                        }
+                    },
+                    {
+                        "range": {
+                            "date": {
+                                "gt": "2016-11-14",
+                                "lte": "2016-11-21"
+                            }
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "size": 1000,
+        "sort": [
+            {
+                "timestamp": {
+                    "order": "asc"
+                }
+            }
+        ]
+    }
+
+    geo_result = es.search(index='user_activity', doc_type='text', body=geo_query)['hits']['hits']
+    geo_dict = {}
+    print(geo_query)
+    for geo_data in geo_result:
+        # item = {}
+        # item.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+        # item[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+        geo_dict.setdefault(geo_data['_source']['date'], {})
+        try:
+            if geo_data['_source']['geo'].split('&')[1] == '其他':
+                continue
+            geo_dict[geo_data['_source']['date']].setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+        except:
+            continue
+        geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+
+    print(geo_dict)
+    geo_dict_item = list(geo_dict.items())
+    print(geo_dict_item)
+    route_list = []
+    for i in range(len(geo_dict_item)):
+        if not geo_dict_item[i][1]:
+            continue
+        item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get), 'e': ''}
+        route_list.append(item)
+        print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
+        if i > 0:
+            route_list[i-1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
+
+    if len(route_list) > 1:
+        del (route_list[-1])
+    else:
+        route_list[0]['e'] = route_list[0]['s']
+    print(route_list)
 
     result['one_day_rank'] = one_day_result_list
     result['one_week_rank'] = one_week_result_list
-
-    # 活跃度分析
+    result['route_list'] = route_list
 
     return result
 
