@@ -341,9 +341,7 @@ def get_influence_feature(uid):
                             "uid": str(uid)
                         }
                     }
-                ],
-                "must_not": [],
-                "should": []
+                ]
             }
         },
         "sort": [
@@ -358,7 +356,14 @@ def get_influence_feature(uid):
     result_list = []
     es_result = scan(client=es, index='user_influence', doc_type='text', query=query)
     for data in es_result:
-        result_list.append(data['_source'])
+        item = {}
+        item['sensitivity'] = data['_source']['sensitivity']
+        item['influence'] = data['_source']['influence']
+        item['activity'] = data['_source']['activity']
+        item['importance'] = data['_source']['importance']
+        item['timestamp'] = data['_source']['timestamp']
+        item['date'] = time.strftime('%Y-%m-%d', time.localtime(item['timestamp']))
+        result_list.append(item)
 
     return result_list
 
