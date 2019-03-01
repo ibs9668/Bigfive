@@ -35,7 +35,7 @@ index_info = {
                 },
                 "create_time":{#创建时间
                     "index":"not_analyzed",
-                    "type" : "date"
+                    "type" : "long"
                 },
                 "create_condition":{#创建条件
                     "index":"not_analyzed",

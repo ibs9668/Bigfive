@@ -23,7 +23,7 @@ index_info = {
       "text":{
           "properties":{
               "timestamp":{  #统计时间
-                      "type" : "date",
+                      "type" : "long",
                       "index" : "not_analyzed"
               },
               "group_id":{    # 群体id                        
