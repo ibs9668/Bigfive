@@ -22,9 +22,6 @@ index_info = {
     },
     "mappings": {
         "text": { #索引类型
-            "_id":{
-            "path":"uid"
-            },
             "properties": {
                  "uid":{ #用户uid
                    "index":"not_analyzed",

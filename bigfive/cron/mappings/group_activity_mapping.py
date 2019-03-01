@@ -50,6 +50,10 @@ index_info={
               },
               "timestamp": {
                 "type": "long"
+              },
+              "date":{
+                "format": "dateOptionalTime",
+                "type": "date"
               }
             }
           }

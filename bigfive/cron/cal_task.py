@@ -1,15 +1,18 @@
 import sys
 sys.path.append('../')
 sys.path.append('portrait/user')
-from config import *
-from time_utils import *
-
-from model.personality_cal import cal_person
-from cron_user import user_attribute
-
+sys.path.append('portrait/group')
+import random
 from elasticsearch import Elasticsearch,helpers
 from elasticsearch.helpers import bulk
 from xpinyin import Pinyin
+
+from config import *
+from time_utils import *
+from model.personality_cal import cal_person
+from cron_user import user_attribute
+from cron_group import group_personality, group_activity, group_attribute, group_density_attribute
+
 
 def user_ranking(uid,username=None):
     if username == None:
@@ -166,7 +169,8 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
         'create_condition':args_dict,
         'group_name':group_name,
         'create_time':create_time,
-        'keyword':create_time,
+        'create_date':ts2date(create_time),
+        'keyword':keyword,
         'group_pinyin':group_pinyin,
         'group_id':group_pinyin + '_' + str(create_time),
         'userlist':uid_list
@@ -176,6 +180,53 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
 
     return dic
 
+def group_attribute(uid_list, date):
+    activity = int(random.random() * 100)
+    influence = int(random.random() * 100)
+    importance = int(random.random() * 100)
+    sensitivity = int(random.random() * 100)
+    activeness_star = int(activity / 20) + 1
+    influence_star = int(influence / 20) + 1
+    importance_star = int(importance / 20) + 1
+    sensitivity_star = int(sensitivity / 20 + 1)
+    return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
+
+def group_density_attribute(uid_list, date, num):
+    in_density = int(random.random() * 100)
+    density_star = int(in_density / 20) + 1
+    return in_density, density_star
+
+def group_ranking(group_dic):
+    uid_list = group_dic['userlist']
+    date = ts2date(group_dic['create_time'])
+    group_id = group_dic['group_id']
+    group_name = group_dic['group_name']
+    machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index = group_personality(uid_list)
+    activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star = group_attribute(uid_list, date)
+    in_density, density_star = group_density_attribute(uid_list, date, 15)
+    dic = {
+        'machiavellianism_index':machiavellianism_index,
+        'narcissism_index':narcissism_index,
+        'psychopathy_index':psychopathy_index,
+        'extroversion_index':extroversion_index,
+        'nervousness_index':nervousness_index,
+        'openn_index':openn_index,
+        'agreeableness_index':agreeableness_index,
+        'conscientiousness_index':conscientiousness_index,
+        'liveness_index':activity,
+        'importance_index':importance,
+        'sensitive_index':sensitivity,
+        'influence_index':influence,
+        'compactness_index':in_density,
+        'liveness_star':activeness_star,
+        'importance_star':importance_star,
+        'sensitive_star':sensitivity_star,
+        'influence_star':influence_star,
+        'compactness_star':density_star,
+        'group_id':group_id,
+        'group_name':group_name
+    }
+    es.index(index=GROUP_RANKING,doc_type='text',body=dic,id=group_id)
     
 if __name__ == '__main__':
     args_dict = {
@@ -189,7 +240,6 @@ if __name__ == '__main__':
         'conscientiousness_index':0,
     }
     # keyword = '强大'
-    keyword = '强大'
     remark = '明哥的确是厉害'
     group_name = '明哥厉害'
     create_time = int(time.time())
