@@ -16,6 +16,7 @@ MAX_VALUE = 99999999
 
 # user index
 USER_ACTIVITY = 'user_activity'
+USER_DOMAIN_TOPIC = 'user_domain_topic'
 USER_RANKING = 'user_ranking'
 USER_SOCIAL_CONTACT = 'user_social_contact'
 USER_INFORMATION = 'user_information'
@@ -50,3 +51,17 @@ MESSAGE_TYPE_LIST = [2,3]
 
 # 微博存量数据索引
 ES_INDEX_LIST = ["flow_text_2016-11-13","flow_text_2016-11-14","flow_text_2016-11-15","flow_text_2016-11-16","flow_text_2016-11-17","flow_text_2016-11-18","flow_text_2016-11-19","flow_text_2016-11-20","flow_text_2016-11-21","flow_text_2016-11-22","flow_text_2016-11-23","flow_text_2016-11-24","flow_text_2016-11-25","flow_text_2016-11-26","flow_text_2016-11-27"]
+
+#微博话题种类
+TOPIC_LIST = ['art','computer','economic','education','environment','medicine',\
+            'military','politics','sports','traffic','life',\
+            'anti-corruption','employment','fear-of-violence','house',\
+            'law','peace','religion','social-security']
+txt_labels = ['university', 'homeadmin', 'abroadadmin', 'homemedia', 'abroadmedia', 'folkorg', \
+          'lawyer', 'politician', 'mediaworker', 'activer', 'grassroot', 'business']
+labels = ['university', 'homeadmin', 'abroadadmin', 'homemedia', 'abroadmedia', 'folkorg', \
+          'lawyer', 'politician', 'mediaworker', 'activer', 'grassroot', 'other', 'business']
+outlist = [u'海外', u'香港', u'台湾', u'澳门']
+lawyerw = [u'律师', u'法律', u'法务', u'辩护']
+STATUS_THRE = 4000
+FOLLOWER_THRE = 1000
