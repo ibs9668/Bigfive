@@ -290,39 +290,42 @@ def get_user_activity(uid):
     }
 
     geo_result = es.search(index='user_activity', doc_type='text', body=geo_query)['hits']['hits']
-    geo_dict = {}
-    print(geo_query)
-    for geo_data in geo_result:
-        # item = {}
-        # item.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
-        # item[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
-        geo_dict.setdefault(geo_data['_source']['date'], {})
-        try:
-            if geo_data['_source']['geo'].split('&')[1] == '其他':
+    if geo_result:
+        geo_dict = {}
+        print(geo_query)
+        for geo_data in geo_result:
+            # item = {}
+            # item.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+            # item[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+            geo_dict.setdefault(geo_data['_source']['date'], {})
+            try:
+                if geo_data['_source']['geo'].split('&')[1] == '其他':
+                    continue
+                geo_dict[geo_data['_source']['date']].setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+            except:
                 continue
-            geo_dict[geo_data['_source']['date']].setdefault(geo_data['_source']['geo'].split('&')[1], 0)
-        except:
-            continue
-        geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+            geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
 
-    print(geo_dict)
-    geo_dict_item = list(geo_dict.items())
-    print(geo_dict_item)
-    route_list = []
-    for i in range(len(geo_dict_item)):
-        if not geo_dict_item[i][1]:
-            continue
-        item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get), 'e': ''}
-        route_list.append(item)
-        print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
-        if i > 0:
-            route_list[i-1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
+        print(geo_dict)
+        geo_dict_item = list(geo_dict.items())
+        print(geo_dict_item)
+        route_list = []
+        for i in range(len(geo_dict_item)):
+            if not geo_dict_item[i][1]:
+                continue
+            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get), 'e': ''}
+            route_list.append(item)
+            print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
+            if i > 0:
+                route_list[i-1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
 
-    if len(route_list) > 1:
-        del (route_list[-1])
+        if len(route_list) > 1:
+            del (route_list[-1])
+        else:
+            route_list[0]['e'] = route_list[0]['s']
+        print(route_list)
     else:
-        route_list[0]['e'] = route_list[0]['s']
-    print(route_list)
+        route_list = []
 
     result['one_day_rank'] = one_day_result_list
     result['one_week_rank'] = one_week_result_list
