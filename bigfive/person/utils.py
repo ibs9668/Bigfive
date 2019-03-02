@@ -94,6 +94,43 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     result = {'rows': [], 'total': hits['total']}
     for item in hits['hits']:
+        item['_source']['big_five_list'] = []
+        item['_source']['dark_list'] = []
+
+        if item['_source']['extroversion_label'] == 0:
+            item['_source']['big_five_list'].append({'外倾性': '极端低'})
+        if item['_source']['extroversion_label'] == 2:
+            item['_source']['big_five_list'].append({'外倾性': '极端高'})
+        if item['_source']['openn_label'] == 0:
+            item['_source']['big_five_list'].append({'开放性': '极端低'})
+        if item['_source']['openn_label'] == 2:
+            item['_source']['big_five_list'].append({'开放性': '极端高'})
+        if item['_source']['agreeableness_label'] == 0:
+            item['_source']['big_five_list'].append({'宜人性': '极端低'})
+        if item['_source']['agreeableness_label'] == 2:
+            item['_source']['big_five_list'].append({'宜人性': '极端高'})
+        if item['_source']['conscientiousness_label'] == 0:
+            item['_source']['big_five_list'].append({'尽责性': '极端低'})
+        if item['_source']['conscientiousness_label'] == 2:
+            item['_source']['big_five_list'].append({'尽责性': '极端高'})
+        if item['_source']['nervousness_label'] == 0:
+            item['_source']['big_five_list'].append({'神经质': '极端低'})
+        if item['_source']['nervousness_label'] == 2:
+            item['_source']['big_five_list'].append({'神经质': '极端高'})
+
+        if item['_source']['machiavellianism_label'] == 0:
+            item['_source']['dark_list'].append({'马基雅维里主义': '极端低'})
+        if item['_source']['machiavellianism_label'] == 2:
+            item['_source']['dark_list'].append({'马基雅维里主义': '极端高'})
+        if item['_source']['psychopathy_label'] == 0:
+            item['_source']['dark_list'].append({'精神病态': '极端低'})
+        if item['_source']['psychopathy_label'] == 2:
+            item['_source']['dark_list'].append({'精神病态': '极端高'})
+        if item['_source']['narcissism_label'] == 0:
+            item['_source']['dark_list'].append({'自怜': '极端低'})
+        if item['_source']['narcissism_label'] == 2:
+            item['_source']['dark_list'].append({'自恋': '极端高'})
+
         item['_source']['name'] = item['_source']['username']
         result['rows'].append(item['_source'])
     return result
