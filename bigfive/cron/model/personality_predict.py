@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+import sys
+sys.path.append('../../')
+import os
 import numpy as np
 import pandas as pd
 import jieba
@@ -11,11 +13,10 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.externals import joblib
 from elasticsearch import Elasticsearch
 
+from config import *
+from time_utils import *
 
-
-es_weibo = Elasticsearch("219.224.134.225:9225",timeout=600)
-
-es = Elasticsearch("219.224.134.220:9200",timeout=600)
+father_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + ".")
 
 def ts2date(ts):
     return time.strftime('%Y-%m-%d', time.localtime(ts))
@@ -31,20 +32,12 @@ def get_uidlist():
 
 
 
-def read_weibo_text_data(uid_list,start_time,end_time):
+def read_weibo_text_data(uid_list,start_date,end_date):
     users_weibo = {}
-    #start_date = ts2date(start_time)
-    end_date = datetime.datetime.fromtimestamp(end_time)
-    next_date = datetime.datetime.fromtimestamp(start_time)
-    es_date = []
-    es_date.append(next_date.strftime("%Y-%m-%d"))
-    while next_date != end_date:
-       next_date = next_date + datetime.timedelta(days=1)
-       date_r = next_date.strftime("%Y-%m-%d")
-       es_date.append(date_r)
+    es_date = get_datelist_v2(start_date,end_date)
     es_index_list = []
     for date in es_date:
-        es_index_list.append("flow_text_"+str(date))
+        es_index_list.append("flow_text_"+date)
 
 
     for user in uid_list:
@@ -114,7 +107,7 @@ def cut_text(text):
 
     text, emo = weibo_clean(text)
     seg_list = jieba.cut(text)  # 结巴分词
-    stopwords_filepath = 'model/stopwords.txt'
+    stopwords_filepath = '%s/model/stopwords.txt' % father_path
     stopwords = [line.strip() for line in open(stopwords_filepath, 'r', encoding='utf-8').readlines()]  # 读取停用词表
     stopwords.extend(['(', ')', '\\', '/', '|', '[', ']', ' '])
     word_list = [w.strip() for w in seg_list if (w not in set(stopwords))]  # 去停用词
@@ -145,7 +138,7 @@ def get_word_feature(user_weibo, user_list, keywords_filepath):
 
 
 def save_predict_result(y):  # 将预测结果存入文件
-    np.save('result/per_result.npy', y)  #numpy格式保存
+    np.save('%s/result/per_result.npy' % father_path, y)  #numpy格式保存
 
     # excel形式输出
     t = {'uid':y[0],'Extraversion':y[1],'Agreeableness':y[2],'Conscientiousness':y[3],'Neuroticism':y[4],'Openness':y[5],'马基雅维利主义':y[6],'自恋':y[7],'精神病态':y[8]}
@@ -166,13 +159,15 @@ def save_predict_result(y):  # 将预测结果存入文件
 #预测用户的人格得分，返回对应用户的人格得分列表，使用时调用此函数,
 def predict_personality(uid_list,start_time,end_time):
 
-    bigfive_keywords_filepath = 'model/bigfive_keywords.npy'
-    dark_keywords_filepath = 'model/dark_keywords.npy'
-    
+    bigfive_keywords_filepath = '%s/model/bigfive_keywords.npy' % father_path
+    dark_keywords_filepath = '%s/model/dark_keywords.npy' % father_path
+
+    print('Start getting weibo data...')
     user_weibo = read_weibo_text_data(uid_list,start_time,end_time)
 
 
     user_list = list(user_weibo.keys())
+    print('Start getting user else feature...')
     else_feature = get_user_else_feature(user_list)
 
     per_predict = []
@@ -180,13 +175,14 @@ def predict_personality(uid_list,start_time,end_time):
     per_name = ['Extraversion','Agreeableness','Conscientiousness','Neuroticism','Openness','马基雅维利主义','自恋','精神病态']
 
     for i in range(8):
+        print('Predict %s...' % per_name[i])
         if i < 5:
             word_feature = get_word_feature(user_weibo, user_list, bigfive_keywords_filepath)
         else:
             word_feature = get_word_feature(user_weibo, user_list, dark_keywords_filepath)
 
         x = np.concatenate((word_feature, else_feature), axis=1)
-        model_name = 'model/'+per_name[i] + '_regression_model.pkl'
+        model_name = father_path + '/model/'+per_name[i] + '_regression_model.pkl'
         regression_model = joblib.load(model_name)
         y = regression_model.predict(x)
         per_predict.append(list(y))

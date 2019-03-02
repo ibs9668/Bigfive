@@ -9,49 +9,80 @@ from xpinyin import Pinyin
 
 from config import *
 from time_utils import *
-from model.personality_cal import cal_person
+from model.personality_predict import predict_personality
 from cron_user import user_attribute
 from cron_group import group_personality, group_activity, group_attribute, group_density_attribute
 
 
-def user_ranking(uid,username=None):
-    if username == None:
-        try:
-            username = es.get(index=USER_INFORMATION,doc_type='text',id=uid)['_source']['username']
-        except:
-            raise ValueError('No such uid in es!')
-    machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index = cal_person(uid)
+def user_ranking(uid_list,username_list,date):
+    personality_dic = es.mget(index=USER_INFLUENCE, doc_type='text', body={'ids':iter_uid_list})['docs']
     liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star = user_attribute(uid)
 
-    dic = {
-        'machiavellianism_index':machiavellianism_index,
-        'narcissism_index':narcissism_index,
-        'psychopathy_index':psychopathy_index,
-        'extroversion_index':extroversion_index,
-        'nervousness_index':nervousness_index,
-        'openn_index':openn_index,
-        'agreeableness_index':agreeableness_index,
-        'conscientiousness_index':conscientiousness_index,
-        'liveness_index':liveness_index,
-        'importance_index':importance_index,
-        'sensitive_index':sensitive_index,
-        'influence_index':influence_index,
-        'liveness_star':liveness_star,
-        'importance_star':importance_star,
-        'sensitive_star':sensitive_star,
-        'influence_star':influence_star,
-        'machiavellianism_label':get_personality_label(machiavellianism_index,'machiavellianism_index'),
-        'narcissism_label':get_personality_label(narcissism_index,'narcissism_index'),
-        'psychopathy_label':get_personality_label(psychopathy_index,'psychopathy_index'),
-        'extroversion_label':get_personality_label(extroversion_index,'extroversion_index'),
-        'nervousness_label':get_personality_label(nervousness_index,'nervousness_index'),
-        'openn_label':get_personality_label(openn_index,'openn_index'),
-        'agreeableness_label':get_personality_label(agreeableness_index,'agreeableness_index'),
-        'conscientiousness_label':get_personality_label(conscientiousness_index,'conscientiousness_index'),
-        'uid':uid,
-        'username':username
-    }
-    es.index(index=USER_RANKING,doc_type='text',body=dic,id=uid)
+    for uid in uid_list:
+        dic = {
+            'machiavellianism_index':machiavellianism_index,
+            'narcissism_index':narcissism_index,
+            'psychopathy_index':psychopathy_index,
+            'extroversion_index':extroversion_index,
+            'nervousness_index':nervousness_index,
+            'openn_index':openn_index,
+            'agreeableness_index':agreeableness_index,
+            'conscientiousness_index':conscientiousness_index,
+            'liveness_index':liveness_index,
+            'importance_index':importance_index,
+            'sensitive_index':sensitive_index,
+            'influence_index':influence_index,
+            'liveness_star':liveness_star,
+            'importance_star':importance_star,
+            'sensitive_star':sensitive_star,
+            'influence_star':influence_star,
+            'machiavellianism_label':get_personality_label(machiavellianism_index,'machiavellianism_index'),
+            'narcissism_label':get_personality_label(narcissism_index,'narcissism_index'),
+            'psychopathy_label':get_personality_label(psychopathy_index,'psychopathy_index'),
+            'extroversion_label':get_personality_label(extroversion_index,'extroversion_index'),
+            'nervousness_label':get_personality_label(nervousness_index,'nervousness_index'),
+            'openn_label':get_personality_label(openn_index,'openn_index'),
+            'agreeableness_label':get_personality_label(agreeableness_index,'agreeableness_index'),
+            'conscientiousness_label':get_personality_label(conscientiousness_index,'conscientiousness_index'),
+            'uid':uid,
+            'username':username
+        }
+        es.index(index=USER_RANKING,doc_type='text',body=dic,id=uid)
+
+def cal_personality(uid_list, date, days):
+    # personality_dic = {}
+    end_date = date
+    start_date = ts2date(date2ts(date) - days*24*3600)
+    per_predict = predict_personality(uid_list,start_date,end_date)
+    timestamp = date2ts(date)
+    for idx in range(len(uid_list)):
+        uid = per_predict[0][idx]
+        extroversion_index = per_predict[1][idx]
+        agreeableness_index = per_predict[2][idx]
+        conscientiousness_index = per_predict[3][idx]
+        nervousness_index = per_predict[4][idx]
+        openn_index = per_predict[5][idx]
+        machiavellianism_index = per_predict[6][idx]
+        narcissism_index = per_predict[7][idx]
+        psychopathy_index = per_predict[8][idx]
+
+        dic = {
+            'extroversion_index':extroversion_index,
+            'agreeableness_index':agreeableness_index,
+            'conscientiousness_index':conscientiousness_index,
+            'nervousness_index':nervousness_index,
+            'openn_index':openn_index,
+            'machiavellianism_index':machiavellianism_index,
+            'narcissism_index':narcissism_index,
+            'psychopathy_index':psychopathy_index,
+            'uid':uid,
+            'timestamp':timestamp,
+            'date':date
+        }
+        # personality_dic[uid] = dic
+        es.index(index=USER_PERSONALITY,doc_type='text',body=dic,id=uid + '_' + str(timestamp))
+
+    # return personality_dic
 
 def get_personality_label(personality_index, personality_name):
     threshold = PERSONALITY_DIC[personality_name]['threshold']
@@ -68,7 +99,7 @@ def user_insert():
     iter_num = 0
     iter_get_user = USER_ITER_COUNT
     while (iter_get_user == USER_ITER_COUNT):
-        print(iter_num*USER_ITER_COUNT)
+        print('\nUsers that have been calculated: %d\n' % (iter_num*USER_ITER_COUNT))
         user_query_body = {
             'query':{
                 'match_all':{}
@@ -84,10 +115,8 @@ def user_insert():
         es_result = es.search(index=USER_INFORMATION,doc_type='text',body=user_query_body)['hits']['hits']
         iter_get_user = len(es_result)
         iter_num += 1
-        for hit in es_result:
-            uid = hit['_source']['uid']
-            username = hit['_source']['username']
-            user_ranking(uid,username)
+        iter_user_list = [hit['_source']['uid'] for hit in es_result]
+        cal_personality(iter_user_list,'2016-11-27',14)
     
 
 def group_create(args_dict,keyword,remark,group_name,create_time):
@@ -251,19 +280,20 @@ def group_ranking(group_dic):
     es.index(index=GROUP_RANKING,doc_type='text',body=dic,id=group_id)
     
 if __name__ == '__main__':
-    args_dict = {
-        'machiavellianism_index':0,
-        'narcissism_index':0,
-        'psychopathy_index':0,
-        'extroversion_index':0,
-        'nervousness_index':0,
-        'openn_index':0,
-        'agreeableness_index':0,
-        'conscientiousness_index':0,
-    }
+    user_insert()
+    # args_dict = {
+    #     'machiavellianism_index':0,
+    #     'narcissism_index':0,
+    #     'psychopathy_index':0,
+    #     'extroversion_index':0,
+    #     'nervousness_index':0,
+    #     'openn_index':0,
+    #     'agreeableness_index':0,
+    #     'conscientiousness_index':0,
+    # }
     # keyword = '强大'
-    remark = '明哥的确是厉害'
-    group_name = '明哥厉害'
-    create_time = int(time.time())
-    group_create(args_dict,keyword,remark,group_name,create_time)
+    # remark = '明哥的确是厉害'
+    # group_name = '明哥厉害'
+    # create_time = int(time.time())
+    # group_create(args_dict,keyword,remark,group_name,create_time)
     # print(es.mget(index=USER_INFORMATION, doc_type='text', body={'ids':['1608546201','111111111']}))
