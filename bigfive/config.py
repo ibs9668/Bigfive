@@ -29,10 +29,18 @@ GROUP_INFORMATION = 'group_information'
 GROUP_RANKING = 'group_ranking'
 GROUP_TASK = 'group_task'
 
-# cron_group parameter
 # cron_user parameter
 USER_ITER_COUNT = 100
 USER_WEIBO_ITER_COUNT = 10000
+
+USER_MACHIAVELLIANISM_THRESHOLD = [20,80]
+USER_NARCISSISM_THRESHOLD = [20,80]
+USER_PSYCHOPATHY_THRESHOLD = [20,80]
+USER_EXTROVERSION_THRESHOLD = [20,80]
+USER_NERVOUSNESS_THRESHOLD = [20,80]
+USER_OPENN_THRESHOLD = [20,80]
+USER_AGREEABLENESS_THRESHOLD = [20,80]
+USER_CONSCIENTIOUSNESS_THRESHOLD = [20,80]
 
 # cron_group parameter
 GROUP_ITER_COUNT = 100
@@ -42,6 +50,9 @@ GROUP_AVE_INFLUENCE_RANK_THRESHOLD = [0.3, 0.7]
 GROUP_AVE_IMPORTANCE_RANK_THRESHOLD = [0.3, 0.7]
 GROUP_AVE_SENSITIVITY_RANK_THRESHOLD = [0.3, 0.7]
 GROUP_DENSITY_THRESHOLD = [0.1, 0.3]
+
+#人格字典
+PERSONALITY_DIC = {'machiavellianism_index':{'name':'马基雅维里主义','threshold':USER_MACHIAVELLIANISM_THRESHOLD},'narcissism_index':{'name':'自恋','threshold':USER_NARCISSISM_THRESHOLD},'psychopathy_index':{'name':'精神病态','threshold':USER_PSYCHOPATHY_THRESHOLD},'extroversion_index':{'name':'外倾性','threshold':USER_EXTROVERSION_THRESHOLD},'nervousness_index':{'name':'神经质','threshold':USER_NERVOUSNESS_THRESHOLD},'openn_index':{'name':'开放性','threshold':USER_OPENN_THRESHOLD},'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}}
 
 # 情感分类 0中性 1积极
 SENTIMENT_INDEX_LIST = [0, 1]

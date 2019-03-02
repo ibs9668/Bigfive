@@ -1,15 +1,18 @@
 import sys
 sys.path.append('../')
 sys.path.append('portrait/user')
-from config import *
-from time_utils import *
-
-from model.personality_cal import cal_person
-from cron_user import user_attribute
-
+sys.path.append('portrait/group')
+import random
 from elasticsearch import Elasticsearch,helpers
 from elasticsearch.helpers import bulk
 from xpinyin import Pinyin
+
+from config import *
+from time_utils import *
+from model.personality_cal import cal_person
+from cron_user import user_attribute
+from cron_group import group_personality, group_activity, group_attribute, group_density_attribute
+
 
 def user_ranking(uid,username=None):
     if username == None:
@@ -19,6 +22,7 @@ def user_ranking(uid,username=None):
             raise ValueError('No such uid in es!')
     machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index = cal_person(uid)
     liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star = user_attribute(uid)
+
     dic = {
         'machiavellianism_index':machiavellianism_index,
         'narcissism_index':narcissism_index,
@@ -36,34 +40,55 @@ def user_ranking(uid,username=None):
         'importance_star':importance_star,
         'sensitive_star':sensitive_star,
         'influence_star':influence_star,
+        'machiavellianism_label':get_personality_label(machiavellianism_index,'machiavellianism_index'),
+        'narcissism_label':get_personality_label(narcissism_index,'narcissism_index'),
+        'psychopathy_label':get_personality_label(psychopathy_index,'psychopathy_index'),
+        'extroversion_label':get_personality_label(extroversion_index,'extroversion_index'),
+        'nervousness_label':get_personality_label(nervousness_index,'nervousness_index'),
+        'openn_label':get_personality_label(openn_index,'openn_index'),
+        'agreeableness_label':get_personality_label(agreeableness_index,'agreeableness_index'),
+        'conscientiousness_label':get_personality_label(conscientiousness_index,'conscientiousness_index'),
         'uid':uid,
         'username':username
     }
     es.index(index=USER_RANKING,doc_type='text',body=dic,id=uid)
 
-def user_insert():
-    query_body = {
-        'query':{
-            'match_all':{}
-        },
-        "size":1000
-    }
-    es_result = helpers.scan(
-        client=es,
-        query=query_body,
-        scroll='1m',
-        index=USER_INFORMATION,
-        doc_type='text',
-        timeout='1m'
-    )
+def get_personality_label(personality_index, personality_name):
+    threshold = PERSONALITY_DIC[personality_name]['threshold']
+    if personality_index < threshold[0]:
+        personality_label = 0
+    elif personality_index > threshold[1]:
+        personality_label = 2
+    else:
+        personality_label = 1
 
-    num = 0
-    for hit in es_result:
-        print(num)
-        uid = hit['_source']['uid']
-        username = hit['_source']['username']
-        user_ranking(uid,username)
-        num += 1
+    return personality_label
+
+def user_insert():
+    iter_num = 0
+    iter_get_user = USER_ITER_COUNT
+    while (iter_get_user == USER_ITER_COUNT):
+        print(iter_num*USER_ITER_COUNT)
+        user_query_body = {
+            'query':{
+                'match_all':{}
+            },
+            'sort':{
+                'uid':{
+                    'order':'asc'
+                }
+            },
+            "size":USER_ITER_COUNT,
+            "from":iter_num * USER_ITER_COUNT
+        }
+        es_result = es.search(index=USER_INFORMATION,doc_type='text',body=user_query_body)['hits']['hits']
+        iter_get_user = len(es_result)
+        iter_num += 1
+        for hit in es_result:
+            uid = hit['_source']['uid']
+            username = hit['_source']['username']
+            user_ranking(uid,username)
+    
 
 def group_create(args_dict,keyword,remark,group_name,create_time):
     uid_list_keyword = []
@@ -166,7 +191,8 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
         'create_condition':args_dict,
         'group_name':group_name,
         'create_time':create_time,
-        'keyword':create_time,
+        'create_date':ts2date(create_time),
+        'keyword':keyword,
         'group_pinyin':group_pinyin,
         'group_id':group_pinyin + '_' + str(create_time),
         'userlist':uid_list
@@ -176,6 +202,53 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
 
     return dic
 
+def group_attribute(uid_list, date):
+    activity = int(random.random() * 100)
+    influence = int(random.random() * 100)
+    importance = int(random.random() * 100)
+    sensitivity = int(random.random() * 100)
+    activeness_star = int(activity / 20) + 1
+    influence_star = int(influence / 20) + 1
+    importance_star = int(importance / 20) + 1
+    sensitivity_star = int(sensitivity / 20 + 1)
+    return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
+
+def group_density_attribute(uid_list, date, num):
+    in_density = int(random.random() * 100)
+    density_star = int(in_density / 20) + 1
+    return in_density, density_star
+
+def group_ranking(group_dic):
+    uid_list = group_dic['userlist']
+    date = ts2date(group_dic['create_time'])
+    group_id = group_dic['group_id']
+    group_name = group_dic['group_name']
+    machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index = group_personality(uid_list)
+    activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star = group_attribute(uid_list, date)
+    in_density, density_star = group_density_attribute(uid_list, date, 15)
+    dic = {
+        'machiavellianism_index':machiavellianism_index,
+        'narcissism_index':narcissism_index,
+        'psychopathy_index':psychopathy_index,
+        'extroversion_index':extroversion_index,
+        'nervousness_index':nervousness_index,
+        'openn_index':openn_index,
+        'agreeableness_index':agreeableness_index,
+        'conscientiousness_index':conscientiousness_index,
+        'liveness_index':activity,
+        'importance_index':importance,
+        'sensitive_index':sensitivity,
+        'influence_index':influence,
+        'compactness_index':in_density,
+        'liveness_star':activeness_star,
+        'importance_star':importance_star,
+        'sensitive_star':sensitivity_star,
+        'influence_star':influence_star,
+        'compactness_star':density_star,
+        'group_id':group_id,
+        'group_name':group_name
+    }
+    es.index(index=GROUP_RANKING,doc_type='text',body=dic,id=group_id)
     
 if __name__ == '__main__':
     args_dict = {
@@ -189,7 +262,6 @@ if __name__ == '__main__':
         'conscientiousness_index':0,
     }
     # keyword = '强大'
-    keyword = '强大'
     remark = '明哥的确是厉害'
     group_name = '明哥厉害'
     create_time = int(time.time())
