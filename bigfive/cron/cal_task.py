@@ -10,32 +10,34 @@ from xpinyin import Pinyin
 from config import *
 from time_utils import *
 from model.personality_predict import predict_personality
-from cron_user import user_attribute
 from cron_group import group_personality, group_activity, group_attribute, group_density_attribute
 
 
 def user_ranking(uid_list,username_list,date):
-    personality_dic = es.mget(index=USER_INFLUENCE, doc_type='text', body={'ids':iter_uid_list})['docs']
-    liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star = user_attribute(uid)
+    query_id_list = [uid + '_' + str(date2ts(date)) for uid in uid_list]
+    res = es.mget(index=USER_PERSONALITY, doc_type='text', body={'ids':query_id_list})['docs']
+    personality_dic = {i['_source']['uid']:i['_source'] for i in res}
+    res = es.mget(index=USER_INFLUENCE, doc_type='text', body={'ids':query_id_list})['docs']
+    attribute_dic = {i['_source']['uid']:i['_source'] for i in res}
 
     for uid in uid_list:
         dic = {
-            'machiavellianism_index':machiavellianism_index,
-            'narcissism_index':narcissism_index,
-            'psychopathy_index':psychopathy_index,
-            'extroversion_index':extroversion_index,
-            'nervousness_index':nervousness_index,
-            'openn_index':openn_index,
-            'agreeableness_index':agreeableness_index,
-            'conscientiousness_index':conscientiousness_index,
-            'liveness_index':liveness_index,
-            'importance_index':importance_index,
-            'sensitive_index':sensitive_index,
-            'influence_index':influence_index,
-            'liveness_star':liveness_star,
-            'importance_star':importance_star,
-            'sensitive_star':sensitive_star,
-            'influence_star':influence_star,
+            'machiavellianism_index':personality_dic[uid]['machiavellianism_index'],
+            'narcissism_index':personality_dic[uid]['narcissism_index'],
+            'psychopathy_index':personality_dic[uid]['psychopathy_index'],
+            'extroversion_index':personality_dic[uid]['extroversion_index'],
+            'nervousness_index':personality_dic[uid]['nervousness_index'],
+            'openn_index':personality_dic[uid]['openn_index'],
+            'agreeableness_index':personality_dic[uid]['agreeableness_index'],
+            'conscientiousness_index':personality_dic[uid]['conscientiousness_index'],
+            'liveness_index':attribute_dic[uid]['activity'],
+            'importance_index':attribute_dic[uid]['importance'],
+            'sensitive_index':attribute_dic[uid]['sensitivity'],
+            'influence_index':attribute_dic[uid]['influence'],
+            'liveness_star':get_attribute_star(attribute_dic[uid]['activity']),
+            'importance_star':get_attribute_star(attribute_dic[uid]['importance']),
+            'sensitive_star':get_attribute_star(attribute_dic[uid]['sensitivity']),
+            'influence_star':get_attribute_star(attribute_dic[uid]['influence']),
             'machiavellianism_label':get_personality_label(machiavellianism_index,'machiavellianism_index'),
             'narcissism_label':get_personality_label(narcissism_index,'narcissism_index'),
             'psychopathy_label':get_personality_label(psychopathy_index,'psychopathy_index'),
@@ -95,6 +97,9 @@ def get_personality_label(personality_index, personality_name):
 
     return personality_label
 
+def get_attribute_star(attribute_index):
+    return int(liveness_index / 20) + 1
+
 def user_insert():
     iter_num = 0
     iter_get_user = USER_ITER_COUNT
@@ -116,8 +121,9 @@ def user_insert():
         iter_get_user = len(es_result)
         iter_num += 1
         iter_user_list = [hit['_source']['uid'] for hit in es_result]
+        iter_username_list = [hit['_source']['username'] for hit in es_result]
         cal_personality(iter_user_list,'2016-11-27',14)
-    
+        user_ranking(iter_user_list,iter_username_list,'2016-11-27')
 
 def group_create(args_dict,keyword,remark,group_name,create_time):
     uid_list_keyword = []
@@ -231,21 +237,21 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
 
     return dic
 
-def group_attribute(uid_list, date):
-    activity = int(random.random() * 100)
-    influence = int(random.random() * 100)
-    importance = int(random.random() * 100)
-    sensitivity = int(random.random() * 100)
-    activeness_star = int(activity / 20) + 1
-    influence_star = int(influence / 20) + 1
-    importance_star = int(importance / 20) + 1
-    sensitivity_star = int(sensitivity / 20 + 1)
-    return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
+# def group_attribute(uid_list, date):
+#     activity = int(random.random() * 100)
+#     influence = int(random.random() * 100)
+#     importance = int(random.random() * 100)
+#     sensitivity = int(random.random() * 100)
+#     activeness_star = int(activity / 20) + 1
+#     influence_star = int(influence / 20) + 1
+#     importance_star = int(importance / 20) + 1
+#     sensitivity_star = int(sensitivity / 20 + 1)
+#     return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
 
-def group_density_attribute(uid_list, date, num):
-    in_density = int(random.random() * 100)
-    density_star = int(in_density / 20) + 1
-    return in_density, density_star
+# def group_density_attribute(uid_list, date, num):
+#     in_density = int(random.random() * 100)
+#     density_star = int(in_density / 20) + 1
+#     return in_density, density_star
 
 def group_ranking(group_dic):
     uid_list = group_dic['userlist']

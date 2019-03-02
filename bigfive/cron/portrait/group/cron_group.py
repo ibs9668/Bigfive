@@ -106,9 +106,9 @@ def group_activity(group_id, uid_list, date, days):
     }
     es.index(index=GROUP_ACTIVITY, doc_type='text', id=str(group_id)+'_'+str(date_end_ts), body=dic)
 
-#计算群组的重要度、活跃度与影响力，利用群组内用户对应指标在全库中排名的均值计算
+#计算群组的重要度、活跃度、敏感度与影响力，利用群组内用户对应指标在全库中排名的均值计算
 #输入：群组id
-#输出：将该群组的三项属性以分数与星级的形式存入数据库
+#输出：将该群组的四项属性以分数与星级的形式存入数据库
 def group_attribute(uid_list, date):
     date_ts = date2ts(date)
     iter_count = 0
@@ -217,7 +217,6 @@ def get_index_rank(attr_value, attr_name, timestamp):
             }
         }
     }
-    print(query_body)
     index_rank = es.count(index=USER_INFLUENCE, doc_type='text', body=query_body)
     if index_rank['_shards']['successful'] != 0:
        result = index_rank['count']
@@ -257,10 +256,25 @@ def group_density_attribute(uid_list, date, days):
             },
             'size':10000
         }
-        es.count(index=USER_SOCIAL_CONTACT, doc_type='text', body=query_body)
+
+        res = es.search(index=USER_SOCIAL_CONTACT, doc_type='text', body=query_body)['hits']['hits']
         #取出来的为用户在一段时间内的转发与评论的数量
         user_retweet_result = {}    #{ruid1:count1, ruid2:count2}
         user_comment_result = {}
+        for hit in res:
+            source_uid = hit['_source']['source']
+            target_uid = hit['_source']['target']
+            message_type = hit['_source']['message_type']
+            if message_type == 2:
+                try:
+                    user_comment_result[source_uid] += 1
+                except:
+                    user_comment_result[source_uid] = 1
+            if message_type == 3:
+                try:
+                    user_retweet_result[source_uid] += 1
+                except:
+                    user_retweet_result[source_uid] = 1
 
         filter_in_dict = filter_union_dict([user_retweet_result, user_comment_result], uid_list, 'in')
         uid_in_record = [[uid, ruid, filter_in_dict[ruid]] for ruid in filter_in_dict if uid != ruid]
@@ -280,7 +294,7 @@ def group_density_attribute(uid_list, date, days):
 
 #输入转发与评论列表，利用输入的过滤用户列表进行合并与筛选
 def filter_union_dict(objs, filter_uid_list, mark):
-    _keys = set(sum([obj.keys() for obj in objs], []))   #合并uid并去重
+    _keys = set(sum([list(obj.keys()) for obj in objs], []))   #合并uid并去重
     if mark == 'in&out':
         _in_total = {}
         _in_keys = _keys & set(filter_uid_list)
@@ -302,6 +316,7 @@ def filter_union_dict(objs, filter_uid_list, mark):
         _in_keys = _keys & set(filter_uid_list)
         for _key in _in_keys:
             _in_total[_key] = sum([int(obj.get(_key,0)) for obj in objs])
+        return _in_total
 
 def group_personality(uid_list):
     machiavellianism_index = int(random.random() * 100)
@@ -316,4 +331,7 @@ def group_personality(uid_list):
 
 if __name__=='__main__':
     # group_activity('minggelihai_1551358645','2016-11-21',15)
-    print(group_attribute('bingquqiangda_1551358450','2016-11-13'))
+    # print(group_attribute(es.get(index='group_information',doc_type='text',id='ceshiyi_1542556800')['_source']['userlist'],'2016-11-19')) 
+    # print(group_density_attribute(es.get(index='group_information',doc_type='text',id='bingquqiangda_1551420830')['_source']['userlist'],'2016-11-27',15))
+    es.delete(index='group_activity',doc_type='text',id='ceshiyi_1542556800_1480176000')
+    #minggelihai_1551418489  bingquqiangda_1551420830  xiaoleiniubi_1551418799

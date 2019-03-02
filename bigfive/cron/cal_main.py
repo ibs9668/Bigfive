@@ -15,16 +15,16 @@ def group_main():
         'machiavellianism_index':0,
         'narcissism_index':0,
         'psychopathy_index':0,
-        'extroversion_index':0,
-        'nervousness_index':0,
+        'extroversion_index':3,
+        'nervousness_index':4,
         'openn_index':0,
         'agreeableness_index':0,
         'conscientiousness_index':0,
     }
-    keyword = '强大'
-    remark = '炳渠的确是强大'
-    group_name = '炳渠强大'
-    create_time = int(time.time())
+    keyword = ''
+    remark = '第一次群体测试'
+    group_name = '测试一'
+    create_time = date2ts('2016-11-19')
 
     print('Start finding userlist...')
     group_dic = group_create(args_dict,keyword,remark,group_name,create_time)
@@ -37,5 +37,5 @@ def group_main():
 
 
 if __name__ == '__main__':
-    user_main()
-    # group_main()
+    # user_main()
+    group_main()
