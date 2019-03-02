@@ -21,18 +21,18 @@ def user_attribute(uid):
 
 #计算对于库中的用户每天所发布微博的关键词、微话题和敏感词列表，便于统计
 #不保证一个用户一天一条，如果未发布微博则没有记录
-def word_analysis_daily(theday):
+def word_analysis_daily(date):
     keywords_dict = {}
     hastag_dict = {}
     sensitive_dict = {}
-    weibo_index = 'flow_text_' + theday
-    timestamp = date2ts(theday)
+    weibo_index = 'flow_text_' + date
+    timestamp = date2ts(date)
 
     #遍历库中所有的用户
     iter_num = 0
     iter_get_user = USER_ITER_COUNT
     while (iter_get_user == USER_ITER_COUNT):
-        print(iter_num*100,theday)
+        print(iter_num*100,date)
         user_query_body = {
             'query':{
                 'match_all':{}
@@ -123,7 +123,8 @@ def word_analysis_daily(theday):
                 'hastags':hastags,
                 'sensitive_words':sensitive_words,
                 'uid':uid,
-                'timestamp':timestamp
+                'timestamp':timestamp,
+                'date':date
             }
 
             es.index(index=USER_TEXT_ANALYSIS,doc_type='text',body=dic,id=uid+'_'+str(timestamp))
@@ -195,7 +196,8 @@ def word_analysis(uid, date, days):
         'hastags':hastags,
         'sensitive_words':sensitive_words,
         'uid':uid,
-        'timestamp':date_end_ts
+        'timestamp':date_end_ts,
+        'date':date
     }
 
     es.index(index=USER_TEXT_ANALYSIS_STA,doc_type='text',body=dic,id=uid+'_'+str(date_end_ts))
@@ -205,7 +207,7 @@ def word_analysis_main(date):
     iter_num = 0
     iter_get_user = USER_ITER_COUNT
     while (iter_get_user == USER_ITER_COUNT):
-        print(iter_num*100,date)
+        print(iter_num*USER_ITER_COUNT,date)
         user_query_body = {
             'query':{
                 'match_all':{}
@@ -229,6 +231,6 @@ def word_analysis_main(date):
 if __name__=='__main__':
     # user_attribute('1965808527')
     # word_analysis_daily('2016-11-13')
-    for date in get_datelist(2016,11,15,2016,11,18):
-        word_analysis_daily(date)
+    for date in get_datelist(2016,11,23,2016,11,27):
+        word_analysis_main(date)
     # word_analysis_main('2016-11-13')

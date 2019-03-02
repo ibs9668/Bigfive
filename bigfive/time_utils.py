@@ -45,3 +45,5 @@ def get_datelist(year1,month1,day1,year2,month2,day2):
         date_list.append(date_str)
         begin_date += datetime.timedelta(days=1)   #输出时间列表的函数
     return date_list
+
+DAY = 24*3600

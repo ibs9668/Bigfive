@@ -37,7 +37,11 @@ index_info = {
                 },
                 "group_pinyin":{#群体名称拼音
                     "index":"not_analyzed",
+<<<<<<< HEAD
                     "type" : "string"
+=======
+                    "type" : "long"
+>>>>>>> 7010976fdc6213c9fa4a9187c5c1ed63789ca97e
                 },
                 "create_time":{#创建时间
                     "type" : "long"

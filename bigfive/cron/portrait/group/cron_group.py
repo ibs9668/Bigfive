@@ -16,7 +16,7 @@ def group_activity(group_id, uid_list, date, days):
     main_end_geo = {}
     print(len(uid_list))
     for uid in uid_list:
-        print(uid)
+        # print(uid)
         query_body = {
             "query":{
                 "filtered":{

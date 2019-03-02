@@ -12,18 +12,18 @@ def user_main():
 
 def group_main():
     args_dict = {
-        'machiavellianism_index':1,
-        'narcissism_index':2,
-        'psychopathy_index':3,
+        'machiavellianism_index':0,
+        'narcissism_index':0,
+        'psychopathy_index':0,
         'extroversion_index':0,
         'nervousness_index':0,
         'openn_index':0,
         'agreeableness_index':0,
         'conscientiousness_index':0,
     }
-    keyword = ''
-    remark = '明哥的确是厉害'
-    group_name = '明哥厉害'
+    keyword = '强大'
+    remark = '炳渠的确是强大'
+    group_name = '炳渠强大'
     create_time = int(time.time())
 
     print('Start finding userlist...')
@@ -37,4 +37,5 @@ def group_main():
 
 
 if __name__ == '__main__':
-    group_main()
+    user_main()
+    # group_main()

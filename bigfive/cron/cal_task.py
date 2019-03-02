@@ -22,6 +22,7 @@ def user_ranking(uid,username=None):
             raise ValueError('No such uid in es!')
     machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index = cal_person(uid)
     liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star = user_attribute(uid)
+
     dic = {
         'machiavellianism_index':machiavellianism_index,
         'narcissism_index':narcissism_index,
@@ -39,34 +40,55 @@ def user_ranking(uid,username=None):
         'importance_star':importance_star,
         'sensitive_star':sensitive_star,
         'influence_star':influence_star,
+        'machiavellianism_label':get_personality_label(machiavellianism_index,'machiavellianism_index'),
+        'narcissism_label':get_personality_label(narcissism_index,'narcissism_index'),
+        'psychopathy_label':get_personality_label(psychopathy_index,'psychopathy_index'),
+        'extroversion_label':get_personality_label(extroversion_index,'extroversion_index'),
+        'nervousness_label':get_personality_label(nervousness_index,'nervousness_index'),
+        'openn_label':get_personality_label(openn_index,'openn_index'),
+        'agreeableness_label':get_personality_label(agreeableness_index,'agreeableness_index'),
+        'conscientiousness_label':get_personality_label(conscientiousness_index,'conscientiousness_index'),
         'uid':uid,
         'username':username
     }
     es.index(index=USER_RANKING,doc_type='text',body=dic,id=uid)
 
-def user_insert():
-    query_body = {
-        'query':{
-            'match_all':{}
-        },
-        "size":1000
-    }
-    es_result = helpers.scan(
-        client=es,
-        query=query_body,
-        scroll='1m',
-        index=USER_INFORMATION,
-        doc_type='text',
-        timeout='1m'
-    )
+def get_personality_label(personality_index, personality_name):
+    threshold = PERSONALITY_DIC[personality_name]['threshold']
+    if personality_index < threshold[0]:
+        personality_label = 0
+    elif personality_index > threshold[1]:
+        personality_label = 2
+    else:
+        personality_label = 1
 
-    num = 0
-    for hit in es_result:
-        print(num)
-        uid = hit['_source']['uid']
-        username = hit['_source']['username']
-        user_ranking(uid,username)
-        num += 1
+    return personality_label
+
+def user_insert():
+    iter_num = 0
+    iter_get_user = USER_ITER_COUNT
+    while (iter_get_user == USER_ITER_COUNT):
+        print(iter_num*USER_ITER_COUNT)
+        user_query_body = {
+            'query':{
+                'match_all':{}
+            },
+            'sort':{
+                'uid':{
+                    'order':'asc'
+                }
+            },
+            "size":USER_ITER_COUNT,
+            "from":iter_num * USER_ITER_COUNT
+        }
+        es_result = es.search(index=USER_INFORMATION,doc_type='text',body=user_query_body)['hits']['hits']
+        iter_get_user = len(es_result)
+        iter_num += 1
+        for hit in es_result:
+            uid = hit['_source']['uid']
+            username = hit['_source']['username']
+            user_ranking(uid,username)
+    
 
 def group_create(args_dict,keyword,remark,group_name,create_time):
     uid_list_keyword = []

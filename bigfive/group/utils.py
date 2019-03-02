@@ -38,7 +38,8 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
         query['sort'].append({order_name: {"order": order}})
     # 添加组名查询
     if group_name:
-        query['query']['bool']['must'].append({"wildcard":{"group_name":"*{}*".format(group_name.lower())}})
+        query['query']['bool']['should'].append({"wildcard":{"group_name":"*{}*".format(group_name.lower())}})
+        query['query']['bool']['should'].append({"wildcard":{"keyword":"*{}*".format(group_name.lower())}})
     # 添加备注查询
     if remark:
         query['query']['bool']['must'].append({"wildcard":{"remark":"*{}*".format(remark.lower())}})
@@ -70,13 +71,13 @@ def search_group_information(group_name,remark,create_time,page,size,order_name,
 
 def delete_by_id(index,doc_type,id):
     """通过es的_id删除一条记录"""
-    # r = es.get(index='group_task',doc_type=doc_type,id=id)
-    # if r['_source']['progress'] != 0:
-    #     r = es.get(index='group_information',doc_type=doc_type,id=id)
-    #     es.delete(index='group_information',doc_type=doc_type,id=id)
-    # else:
-    #     r1 = es.delete(index='group_task',doc_type=doc_type,id=id)
-    r2 = es.delete(index=index,doc_type=doc_type,id=id)
+    if index =='task':
+        r = es.get(index='group_task',doc_type=doc_type,id=id)
+        if r['_source']['progress'] != 0:
+            raise ValueError('progress is not 0')
+    elif index == 'info':
+        es.delete(index='group_information',doc_type=doc_type,id=id)
+    es.delete(index='group_task',doc_type=doc_type,id=id)
     return r2
 
 
