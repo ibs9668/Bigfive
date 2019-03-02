@@ -1,4 +1,4 @@
-微博项目人格预测模型使用说明
+﻿微博项目人格预测模型使用说明
 
 调用 personality_predict.py  中的 predict_personality(weibo_text_filepath, weibo_profile_filepath) 函数即可预测人格得分
 
@@ -11,3 +11,7 @@ weibo_profile.json 文件中是用户的基本信息，必须包括“uid”，�
 test_data 文件夹中有两个示例数据可供参考
 
 Model 文件中是训练好的回归模型
+
+8个维度的排序：['Extraversion','Agreeableness','Conscientiousness','Neuroticism','Openness','马基雅维利主义','自恋','精神病态']
+
+[外倾性，宜人性，尽责性，神经质，开放性，马基雅维利主义,自恋,精神病态]
