@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, user_emotion, user_social_contact, user_preference, portrait_table, \
-    delete_by_id, get_influence_feature, get_user_activity
+    delete_by_id, get_influence_feature, get_user_activity, get_preference_identity
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -57,6 +57,13 @@ def delete_user():
 def user_activity():
     uid = request.args.get('person_id')
     result = get_user_activity(uid)
+    return json.dumps(result, ensure_ascii=False)
+
+
+@mod.route('/preference_identity', methods=['POST', 'GET'])
+def preference_identity():
+    uid = request.args.get('person_id')
+    result = get_preference_identity(uid)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -144,24 +151,24 @@ def user_personality():
 #     return json.dumps(activity_dict, ensure_ascii=False)
 
 
-@mod.route('/perference_identity', methods=['POST', 'GET'])
-def perference_identity():
-    uid = request.args.get('person_id')
-    user_inf = user_preference(uid)
-    node = []
-    link = []
-    user_pre_identity = {}
-    main_domain = user_inf["_source"]["main_domain"]
-    for key, value in user_inf["_source"]["domain"].items():
-        link_dict = {}
-        link_dict["source"] = main_domain
-        link_dict["target"] = value
-        link_dict["relation"] = key
-        node.append(value)
-        link.append(link_dict)
-    user_pre_identity["node"] = node
-    user_pre_identity["link"] = link
-    return json.dumps(user_pre_identity, ensure_ascii=False)
+# @mod.route('/perference_identity', methods=['POST', 'GET'])
+# def perference_identity():
+#     uid = request.args.get('person_id')
+#     user_inf = user_preference(uid)
+#     node = []
+#     link = []
+#     user_pre_identity = {}
+#     main_domain = user_inf["_source"]["main_domain"]
+#     for key, value in user_inf["_source"]["domain"].items():
+#         link_dict = {}
+#         link_dict["source"] = main_domain
+#         link_dict["target"] = value
+#         link_dict["relation"] = key
+#         node.append(value)
+#         link.append(link_dict)
+#     user_pre_identity["node"] = node
+#     user_pre_identity["link"] = link
+#     return json.dumps(user_pre_identity, ensure_ascii=False)
 
 
 @mod.route('/perference_topic', methods=['POST', 'GET'])
