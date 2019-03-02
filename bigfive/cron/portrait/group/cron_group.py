@@ -1,21 +1,22 @@
 import sys
 sys.path.append('../../../')
+import random
+
 from config import *
 from time_utils import *
 
 #根据群体内的用户计算用户的位置情况，指定时间范围计算该范围内用户的出发地、目的地和转移情况
 #输入：群组id，日期，向前延伸天数
 #输出，将群组该日期的位置情况存入数据库
-def group_activity(group_id, date, days):
+def group_activity(group_id, uid_list, date, days):
     date_end_ts = date2ts(date)
     date_start_ts = date_end_ts - 24*3600*days
     activity_direction = {}
     main_start_geo = {}
     main_end_geo = {}
-    userlist = es.get(index=GROUP_INFORMATION, doc_type='text', id=group_id)['_source']['userlist']
-    print(len(userlist))
-    for uid in userlist:
-        print(uid)
+    print(len(uid_list))
+    for uid in uid_list:
+        # print(uid)
         query_body = {
             "query":{
                 "filtered":{
@@ -100,23 +101,22 @@ def group_activity(group_id, date, days):
         'group_id':group_id,
         'activity_direction':activity_direction_dic,
         'main_start_geo':main_start_geo_dic,
-        'main_end_geo':main_end_geo_dic
+        'main_end_geo':main_end_geo_dic,
+        'date':date
     }
     es.index(index=GROUP_ACTIVITY, doc_type='text', id=str(group_id)+'_'+str(date_end_ts), body=dic)
 
-#计算群组的重要度、活跃度与影响力，利用群组内用户对应指标在全库中排名的均值计算
+#计算群组的重要度、活跃度、敏感度与影响力，利用群组内用户对应指标在全库中排名的均值计算
 #输入：群组id
-#输出：将该群组的三项属性以分数与星级的形式存入数据库
-def group_attribute(group_id, date):
+#输出：将该群组的四项属性以分数与星级的形式存入数据库
+def group_attribute(uid_list, date):
     date_ts = date2ts(date)
-    uid_list = es.get(index=GROUP_INFORMATION, doc_type='text', id=group_id)['_source']['userlist']
     iter_count = 0
     group_all_user_count = len(uid_list)
     importance_list = []
     influence_list = []
     activeness_list = []
     sensitivity_list = []
-    result = {}
     while iter_count < group_all_user_count:   #一下获取多个用户以减少查询次数
         iter_uid_list = uid_list[iter_count: iter_count + GROUP_ITER_COUNT]
         iter_uid_list = [uid + '_' + str(date_ts) for uid in iter_uid_list]
@@ -160,42 +160,42 @@ def group_attribute(group_id, date):
         raise e
     #活跃度
     ave_activeness_rank = float(sum(activeness_list)) / len(activeness_list)
-    result['activity'] = (all_user_count - ave_activeness_rank) / all_user_count * 100
+    activity = (all_user_count - ave_activeness_rank) / all_user_count * 100
     if ave_activeness_rank <= GROUP_AVE_ACTIVENESS_RANK_THRESHOLD[0] * all_user_count:
-        result['activeness_star'] = 5
+        activeness_star = 5
     elif ave_activeness_rank > GROUP_AVE_ACTIVENESS_RANK_THRESHOLD[1] * all_user_count:
-        result['activeness_star'] = 1
+        activeness_star = 1
     else:
-        result['activeness_star'] = 3
+        activeness_star = 3
     #影响力
     ave_influence_rank = float(sum(influence_list) / len(influence_list))
-    result['influence'] = (all_user_count - ave_influence_rank) / all_user_count * 100
+    influence = (all_user_count - ave_influence_rank) / all_user_count * 100
     if ave_influence_rank <= GROUP_AVE_INFLUENCE_RANK_THRESHOLD[0] * all_user_count:
-        result['influence_star'] = 5
+        influence_star = 5
     elif ave_influence_rank > GROUP_AVE_INFLUENCE_RANK_THRESHOLD[1] * all_user_count:
-        result['influence_star'] = 1
+        influence_star = 1
     else:
-        result['influence_star'] = 3
+        influence_star = 3
     #重要度
     ave_importance_rank = float(sum(importance_list) / len(importance_list))
-    result['importance'] = (all_user_count - ave_importance_rank) / all_user_count * 100
+    importance = (all_user_count - ave_importance_rank) / all_user_count * 100
     if ave_importance_rank <= GROUP_AVE_IMPORTANCE_RANK_THRESHOLD[0] * all_user_count:
-        result['importance_star'] = 5
+        importance_star = 5
     elif ave_importance_rank > GROUP_AVE_IMPORTANCE_RANK_THRESHOLD[1] * all_user_count:
-        result['importance_star'] = 1
+        importance_star = 1
     else:
-        result['importance_star'] = 3
+        importance_star = 3
     #敏感度
     ave_sensitivity_rank = float(sum(sensitivity_list) / len(sensitivity_list))
-    result['sensitivity'] = (all_user_count - ave_sensitivity_rank) / all_user_count * 100
+    sensitivity = (all_user_count - ave_sensitivity_rank) / all_user_count * 100
     if ave_sensitivity_rank <= GROUP_AVE_SENSITIVITY_RANK_THRESHOLD[0] * all_user_count:
-        result['sensitivity_star'] = 5
+        sensitivity_star = 5
     elif ave_sensitivity_rank > GROUP_AVE_SENSITIVITY_RANK_THRESHOLD[1] * all_user_count:
-        result['sensitivity_star'] = 1
+        sensitivity_star = 1
     else:
-        result['sensitivity_star'] = 3
+        sensitivity_star = 3
 
-    return result
+    return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
 
 
 ###获得对应的数值在用户列表中的排名
@@ -217,7 +217,6 @@ def get_index_rank(attr_value, attr_name, timestamp):
             }
         }
     }
-    print(query_body)
     index_rank = es.count(index=USER_INFLUENCE, doc_type='text', body=query_body)
     if index_rank['_shards']['successful'] != 0:
        result = index_rank['count']
@@ -229,15 +228,13 @@ def get_index_rank(attr_value, attr_name, timestamp):
 #计算群组的紧密性，根据转发评论用户之间的边计算
 #输入：群组id
 #输出：将该群组的四项属性以星级的形式存入数据库
-def group_density_attribute(group_id, date, days):
+def group_density_attribute(uid_list, date, days):
     date_end_ts = date2ts(date)
     date_start_ts = date_end_ts - 24*3600*days
-    uid_list = es.get(index=GROUP_INFORMATION, doc_type='text', id=group_id)['_source']['userlist']
     iter_count = 0
     group_all_user_count = len(uid_list)
     all_in_record = []
-    result = {}
-    for uid in userlist:
+    for uid in uid_list:
         query_body = {
             'query':{
                 'filtered':{
@@ -259,10 +256,25 @@ def group_density_attribute(group_id, date, days):
             },
             'size':10000
         }
-        es.count(index=USER_SOCIAL_CONTACT, doc_type='text', body=query_body)
+
+        res = es.search(index=USER_SOCIAL_CONTACT, doc_type='text', body=query_body)['hits']['hits']
         #取出来的为用户在一段时间内的转发与评论的数量
         user_retweet_result = {}    #{ruid1:count1, ruid2:count2}
         user_comment_result = {}
+        for hit in res:
+            source_uid = hit['_source']['source']
+            target_uid = hit['_source']['target']
+            message_type = hit['_source']['message_type']
+            if message_type == 2:
+                try:
+                    user_comment_result[source_uid] += 1
+                except:
+                    user_comment_result[source_uid] = 1
+            if message_type == 3:
+                try:
+                    user_retweet_result[source_uid] += 1
+                except:
+                    user_retweet_result[source_uid] = 1
 
         filter_in_dict = filter_union_dict([user_retweet_result, user_comment_result], uid_list, 'in')
         uid_in_record = [[uid, ruid, filter_in_dict[ruid]] for ruid in filter_in_dict if uid != ruid]
@@ -270,19 +282,19 @@ def group_density_attribute(group_id, date, days):
 
     in_inter_edge_count = len(all_in_record)
     in_density = float(in_inter_edge_count) / (len(uid_list) * (len(uid_list) - 1))
-    result['in_density'] = in_density * 100
     #紧密度
     if in_density <= GROUP_DENSITY_THRESHOLD[0]:
-        result['density_star'] = 1
+        density_star = 1
     elif in_density > GROUP_DENSITY_THRESHOLD[1]:
-        result['density_star'] = 5
+        density_star = 5
     else:
-        result['density_star'] = 3
-    return result
+        density_star = 3
+    in_density = in_density * 100
+    return in_density, density_star
 
 #输入转发与评论列表，利用输入的过滤用户列表进行合并与筛选
 def filter_union_dict(objs, filter_uid_list, mark):
-    _keys = set(sum([obj.keys() for obj in objs], []))   #合并uid并去重
+    _keys = set(sum([list(obj.keys()) for obj in objs], []))   #合并uid并去重
     if mark == 'in&out':
         _in_total = {}
         _in_keys = _keys & set(filter_uid_list)
@@ -304,7 +316,22 @@ def filter_union_dict(objs, filter_uid_list, mark):
         _in_keys = _keys & set(filter_uid_list)
         for _key in _in_keys:
             _in_total[_key] = sum([int(obj.get(_key,0)) for obj in objs])
+        return _in_total
+
+def group_personality(uid_list):
+    machiavellianism_index = int(random.random() * 100)
+    narcissism_index = int(random.random() * 100)
+    psychopathy_index = int(random.random() * 100)
+    extroversion_index = int(random.random() * 100)
+    nervousness_index = int(random.random() * 100)
+    openn_index = int(random.random() * 100)
+    agreeableness_index = int(random.random() * 100)
+    conscientiousness_index = int(random.random() * 100)
+    return machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index
 
 if __name__=='__main__':
     # group_activity('minggelihai_1551358645','2016-11-21',15)
-    print(group_attribute('bingquqiangda_1551358450','2016-11-13'))
+    # print(group_attribute(es.get(index='group_information',doc_type='text',id='ceshiyi_1542556800')['_source']['userlist'],'2016-11-19')) 
+    # print(group_density_attribute(es.get(index='group_information',doc_type='text',id='bingquqiangda_1551420830')['_source']['userlist'],'2016-11-27',15))
+    es.delete(index='group_activity',doc_type='text',id='ceshiyi_1542556800_1480176000')
+    #minggelihai_1551418489  bingquqiangda_1551420830  xiaoleiniubi_1551418799

@@ -23,9 +23,12 @@ index_info = {
           "text":{
               "properties":{
                   "timestamp":{#记录时间
-                          "type" : "long",
-                          "index" : "not_analyzed"
-                          },
+                          "type" : "long"
+                  },
+                  "date":{
+                      "format": "dateOptionalTime",
+                      "type":"date"
+                  },
                   "uid":{                             
                       "type":"string",
                       "index":"not_analyzed"
@@ -33,15 +36,15 @@ index_info = {
                   },
                     
                   "nuetral":{  #中性                           
-                      "type":"double"
+                      "type":"long"
                         
                   },                              
                   "positive":{#积极
-                      "type":"double"
+                      "type":"long"
                         
                   },
                   "negtive":{#消极
-                      "type":"double"
+                      "type":"long"
                         
                   }
                     

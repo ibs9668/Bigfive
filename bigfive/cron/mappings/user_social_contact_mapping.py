@@ -22,39 +22,29 @@ index_info = {
     },
     "mappings": {
         "text": { #索引类型
-            "_id":{
-                "path":"uid"
-            },
             "properties": {
-                "uid":{ #用户uid
+                "target_name":{ #目标用户名
                    "index":"not_analyzed",
                     "type" : "string"
                 },
-                "username":{#昵称
-                    "analyzer":"ik_max_word",
-                    "type" : "string"
-                },
-                "map_type":{#网络关系类型
-                    "index":"not_analyzed",
+                "message_type":{#昵称
                     "type" : "long"
                 },
-                "node": {#节点
+                "source":{#网络关系类型
                     "index":"not_analyzed",
-                    "type": "string"
+                    "type" : "string"
                 },
-                "link": {#边
-                    "properties": {
-                        "source": { #源节点
-                            "index":"not_analyzed",
-                            "type": "string"
-                        },
-                        "target": { #目标节点
-                            "index":"not_analyzed",
-                            "type": "string"
-                        }
-                    }
+                "source_name":{#网络关系类型
+                    "index":"not_analyzed",
+                    "type" : "string"
                 },
-
+                "target":{#网络关系类型
+                    "index":"not_analyzed",
+                    "type" : "string"
+                },
+                "timestamp":{#网络关系类型
+                    "type" : "long"
+                }
             }
         }
     }
