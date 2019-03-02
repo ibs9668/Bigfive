@@ -8,17 +8,6 @@ from keyword_topic import text_rank, micro_words, cal_sensitive
 from elasticsearch import Elasticsearch,helpers
 from elasticsearch.helpers import bulk
 
-def user_attribute(uid):
-    liveness_index = int(random.random() * 100)
-    importance_index = int(random.random() * 100)
-    sensitive_index = int(random.random() * 100)
-    influence_index = int(random.random() * 100)
-    liveness_star = int(liveness_index / 20) + 1
-    importance_star = int(importance_index / 20) + 1
-    sensitive_star = int(sensitive_index / 20) + 1
-    influence_star = int(influence_index / 20 + 1)
-    return liveness_index,importance_index,sensitive_index,influence_index,liveness_star,importance_star,sensitive_star,influence_star
-
 #计算对于库中的用户每天所发布微博的关键词、微话题和敏感词列表，便于统计
 #不保证一个用户一天一条，如果未发布微博则没有记录
 def word_analysis_daily(date):
