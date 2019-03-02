@@ -6,7 +6,7 @@ import time
 
 from elasticsearch.helpers import scan
 
-from bigfive.config import es
+from bigfive.config import es, labels_dict, topic_dict
 
 
 def judge_uid_or_nickname(keyword):
@@ -246,7 +246,8 @@ def get_user_activity(uid):
 
     print(one_week_query)
     one_week_result_list = []
-    one_week_result = es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
+    one_week_result = \
+    es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
     one_week_dic = {}
     for one_week_data in one_week_result:
         one_week_dic[one_week_data['key']] = one_week_data['ip_count']['sum']
@@ -304,7 +305,8 @@ def get_user_activity(uid):
                 geo_dict[geo_data['_source']['date']].setdefault(geo_data['_source']['geo'].split('&')[1], 0)
             except:
                 continue
-            geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+            geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source'][
+                'count']
 
         print(geo_dict)
         geo_dict_item = list(geo_dict.items())
@@ -317,7 +319,7 @@ def get_user_activity(uid):
             route_list.append(item)
             print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
             if i > 0:
-                route_list[i-1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
+                route_list[i - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
 
         if len(route_list) > 1:
             del (route_list[-1])
@@ -330,6 +332,92 @@ def get_user_activity(uid):
     result['one_day_rank'] = one_day_result_list
     result['one_week_rank'] = one_week_result_list
     result['route_list'] = route_list
+
+    return result
+
+
+def get_preference_identity(uid):
+    result = {}
+    # today = '2019-03-01'
+    today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    today_ts = int(time.mktime(time.strptime(today, '%Y-%m-%d')))
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "uid": str(uid)
+                        }
+                    },
+                    {
+                        "range": {
+                            "timestamp": {
+                                "lte": str(int(today_ts))
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "size": 1000,
+        "sort": [
+            {
+                "timestamp": {
+                    "order": "desc"
+                }
+            }
+        ]
+    }
+
+    preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    preference_item = {}
+    preference_item["topic_violence"] = preference_and_topic_data["topic_violence"]
+    preference_item["topic_sports"] = preference_and_topic_data["topic_sports"]
+    preference_item["topic_economic"] = preference_and_topic_data["topic_economic"]
+    preference_item["topic_employment"] = preference_and_topic_data["topic_employment"]
+    preference_item["topic_house"] = preference_and_topic_data["topic_house"]
+    preference_item["topic_anti_corruption"] = preference_and_topic_data["topic_anti_corruption"]
+    preference_item["topic_art"] = preference_and_topic_data["topic_art"]
+    preference_item["topic_computer"] = preference_and_topic_data["topic_computer"]
+    preference_item["topic_military"] = preference_and_topic_data["topic_military"]
+    preference_item["topic_education"] = preference_and_topic_data["topic_education"]
+    preference_item["topic_politics"] = preference_and_topic_data["topic_politics"]
+    preference_item["topic_social_security"] = preference_and_topic_data["topic_social_security"]
+    preference_item["topic_peace"] = preference_and_topic_data["topic_peace"]
+    preference_item["topic_environment"] = preference_and_topic_data["topic_environment"]
+    preference_item["topic_religion"] = preference_and_topic_data["topic_religion"]
+    preference_item["topic_medicine"] = preference_and_topic_data["topic_medicine"]
+    preference_item["topic_life"] = preference_and_topic_data["topic_life"]
+    preference_item["topic_law"] = preference_and_topic_data["topic_law"]
+    preference_item["topic_traffic"] = preference_and_topic_data["topic_traffic"]
+
+    l = sorted(preference_item.items(), key=lambda x:x[1], reverse=True)[0:5]
+    topic_result = {}
+    topic_result[topic_dict[l[0][0].replace('topic_', '')]] = int(l[0][1] * 100)
+    topic_result[topic_dict[l[1][0].replace('topic_', '')]] = int(l[1][1] * 100)
+    topic_result[topic_dict[l[2][0].replace('topic_', '')]] = int(l[2][1] * 100)
+    topic_result[topic_dict[l[3][0].replace('topic_', '')]] = int(l[3][1] * 100)
+    topic_result[topic_dict[l[4][0].replace('topic_', '')]] = int(l[4][1] * 100)
+
+    print(preference_and_topic_data)
+    node_main = {'name': labels_dict[preference_and_topic_data['main_domain']]}
+    node_followers = {'name': labels_dict[preference_and_topic_data['domain_followers']]}
+    node_verified = {'name': labels_dict[preference_and_topic_data['domain_verified']]}
+    node_weibo = {'name': labels_dict[preference_and_topic_data['domain_weibo']]}
+    m_to_f_link = {'source': node_main, 'target': node_followers}
+    m_to_v_link = {'source': node_main, 'target': node_verified}
+    m_to_w_link = {'source': node_main, 'target': node_weibo}
+    node = [node_main, node_followers, node_verified, node_weibo]
+    link = [m_to_f_link, m_to_v_link, m_to_w_link]
+    domain_dict = {'node': node, 'link': link}
+
+    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    result['topic_result'] = topic_result
+    result['keyword'] = analysis_result['keywords']
+    result['hastags'] = analysis_result['hastags']
+    result['sensitive_words'] = analysis_result['sensitive_words']
+    result['domain_dict'] = domain_dict
 
     return result
 
