@@ -88,7 +88,8 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
-    query['sort'] = [{order_name: {"order": order_type}}]
+    query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
+    # query['sort'] = [{order_name: {"order": order_type}}]
 
     hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
 
@@ -98,38 +99,38 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
         item['_source']['dark_list'] = []
 
         if item['_source']['extroversion_label'] == 0:
-            item['_source']['big_five_list'].append({'外倾性': '极端低'})
+            item['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
         if item['_source']['extroversion_label'] == 2:
-            item['_source']['big_five_list'].append({'外倾性': '极端高'})
+            item['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
         if item['_source']['openn_label'] == 0:
-            item['_source']['big_five_list'].append({'开放性': '极端低'})
+            item['_source']['big_five_list'].append({'开放性': '0'})
         if item['_source']['openn_label'] == 2:
-            item['_source']['big_five_list'].append({'开放性': '极端高'})
+            item['_source']['big_five_list'].append({'开放性': '1'})
         if item['_source']['agreeableness_label'] == 0:
-            item['_source']['big_five_list'].append({'宜人性': '极端低'})
+            item['_source']['big_five_list'].append({'宜人性': '0'})
         if item['_source']['agreeableness_label'] == 2:
-            item['_source']['big_five_list'].append({'宜人性': '极端高'})
+            item['_source']['big_five_list'].append({'宜人性': '1'})
         if item['_source']['conscientiousness_label'] == 0:
-            item['_source']['big_five_list'].append({'尽责性': '极端低'})
+            item['_source']['big_five_list'].append({'尽责性': '0'})
         if item['_source']['conscientiousness_label'] == 2:
-            item['_source']['big_five_list'].append({'尽责性': '极端高'})
+            item['_source']['big_five_list'].append({'尽责性': '1'})
         if item['_source']['nervousness_label'] == 0:
-            item['_source']['big_five_list'].append({'神经质': '极端低'})
+            item['_source']['big_five_list'].append({'神经质': '0'})
         if item['_source']['nervousness_label'] == 2:
-            item['_source']['big_five_list'].append({'神经质': '极端高'})
+            item['_source']['big_five_list'].append({'神经质': '1'})
 
         if item['_source']['machiavellianism_label'] == 0:
-            item['_source']['dark_list'].append({'马基雅维里主义': '极端低'})
+            item['_source']['dark_list'].append({'马基雅维里主义': '0'})
         if item['_source']['machiavellianism_label'] == 2:
-            item['_source']['dark_list'].append({'马基雅维里主义': '极端高'})
+            item['_source']['dark_list'].append({'马基雅维里主义': '1'})
         if item['_source']['psychopathy_label'] == 0:
-            item['_source']['dark_list'].append({'精神病态': '极端低'})
+            item['_source']['dark_list'].append({'精神病态': '0'})
         if item['_source']['psychopathy_label'] == 2:
-            item['_source']['dark_list'].append({'精神病态': '极端高'})
+            item['_source']['dark_list'].append({'精神病态': '1'})
         if item['_source']['narcissism_label'] == 0:
-            item['_source']['dark_list'].append({'自怜': '极端低'})
+            item['_source']['dark_list'].append({'自怜': '0'})
         if item['_source']['narcissism_label'] == 2:
-            item['_source']['dark_list'].append({'自恋': '极端高'})
+            item['_source']['dark_list'].append({'自恋': '1'})
 
         item['_source']['name'] = item['_source']['username']
         result['rows'].append(item['_source'])
