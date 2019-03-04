@@ -32,7 +32,7 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
     size = size if size else '10'
     sort_list = []
     if order_dict:
-        for order_name, order_type in order_dict.items():
+        for order_name, order_type in json.loads(order_dict).items():
             sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
     # if order_name == 'name':
     #     order_name = 'username'
@@ -151,15 +151,35 @@ def delete_by_id(index, doc_type, id):
 
 
 def get_basic_info(uid):
+    star_query = {
+        "query": {
+            "bool": {
+                "must": {
+                    "term": {"uid": uid}
+                }
+            }
+        }
+    }
     political_bias_dic = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
     result = es.get(index='user_information', doc_type='text', id=uid)['_source']
-    star_result = es.get(index='user_ranking', doc_type='text', id=uid)['_source']
+    star_result = es.search(index='user_ranking', doc_type='text', body=star_query)['hits']['hits'][-1]['_source']
     result['domain'] = labels_dict[result['domain']]
     result['political_bias'] = political_bias_dic[result['political_bias']]
     result['liveness_star'] = star_result['liveness_star']
     result['importance_star'] = star_result['importance_star']
     result['sensitive_star'] = star_result['sensitive_star']
     result['influence_star'] = star_result['influence_star']
+
+    result['machiavellianism'] = star_result['machiavellianism_index']
+    result['psychopathy'] = star_result['psychopathy_index']
+    result['narcissism'] = star_result['narcissism_index']
+
+    result['extroversion'] = star_result['extroversion_index']
+    result['nervousness'] = star_result['nervousness_index']
+    result['openn'] = star_result['openn_index']
+    result['agreeableness'] = star_result['agreeableness_index']
+    result['conscientiousness'] = star_result['conscientiousness_index']
+
     return result
 
 
@@ -508,7 +528,6 @@ def get_preference_identity(uid):
         for i in analysis_result['sensitive_words']:
             print(i)
             result['sensitive_words'].append({i['sensitive_word']: i['count']})
-
     result['domain_dict'] = domain_dict
 
     return result
