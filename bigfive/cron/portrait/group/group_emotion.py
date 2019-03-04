@@ -55,8 +55,8 @@ def group_emotion(uid_list,group_id):
         emotion_dict["positive"] = float(emotion_dict["positive"])/len(uid_list)
         emotion_dict["negtive"] = float(emotion_dict["negtive"])/len(uid_list)
         id_es = str(group_id) + "_" + str(j)
-        #es.index(index = "group_emotion",doc_type = "text",id = id_es,body = {"timestamp":j,"nuetral":emotion_dict["nuetral"],"positive":emotion_dict["positive"],"negtive":emotion_dict["negtive"],"date":ts2date(j),group_id:group_id})
-        print ({"timestamp":j,"nuetral":emotion_dict["nuetral"],"positive":emotion_dict["positive"],"negtive":emotion_dict["negtive"],"date":ts2date(j),group_id:group_id})
+        es.index(index = "group_emotion",doc_type = "text",id = id_es,body = {"timestamp":j,"nuetral":emotion_dict["nuetral"],"positive":emotion_dict["positive"],"negtive":emotion_dict["negtive"],"date":ts2date(j),"group_id":group_id})
+        #print ({"timestamp":j,"nuetral":emotion_dict["nuetral"],"positive":emotion_dict["positive"],"negtive":emotion_dict["negtive"],"date":ts2date(j),group_id:group_id})
 
 
 if __name__ == '__main__':
