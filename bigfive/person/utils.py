@@ -352,37 +352,39 @@ def user_social_contact(uid, map_type):
         },
         "size": 1000,
     }
-    r = []
     r1 = es.search(index="user_social_contact", doc_type="text",
                    body=query_body)["hits"]["hits"]
     node = []
     link = []
+    key_list = []
     for one in r1:
         item = one['_source']
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "term": {
-                                "message_type": message_type
+        key_list.append(item[key2])
+    query_body = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "message_type": message_type
+                                }
+                            },
+                            {
+                                "terms": {
+                                    key: key_list
+                                }
                             }
-                        },
-                        {
-                            "term": {
-                                key: item[key2]
-                            }
-                        }
-                    ]
-                }
-            },
-            "size": 1000,
-        }
-        r2 = es.search(index="user_social_contact",
+                        ]}
+                }}
+        },
+        "size": 3000,
+    }
+    r2 = es.search(index="user_social_contact",
                        doc_type="text", body=query_body)["hits"]["hits"]
-        r += r2
-    r += r1
-    for one in r:
+    r1 += r2
+    for one in r1:
         item = one['_source']
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
