@@ -254,17 +254,22 @@ def get_user_activity(uid):
         ]
     }
 
-    one_day_result_list = []
+    one_day_ip_rank = []
     one_day_rank = 1
     one_day_result = es.search(index='user_activity', doc_type='text', body=one_day_query)['hits']['hits']
-    geo_item = {}
+    one_day_geo_item = {}
     for one_day_data in one_day_result:
-
-
+        one_day_geo_item.setdefault(one_day_data['_source']['geo'].split('&')[1], 0)
+        one_day_geo_item[one_day_data['_source']['geo'].split('&')[1]] += one_day_data['_source']['count']
         item = {'rank': one_day_rank, 'count': one_day_data['_source']['count'], 'ip': one_day_data['_source']['ip']}
-
-        one_day_result_list.append(item)
+        one_day_ip_rank.append(item)
         one_day_rank += 1
+
+    one_day_geo_rank = []
+    one_day_geo_sorted = sorted(one_day_geo_item.items(), key=lambda x: x[1], reverse=True)
+    for i in range(len(one_day_geo_sorted)):
+        print(one_day_geo_sorted[i])
+        one_day_geo_rank.append({'rank': i + 1, 'count': int(one_day_geo_sorted[i][1]), 'geo': one_day_geo_sorted[i][0]})
 
     # ip一周排名
     one_week_query = {
@@ -305,9 +310,8 @@ def get_user_activity(uid):
             }
         }
     }
-
     print(one_week_query)
-    one_week_result_list = []
+    one_week_ip_rank = []
     one_week_result = \
     es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
     one_week_dic = {}
@@ -317,7 +321,7 @@ def get_user_activity(uid):
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(len(l)):
         item = {'rank': i + 1, 'count': int(l[i][1]), 'ip': l[i][0]}
-        one_week_result_list.append(item)
+        one_week_ip_rank.append(item)
 
     # 活跃度分析
     geo_query = {
@@ -353,13 +357,15 @@ def get_user_activity(uid):
     }
 
     geo_result = es.search(index='user_activity', doc_type='text', body=geo_query)['hits']['hits']
+    one_week_geo_rank = []
     if geo_result:
         geo_dict = {}
         print(geo_query)
+        one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
-            # item.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
-            # item[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+            one_week_geo_dict.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+            one_week_geo_dict[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
             geo_dict.setdefault(geo_data['_source']['date'], {})
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
@@ -370,9 +376,12 @@ def get_user_activity(uid):
             geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source'][
                 'count']
 
-        print(geo_dict)
+        one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
+        for i in range(len(one_week_geo_sorted)):
+            one_week_geo_rank.append(
+                {'rank': i + 1, 'count': int(one_week_geo_sorted[i][1]), 'geo': one_week_geo_sorted[i][0]})
+
         geo_dict_item = list(geo_dict.items())
-        print(geo_dict_item)
         route_list = []
         for i in range(len(geo_dict_item)):
             if not geo_dict_item[i][1]:
@@ -391,8 +400,10 @@ def get_user_activity(uid):
     else:
         route_list = []
 
-    result['one_day_rank'] = one_day_result_list
-    result['one_week_rank'] = one_week_result_list
+    result['one_day_ip_rank'] = one_day_ip_rank
+    result['one_day_geo_rank'] = one_day_geo_rank
+    result['one_week_ip_rank'] = one_week_ip_rank
+    result['one_week_geo_rank'] = one_week_geo_rank
     result['route_list'] = route_list
 
     return result
