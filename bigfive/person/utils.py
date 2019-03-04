@@ -149,6 +149,10 @@ def delete_by_id(index, doc_type, id):
     return result
 
 
+def get_basic_info(uid):
+    query_basic_info = {}
+
+
 def user_emotion(uid, interval):
     query_body = {
         "query": {
