@@ -61,7 +61,7 @@ def search_group_information(group_name, remark, create_time, page, size, order_
     else:
         raise ValueError("index is error!")
     r = es.search(index=index, doc_type='text', body=query, _source_include=[
-                  'group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
+        'group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
     # 结果为空
     if not r:
         return {}
@@ -106,6 +106,44 @@ def search_group_ranking():
         item['name'] = item['group_name']
         result.append(item)
     return {'rows': result, 'total': total}
+
+
+def get_group_basic_info(gid, remark):
+    group_ranking_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "group_id": gid
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    group_item = {}
+    result = es.get(index='group_information', id=gid, doc_type='text')['_source']
+    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=group_ranking_query)['hits']['hits'][0]['_source']
+    print(group_ranking_result)
+    group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
+    group_item['narcissism'] = group_ranking_result['narcissism_index']
+    group_item['psychopathy'] = group_ranking_result['psychopathy_index']
+
+    group_item['extroversion'] = group_ranking_result['extroversion_index']
+    group_item['conscientiousness'] = group_ranking_result['conscientiousness_index']
+    group_item['agreeableness'] = group_ranking_result['agreeableness_index']
+    group_item['openn'] = group_ranking_result['openn_index']
+    group_item['nervousness'] = group_ranking_result['nervousness_index']
+
+    group_item['group_name'] = result['group_name']
+    group_item['user_count'] = len(result['userlist'])
+    group_item['keyword'] = result['keyword']
+    group_item['create_time'] = result['create_time']
+    group_item['remark'] = result['remark']
+    if remark:
+        es.update(index='group_information', id=gid, doc_type='text', body={'doc': {'remark': remark}})
+    return group_item
 
 
 def group_preference(group_id):
@@ -213,9 +251,9 @@ def group_emotion(group_id, interval):
         "nuetral_line": []
     }
     for bucket in buckets:
-        result['time'].append(bucket['key_as_string'],)
-        result["positive_line"].append(bucket['positive']['sum'],)
-        result["negtive_line"].append(bucket['negtive']['sum'],)
+        result['time'].append(bucket['key_as_string'], )
+        result["positive_line"].append(bucket['positive']['sum'], )
+        result["negtive_line"].append(bucket['negtive']['sum'], )
         result["nuetral_line"].append(bucket['nuetral']['sum'])
     return result
 
@@ -274,7 +312,11 @@ def group_social_contact(group_id, map_type):
 
 
 if __name__ == '__main__':
-    data = {"remark": "某市政府多人涉嫌贪污，目前正接受调查", "create_condition": {"openn_index": 1, "sensitive_index": 3, "extroversion_index": 3, "liveness_index": 2, "conscientiousness_index": 3, "compactness_index": 4,
-                                                                 "importance_index": 3, "event": "gangdu", "psychopathy_index": 3, "narcissism_index": 4, "machiavellianism_index": 3, "agreeableness_index": 5, "nervousness_index": 1}, "group_name": "政府"}
+    data = {"remark": "某市政府多人涉嫌贪污，目前正接受调查",
+            "create_condition": {"openn_index": 1, "sensitive_index": 3, "extroversion_index": 3, "liveness_index": 2,
+                                 "conscientiousness_index": 3, "compactness_index": 4,
+                                 "importance_index": 3, "event": "gangdu", "psychopathy_index": 3,
+                                 "narcissism_index": 4, "machiavellianism_index": 3, "agreeableness_index": 5,
+                                 "nervousness_index": 1}, "group_name": "政府"}
     r = create_group(data)
     print(r)
