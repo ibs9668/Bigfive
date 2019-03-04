@@ -52,7 +52,7 @@ def sgroup():
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
     index = request.args.get('index')
-    result = search_group_information(group_name,remark,create_time,page,size,order_name,order,index)
+    result = search_group_task(group_name,remark,create_time,page,size,order_name,order,index)
     return jsonify(result)
 
 
@@ -103,54 +103,11 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity',methods=['POST','GET'])  # group_id=2
+@mod.route('/group_activity',methods=['POST','GET'])
 def group_activity():
     group_id = request.args.get("group_id")
-
-    day = datetime.today().date() - timedelta(days=30)####接真实数据时改成【6】
-    ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
-
-    query_body = {
-        "query": {
-            "bool": {
-                "must": [{
-                    "range": {
-                    "timestamp": {
-                    "gt": ts,
-                    "lt": int(time.time())}
-                        }
-                    },
-                {
-                "term": {"group_id": group_id}
-                }
-                ]
-            }
-        }
-    }
-    activity_table = es.search(index = 'group_activity', doc_type = 'text', body = query_body)['hits']['hits']
-    activity_lst = [i["_source"] for i in activity_table]
-
-    geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
-    geo_dict = dict(Counter(geo_lst[1:]))
-
-    query_body2= {
-        "query":{
-            "bool":{
-                "must":{
-                    "term":{"group_id":group_id}
-                }
-            }
-        }
-    }
-    # source_location = es.search(index = 'group_information', doc_type = 'text', body = query_body2)['hits']['hits'][0]["_source"]["belong_home"].split(u"国")[1]
-
-    activity_dict = dict()
-    activity_dict["table"] = activity_lst
-    activity_dict["source_location"] = geo_lst[0]
-    activity_dict["geo_dict"] = geo_dict
-    # activity_dict["source_location"] = source_location
-
-    return json.dumps(activity_dict,ensure_ascii=False)
+    result = get_group_activity(group_id)
+    return jsonify(result)
 
 
 ################################ 李宛星负责 ###########################
