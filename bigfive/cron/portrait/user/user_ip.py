@@ -123,27 +123,56 @@ def get_uidlist():
     return uid_list
 
 
-if __name__ == '__main__':
+def user_ip_run(flow_text_list):
 
     uid_list = get_uidlist()
-    #索引名称
-    for i in range(len(list_index)):
-        date_list= ["2016-11-14","2016-11-15","2016-11-16","2016-11-17","2016-11-18",\
-        "2016-11-19","2016-11-20","2016-11-21","2016-11-22","2016-11-23","2016-11-24","2016-11-25",\
-        "2016-11-26","2016-11-27"]  #"2016-11-13",
-        # print (list_index[i])
+    for i in range(len(flow_text_list)):
         count = 0
         try: 
             for uid in uid_list:
-                ip_list = get_recent_ip(uid,list_index[i],date_list[i])
+                ip_list = get_recent_ip(uid,flow_text_list[i],flow_text_list[i].split("_")[-1])
 
                 if ip_list == []:
-                    pass
+                    es.index(index="user_activity",doc_type="text",
+                            body={
+                            "timestamp": date2ts(flow_text_list[i].split("_")[-1]),
+                            "uid":uid,
+                            "ip":"",
+                            "geo":"",
+                            "count":0},timeout=50)
                 else:
-
                     ip_rank(ip_list)
                 count += 1
                 print(count)
         except:
-            print("error____"+list_index[i]+"____"+str(count))
+            pass
   
+
+
+
+if __name__ == '__main__':
+    
+    user_ip_run(ES_INDEX_LIST)
+
+  #   uid_list = get_uidlist()
+  #   #索引名称
+  #   for i in range(len(list_index)):
+  #       date_list= ["2016-11-14","2016-11-15","2016-11-16","2016-11-17","2016-11-18",\
+  #       "2016-11-19","2016-11-20","2016-11-21","2016-11-22","2016-11-23","2016-11-24","2016-11-25",\
+  #       "2016-11-26","2016-11-27"]  #"2016-11-13",
+  #       # print (list_index[i])
+  #       count = 0
+  #       try: 
+  #           for uid in uid_list:
+  #               ip_list = get_recent_ip(uid,list_index[i],date_list[i])
+
+  #               if ip_list == []:
+  #                   pass
+  #               else:
+
+  #                   ip_rank(ip_list)
+  #               count += 1
+  #               print(count)
+  #       except:
+  #           print("error____"+list_index[i]+"____"+str(count))
+  # 
