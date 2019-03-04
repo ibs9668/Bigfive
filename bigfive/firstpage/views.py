@@ -2,6 +2,7 @@
 
 from flask import Blueprint ,request
 import json
+
 from bigfive.firstpage.utils import *
 
 mod = Blueprint('firstpage',__name__,url_prefix='/firstpage')
@@ -65,8 +66,8 @@ def dark_group_info():
 
     return json.dumps(result, ensure_ascii=False)
     
-@mod.route('/bigfive_person_info/', methods=['GET', 'POST'])
-def bigfive_person_info():
+@mod.route('/bigfive_user_info/', methods=['GET', 'POST'])
+def bigfive_user_info():
 
     result = bigfive_personality()
 
