@@ -19,26 +19,41 @@ def test():
 
 
 # portrait表格
-@mod.route('/portrait/', methods=['POST', 'GET'])
+@mod.route('/portrait/', methods=['POST'])
 def return_portrait_table():
-    keyword = request.args.get("keyword", default='').lower()
-    page = request.args.get('page', default='1')
-    size = request.args.get('size', default='10')
+    # keyword = request.args.get("keyword", default='').lower()
+    # page = request.args.get('page', default='1')
+    # size = request.args.get('size', default='10')
+    #
+    # order_name = request.args.get('order_name', default='username')
+    # order_type = request.args.get('order_type', default='asc')
+    #
+    # sensitive_index = request.args.get('sensitive_index', default='')
+    # machiavellianism_index = request.args.get('machiavellianism_index', default=0)
+    # narcissism_index = request.args.get('narcissism_index', default=0)
+    # psychopathy_index = request.args.get('psychopathy_index', default=0)
+    # extroversion_index = request.args.get('extroversion_index', default=0)
+    # nervousness_index = request.args.get('nervousness_index', default=0)
+    # openn_index = request.args.get('openn_index', default=0)
+    # agreeableness_index = request.args.get('agreeableness_index', default=0)
+    # conscientiousness_index = request.args.get('conscientiousness_index', default=0)
+    # print(request.json())
+    # parameters = json.loads(request.json())
+    keyword = request.json.get('keyword')
+    page = request.json.get('page')
+    size = request.json.get('size')
+    order_dict = request.json.get('order_dict')
+    sensitive_index = request.json.get('sensitive_index')
+    machiavellianism_index = request.json.get('machiavellianism_index')
+    narcissism_index = request.json.get('narcissism_index')
+    psychopathy_index = request.json.get('psychopathy_index')
+    extroversion_index = request.json.get('extroversion_index')
+    nervousness_index = request.json.get('nervousness_index')
+    openn_index = request.json.get('openn_index')
+    agreeableness_index = request.json.get('agreeableness_index')
+    conscientiousness_index = request.json.get('conscientiousness_index')
 
-    order_name = request.args.get('order_name', default='username')
-    order_type = request.args.get('order_type', default='asc')
-
-    sensitive_index = request.args.get('sensitive_index', default='')
-    machiavellianism_index = request.args.get('machiavellianism_index', default=0)
-    narcissism_index = request.args.get('narcissism_index', default=0)
-    psychopathy_index = request.args.get('psychopathy_index', default=0)
-    extroversion_index = request.args.get('extroversion_index', default=0)
-    nervousness_index = request.args.get('nervousness_index', default=0)
-    openn_index = request.args.get('openn_index', default=0)
-    agreeableness_index = request.args.get('agreeableness_index', default=0)
-    conscientiousness_index = request.args.get('conscientiousness_index', default=0)
-
-    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
+    result = portrait_table(keyword, page, size, order_dict, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
 
     return json.dumps(result, ensure_ascii=False)
 
