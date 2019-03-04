@@ -272,13 +272,21 @@ def get_group_basic_info(gid, remark):
 def group_preference(group_id):
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
-    if not hits:
+    sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
+    print(query)
+    if not hits or not sta_hits:
         return {}
 
     item = hits[0]['_source']
     domain_static = {one['domain']:one['count'] for one in item['domain_static'] if one['count']}
     topic_static = {one['topic']:one['count'] for one in item['topic_static'] if one['count']}
-    result = {'domain_static':domain_static,'topic_static':topic_static}
+
+    sta_item = sta_hits[0]['_source']
+    keywords = {one['keyword']:one['count'] for one in sta_item['keywords']}
+    hastags = {one['hastag']:one['count'] for one in sta_item['hastags']}
+    sensitive_words = {one['sensitive_word']:one['count'] for one in sta_item['sensitive_words']}
+
+    result = {'domain_static':domain_static,'topic_static':topic_static, 'keywords': keywords, 'hastags': hastags, 'sensitive_words': sensitive_words}
     return result
 
 
