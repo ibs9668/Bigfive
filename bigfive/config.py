@@ -29,6 +29,8 @@ GROUP_ACTIVITY = 'group_activity'
 GROUP_INFORMATION = 'group_information'
 GROUP_RANKING = 'group_ranking'
 GROUP_TASK = 'group_task'
+GROUP_DOMAIN_TOPIC = 'group_domain_topic'
+GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 
 # cron_group parameter
 # cron_user parameter

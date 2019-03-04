@@ -200,25 +200,26 @@ def get_uidlist():
         uid_list.append(es_item["_id"])
     return uid_list
 
-def get_weibo_index(RUN_TYPE,start_date,last_time): #start_date:开始日期前一天
+# def get_weibo_index(RUN_TYPE,start_date,last_time): #start_date:开始日期前一天
 
-    weibo_index_pre = "flow_text_"
-    if RUN_TYPE == 1:       
-        now_date = ts2datetime(time.time())
-        now_date_ts = date2ts(now_date)+DAY#今天零点时间戳
-    elif RUN_TYPE == 2:
-        start_date_ts = date2ts(start_date) #开始时间戳
+#     weibo_index_pre = "flow_text_"
+#     if RUN_TYPE == 1:       
+#         now_date = ts2datetime(time.time())
+#         now_date_ts = date2ts(now_date)+DAY#今天零点时间戳
+#     elif RUN_TYPE == 2:
+#         start_date_ts = date2ts(start_date) #开始时间戳
 
-        weibo_index_list = []
-        for i in range(last_time):
-            start_date_ts = int(start_date_ts+ DAY)
-            start_date = ts2datetime(start_date_ts)
-            if es_weibo.indices.exists(index=str(weibo_index_pre)+str(start_date)) :
-                weibo_index_list.append(str(weibo_index_pre)+str(start_date))
+#         weibo_index_list = []
+#         for i in range(last_time):
+#             start_date_ts = int(start_date_ts+ DAY)
+#             start_date = ts2datetime(start_date_ts)
+#             if es_weibo.indices.exists(index=str(weibo_index_pre)+str(start_date)) :
+#                 weibo_index_list.append(str(weibo_index_pre)+str(start_date))
 
-    return weibo_index_list
+#     return weibo_index_list
 
-def save_topic(uid_list,timestamp,index_list):
+def save_topic(uid_list,timestamp,index_name):
+    count = 0
     for uid in uid_list:
         uid_word_dict = dict()
         uid_list2 = []
@@ -226,7 +227,7 @@ def save_topic(uid_list,timestamp,index_list):
         uid_text = ""
 
         query_body = {"query":{"bool":{"must":[{"term":{"uid":uid}}]}},"from":0,"size":10000}
-        search_result = es_weibo.search(index=index_list, doc_type="text",body=query_body,timeout=50)["hits"]["hits"]
+        search_result = es_weibo.search(index=index_name, doc_type="text",body=query_body,timeout=50)["hits"]["hits"]
 
         if search_result != []:
             time_n = time.time()
@@ -282,7 +283,7 @@ def save_topic(uid_list,timestamp,index_list):
                         }},timeout=50)
                 else:
 
-                    es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(m)+"_"+str(timestamp),
+                    es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
                     body={
                     "timestamp": timestamp,
                     "uid":m,
@@ -307,21 +308,101 @@ def save_topic(uid_list,timestamp,index_list):
                     "topic_social_security":result_data[m]["social-security"]
                  
                             },timeout=50)
-                # count += 1
-                # print (count)
+
 
         else:
-            pass
+            id_body = {
+                                "query":{
+                                    "ids":{
+                                        "type":"text",
+                                        "values":[
+                                            str(uid)+"_"+str(timestamp)
+                                        ]
+                                    }
+                                }
+                            }
+            if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:#1970833007_1479484800
+                    
+                es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+                "doc":
+                {
+                    "timestamp": timestamp,
+                    "uid":uid,
+                    "topic_art":0,
+                    "topic_computer":0,
+                    "topic_economic":0,
+                    "topic_education":0,
+                    "topic_environment":0,
+                    "topic_medicine":0,
+                    "topic_military":0,
+                    "topic_politics":0,
+                    "topic_sports":0,
+                    "topic_traffic":0,
+                    "topic_life":0,
+                    "topic_anti_corruption":0,
+                    "topic_employment":0,
+                    "topic_violence":0,
+                    "topic_house":0,
+                    "topic_law":0,
+                    "topic_peace":0,
+                    "topic_religion":0,
+                    "topic_social_security":0
+                 
+                            }},timeout=50)
+            else:
+
+                es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
+                body={
+                    "timestamp": timestamp,
+                    "uid":uid,
+                    "topic_art":0,
+                    "topic_computer":0,
+                    "topic_economic":0,
+                    "topic_education":0,
+                    "topic_environment":0,
+                    "topic_medicine":0,
+                    "topic_military":0,
+                    "topic_politics":0,
+                    "topic_sports":0,
+                    "topic_traffic":0,
+                    "topic_life":0,
+                    "topic_anti_corruption":0,
+                    "topic_employment":0,
+                    "topic_violence":0,
+                    "topic_house":0,
+                    "topic_law":0,
+                    "topic_peace":0,
+                    "topic_religion":0,
+                    "topic_social_security":0
+                 
+                            },timeout=50)
+        count += 1
+        print (count)
+
+def user_topic_run(flow_text_list):#####运行函数
+    uid_list = get_uidlist()
+    flow_text_list.reverse()
+    
+    for i in range(len(flow_text_list)):
+        index_list = flow_text_list[i:i+7:1]
+        timestamp = date2ts(index_list[0].split("_")[-1])
+        # print (index_list[0].split("_")[-1])
+        save_topic(uid_list,timestamp,index_list)
+   
+    return 0
 
 
 if __name__ == '__main__':
 
-    date_list= ["2016-11-13","2016-11-14","2016-11-15","2016-11-16","2016-11-17","2016-11-18",\
-        "2016-11-19","2016-11-20","2016-11-21","2016-11-22","2016-11-23","2016-11-24","2016-11-25",\
-        "2016-11-26","2016-11-27"]
+    user_topic_run(ES_INDEX_LIST)
 
-    timestamp = date2ts("2016-11-19")
-
-    uid_list = get_uidlist()
-    index_list = get_weibo_index(2,"2016-11-12",7)
-    save_topic(uid_list,timestamp,index_list)
+    # ES_INDEX_LIST= ['flow_text_2016-11-27', 'flow_text_2016-11-26', 'flow_text_2016-11-25', 'flow_text_2016-11-24', 'flow_text_2016-11-23', 'flow_text_2016-11-22', 'flow_text_2016-11-21']
+    # uid_list = get_uidlist()
+    # ES_INDEX_LIST.reverse()
+    
+    # for i in range(len(ES_INDEX_LIST)):
+    #     index_list = ES_INDEX_LIST[i:i+7:1]
+    #     # if len(index_list) == 7:
+    #     timestamp = date2ts(index_list[0].split("_")[-1])
+    #     print (index_list[0].split("_")[-1])
+    #     save_topic(uid_list,timestamp,index_list)
