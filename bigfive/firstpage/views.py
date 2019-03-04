@@ -41,3 +41,13 @@ def search():
 #     result = search_person_and_group(keyword, page, size, person_order_name, group_order_name, person_order_type, group_order_type)
 #     return json.dumps(result, ensure_ascii=False)
 
+
+@mod.route('/statistics_user_info/', methods=['GET', 'POST'])
+def statistics_user_info():
+    timestamp = request.args.get('timestamp')
+    
+
+    result = get_statistics_user_info(timestamp)
+
+    return json.dumps(result, ensure_ascii=False)
+
