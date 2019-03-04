@@ -61,12 +61,23 @@ def group_ranking():
     """群体排名"""
     result = search_group_ranking()
     return jsonify(result)
+
+
 @mod.route('/delete_group_ranking/',methods=['POST'])
 def delete_ranking():
     """群体排名"""
     gid = request.json.get('gid')
     result = delete_by_id('group_ranking','text',gid)
     return jsonify(1)
+
+
+@mod.route('/basic_info/', methods=['GET'])
+def basic_info():
+    gid = request.args.get('gid')
+    remark = request.args.get('remark', '')
+    result = get_group_basic_info(gid, remark)
+    return json.dumps(result, ensure_ascii=False)
+
 
 
 ################################ 宋慧慧负责 ###########################
