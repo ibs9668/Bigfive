@@ -31,8 +31,9 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
     page = page if page else '1'
     size = size if size else '10'
     sort_list = []
-    for order_name, order_type in json.loads(order_dict).items():
-        sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
+    if order_dict:
+        for order_name, order_type in order_dict.items():
+            sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
     # if order_name == 'name':
     #     order_name = 'username'
     order_name = order_name if order_name else 'username'
