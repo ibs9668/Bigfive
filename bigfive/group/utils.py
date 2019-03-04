@@ -136,6 +136,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
+
     if machiavellianism_index:
         query['query']['bool']['must'].append({"range": {
             "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
@@ -161,7 +162,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
         query['query']['bool']['must'].append({"range": {
             "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
-        user_query = '{"wildcard":{"group_name": "*%s*"}}' % keyword
+        user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(user_query))
     if sensitive_index:
         sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(
@@ -220,7 +221,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
         if hit['_source']['narcissism_label'] == 2:
             hit['_source']['dark_list'].append({'自恋': '1'})
 
-        hit['_source']['name'] = hit['_source']['username']
+        hit['_source']['name'] = hit['_source']['group_name']
 
 
         item = hit['_source']
@@ -438,9 +439,27 @@ def get_group_activity(group_id):
     result = {'one':[],'two':[],'three':[],'four':[]}
     item = hits[0]['_source']
     activity_direction = sorted(item['activity_direction'],key=lambda x:x['count'],reverse=True)[:5]
+    start_geo_item = {}
+    end_geo_item = {}
     for i in activity_direction:
+        try:
+            if i['geo2geo'].split('&')[0].split(' ')[1] == '其他' or i['geo2geo'].split('&')[1].split(' ')[1] == '其他':
+                continue
+        except:
+            continue
+        start_geo_item.setdefault(i['geo2geo'].split('&')[0].split(' ')[1], 0)
+        start_geo_item[i['geo2geo'].split('&')[0].split(' ')[1]] += i['count']
+        end_geo_item.setdefault(i['geo2geo'].split('&')[1].split(' ')[1], 0)
+        end_geo_item[i['geo2geo'].split('&')[1].split(' ')[1]] += i['count']
+
         start_end = i['geo2geo'].split('&')
         result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
+
+        # s_end
+
+
+    print('start_geo_item', start_geo_item)
+    print('end_geo_item', end_geo_item)
     result['two'] = sorted(item['main_start_geo'],key=lambda x:x['count'],reverse=True)[:5]
     result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
     return result
