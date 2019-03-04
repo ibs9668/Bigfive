@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 
-#from bigfive.config import es
+from bigfive.config import es
 
-from elasticsearch import Elasticsearch
 
-ES_HOST = '219.224.134.214'
-ES_PORT = 9200
-ES_HOST_WEIBO = '219.224.134.225'
-ES_PORT_WEIBO = 9225
-
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 
 def search_group(keyword, page, size, order_name, order_type):
     page = page if page else '1'
