@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, user_emotion, user_social_contact, user_preference, portrait_table, \
-    delete_by_id, get_influence_feature, get_user_activity, get_preference_identity
+    delete_by_id, get_influence_feature, get_user_activity, get_preference_identity, get_basic_info
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -19,26 +19,43 @@ def test():
 
 
 # portrait表格
-@mod.route('/portrait/', methods=['POST', 'GET'])
+@mod.route('/portrait/', methods=['POST'])
 def return_portrait_table():
-    keyword = request.args.get("keyword", default='').lower()
-    page = request.args.get('page', default='1')
-    size = request.args.get('size', default='10')
+    # keyword = request.args.get("keyword", default='').lower()
+    # page = request.args.get('page', default='1')
+    # size = request.args.get('size', default='10')
+    #
+    # order_name = request.args.get('order_name', default='username')
+    # order_type = request.args.get('order_type', default='asc')
+    #
+    # sensitive_index = request.args.get('sensitive_index', default='')
+    # machiavellianism_index = request.args.get('machiavellianism_index', default=0)
+    # narcissism_index = request.args.get('narcissism_index', default=0)
+    # psychopathy_index = request.args.get('psychopathy_index', default=0)
+    # extroversion_index = request.args.get('extroversion_index', default=0)
+    # nervousness_index = request.args.get('nervousness_index', default=0)
+    # openn_index = request.args.get('openn_index', default=0)
+    # agreeableness_index = request.args.get('agreeableness_index', default=0)
+    # conscientiousness_index = request.args.get('conscientiousness_index', default=0)
+    # print(request.json())
+    # parameters = json.loads(request.json())
+    keyword = request.form.get('keyword')
+    page = request.form.get('page')
+    size = request.form.get('size')
+    order_dict = request.form.get('order_dict')
+    sensitive_index = request.form.get('sensitive_index')
+    machiavellianism_index = request.form.get('machiavellianism_index')
+    narcissism_index = request.form.get('narcissism_index')
+    psychopathy_index = request.form.get('psychopathy_index')
+    extroversion_index = request.form.get('extroversion_index')
+    nervousness_index = request.form.get('nervousness_index')
+    openn_index = request.form.get('openn_index')
+    agreeableness_index = request.form.get('agreeableness_index')
+    conscientiousness_index = request.form.get('conscientiousness_index')
+    order_name = request.form.get('order_name')
+    order_type = request.form.get('order_type')
 
-    order_name = request.args.get('order_name', default='username')
-    order_type = request.args.get('order_type', default='asc')
-
-    sensitive_index = request.args.get('sensitive_index', default='')
-    machiavellianism_index = request.args.get('machiavellianism_index', default=0)
-    narcissism_index = request.args.get('narcissism_index', default=0)
-    psychopathy_index = request.args.get('psychopathy_index', default=0)
-    extroversion_index = request.args.get('extroversion_index', default=0)
-    nervousness_index = request.args.get('nervousness_index', default=0)
-    openn_index = request.args.get('openn_index', default=0)
-    agreeableness_index = request.args.get('agreeableness_index', default=0)
-    conscientiousness_index = request.args.get('conscientiousness_index', default=0)
-
-    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
+    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
 
     return json.dumps(result, ensure_ascii=False)
 
@@ -50,6 +67,13 @@ def delete_user():
     result = es.delete(index='user_ranking', doc_type='text', id=uid)
     # return json.dumps(result, ensure_ascii=False)
     return jsonify(1)
+
+
+@mod.route('/basic_info/', methods=['POST'])
+def basic_info():
+    uid = request.args.get('person_id')
+    result = get_basic_info(uid)
+    return json.dumps(result, ensure_ascii=False)
 
 
 # 活动特征

@@ -27,13 +27,18 @@ def index_to_score_rank(index):
 
 def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index,
                    narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index,
-                   agreeableness_index, conscientiousness_index):
+                   agreeableness_index, conscientiousness_index, order_dict):
     page = page if page else '1'
     size = size if size else '10'
-    if order_name == 'name':
-        order_name = 'username'
+    sort_list = []
+    for order_name, order_type in order_dict.items():
+        sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
+    # if order_name == 'name':
+    #     order_name = 'username'
     order_name = order_name if order_name else 'username'
     order_type = order_type if order_type else 'asc'
+    sort_list.append({order_name: {"order": order_type}})
+
     machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
     narcissism_index = narcissism_index if narcissism_index else 0
     psychopathy_index = psychopathy_index if psychopathy_index else 0
@@ -88,7 +93,10 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
-    query['sort'] = [{order_name: {"order": order_type}}]
+    query['sort'] = sort_list
+    # query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
+    # query['sort'] = [{order_name: {"order": order_type}}]
+    print(query)
 
     hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
 
@@ -98,38 +106,38 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
         item['_source']['dark_list'] = []
 
         if item['_source']['extroversion_label'] == 0:
-            item['_source']['big_five_list'].append({'外倾性': '极端低'})
+            item['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
         if item['_source']['extroversion_label'] == 2:
-            item['_source']['big_five_list'].append({'外倾性': '极端高'})
+            item['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
         if item['_source']['openn_label'] == 0:
-            item['_source']['big_five_list'].append({'开放性': '极端低'})
+            item['_source']['big_five_list'].append({'开放性': '0'})
         if item['_source']['openn_label'] == 2:
-            item['_source']['big_five_list'].append({'开放性': '极端高'})
+            item['_source']['big_five_list'].append({'开放性': '1'})
         if item['_source']['agreeableness_label'] == 0:
-            item['_source']['big_five_list'].append({'宜人性': '极端低'})
+            item['_source']['big_five_list'].append({'宜人性': '0'})
         if item['_source']['agreeableness_label'] == 2:
-            item['_source']['big_five_list'].append({'宜人性': '极端高'})
+            item['_source']['big_five_list'].append({'宜人性': '1'})
         if item['_source']['conscientiousness_label'] == 0:
-            item['_source']['big_five_list'].append({'尽责性': '极端低'})
+            item['_source']['big_five_list'].append({'尽责性': '0'})
         if item['_source']['conscientiousness_label'] == 2:
-            item['_source']['big_five_list'].append({'尽责性': '极端高'})
+            item['_source']['big_five_list'].append({'尽责性': '1'})
         if item['_source']['nervousness_label'] == 0:
-            item['_source']['big_five_list'].append({'神经质': '极端低'})
+            item['_source']['big_five_list'].append({'神经质': '0'})
         if item['_source']['nervousness_label'] == 2:
-            item['_source']['big_five_list'].append({'神经质': '极端高'})
+            item['_source']['big_five_list'].append({'神经质': '1'})
 
         if item['_source']['machiavellianism_label'] == 0:
-            item['_source']['dark_list'].append({'马基雅维里主义': '极端低'})
+            item['_source']['dark_list'].append({'马基雅维里主义': '0'})
         if item['_source']['machiavellianism_label'] == 2:
-            item['_source']['dark_list'].append({'马基雅维里主义': '极端高'})
+            item['_source']['dark_list'].append({'马基雅维里主义': '1'})
         if item['_source']['psychopathy_label'] == 0:
-            item['_source']['dark_list'].append({'精神病态': '极端低'})
+            item['_source']['dark_list'].append({'精神病态': '0'})
         if item['_source']['psychopathy_label'] == 2:
-            item['_source']['dark_list'].append({'精神病态': '极端高'})
+            item['_source']['dark_list'].append({'精神病态': '1'})
         if item['_source']['narcissism_label'] == 0:
-            item['_source']['dark_list'].append({'自怜': '极端低'})
+            item['_source']['dark_list'].append({'自怜': '0'})
         if item['_source']['narcissism_label'] == 2:
-            item['_source']['dark_list'].append({'自恋': '极端高'})
+            item['_source']['dark_list'].append({'自恋': '1'})
 
         item['_source']['name'] = item['_source']['username']
         result['rows'].append(item['_source'])
@@ -139,6 +147,10 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 def delete_by_id(index, doc_type, id):
     result = es.delete(index=index, doc_type=doc_type, id=id)
     return result
+
+
+def get_basic_info(uid):
+    query_basic_info = {}
 
 
 def user_emotion(uid, interval):
@@ -408,6 +420,7 @@ def get_preference_identity(uid):
     }
 
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
     preference_item["topic_violence"] = preference_and_topic_data["topic_violence"]
     preference_item["topic_sports"] = preference_and_topic_data["topic_sports"]
