@@ -56,10 +56,27 @@ def sgroup():
     return jsonify(result)
 
 
-@mod.route('/group_ranking/',methods=['GET'])
+@mod.route('/group_ranking/',methods=['POST'])
 def group_ranking():
     """群体排名"""
-    result = search_group_ranking()
+    parameters = request.form.to_dict()
+    keyword = parameters.get('keyword')
+    page = parameters.get('page')
+    size = parameters.get('size')
+    order_dict = parameters.get('order_dict')
+    sensitive_index = parameters.get('sensitive_index')
+    machiavellianism_index = parameters.get('machiavellianism_index')
+    narcissism_index = parameters.get('narcissism_index')
+    psychopathy_index = parameters.get('psychopathy_index')
+    extroversion_index = parameters.get('extroversion_index')
+    nervousness_index = parameters.get('nervousness_index')
+    openn_index = parameters.get('openn_index')
+    agreeableness_index = parameters.get('agreeableness_index')
+    conscientiousness_index = parameters.get('conscientiousness_index')
+    order_name = parameters.get('order_name')
+    order_type = parameters.get('order_type')
+
+    result = search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
     return jsonify(result)
 
 

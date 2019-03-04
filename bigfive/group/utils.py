@@ -1,9 +1,22 @@
 # coding=utf-8
+import json
 
 from bigfive.time_utils import *
 from xpinyin import Pinyin
 
 from bigfive.config import es
+
+
+def index_to_score_rank(index):
+    index_to_score_rank_dict = {
+        0: [0, 101],
+        1: [0, 20],
+        2: [20, 40],
+        3: [40, 60],
+        4: [60, 80],
+        5: [80, 101],
+    }
+    return index_to_score_rank_dict[int(index)]
 
 
 def create_group_task(data):
@@ -88,10 +101,79 @@ def delete_by_id(index, doc_type, id):
     return r2
 
 
-def search_group_ranking():
+def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict):
+
+    page = page if page else '1'
+    size = size if size else '10'
+    sort_list = []
+    if order_dict:
+        for order_name, order_type in json.loads(order_dict).items():
+            sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append(
+                {order_name: {"order": "asc"}})
+
+    order_name = order_name if order_name else 'group_name'
+    order_type = order_type if order_type else 'asc'
+    sort_list.append({order_name: {"order": order_type}})
+
+    machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
+    narcissism_index = narcissism_index if narcissism_index else 0
+    psychopathy_index = psychopathy_index if psychopathy_index else 0
+    extroversion_index = extroversion_index if extroversion_index else 0
+    nervousness_index = nervousness_index if nervousness_index else 0
+    openn_index = openn_index if openn_index else 0
+    agreeableness_index = agreeableness_index if agreeableness_index else 0
+    conscientiousness_index = conscientiousness_index if conscientiousness_index else 0
+
+    machiavellianism_rank = index_to_score_rank(machiavellianism_index)
+    narcissism_rank = index_to_score_rank(narcissism_index)
+    psychopathy_rank = index_to_score_rank(psychopathy_index)
+    extroversion_rank = index_to_score_rank(extroversion_index)
+    nervousness_rank = index_to_score_rank(nervousness_index)
+    openn_rank = index_to_score_rank(openn_index)
+    agreeableness_rank = index_to_score_rank(agreeableness_index)
+    conscientiousness_rank = index_to_score_rank(conscientiousness_index)
+
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
+
+    if machiavellianism_index:
+        query['query']['bool']['must'].append({"range": {
+            "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
+    if narcissism_index:
+        query['query']['bool']['must'].append(
+            {"range": {"narcissism_index": {"gte": str(narcissism_rank[0]), "lt": str(narcissism_rank[1])}}})
+    if psychopathy_index:
+        query['query']['bool']['must'].append(
+            {"range": {"psychopathy_index": {"gte": str(psychopathy_rank[0]), "lt": str(psychopathy_rank[1])}}})
+    if extroversion_index:
+        query['query']['bool']['must'].append(
+            {"range": {"extroversion_index": {"gte": str(extroversion_rank[0]), "lt": str(extroversion_rank[1])}}})
+    if nervousness_index:
+        query['query']['bool']['must'].append(
+            {"range": {"nervousness_index": {"gte": str(nervousness_rank[0]), "lt": str(nervousness_rank[1])}}})
+    if openn_index:
+        query['query']['bool']['must'].append(
+            {"range": {"openn_index": {"gte": str(openn_rank[0]), "lt": str(openn_rank[1])}}})
+    if agreeableness_index:
+        query['query']['bool']['must'].append(
+            {"range": {"agreeableness_index": {"gte": str(agreeableness_rank[0]), "lt": str(agreeableness_rank[1])}}})
+    if conscientiousness_index:
+        query['query']['bool']['must'].append({"range": {
+            "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
+    if keyword:
+        user_query = '{"wildcard":{"group_name": "*%s*"}}' % keyword
+        query['query']['bool']['must'].append(json.loads(user_query))
+    if sensitive_index:
+        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(
+            sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
+        query['query']['bool']['must'].append(json.loads(sensitive_query))
+
+    query['from'] = str((int(page) - 1) * int(size))
+    query['size'] = str(size)
+    query['sort'] = sort_list
+
     r = es.search(index='group_ranking', doc_type='text', body=query)
+
     total = r['hits']['total']
     # 结果为空
     if not total:
@@ -100,6 +182,47 @@ def search_group_ranking():
     # 正常返回
     result = []
     for hit in r:
+
+        hit['_source']['big_five_list'] = []
+        hit['_source']['dark_list'] = []
+
+        if hit['_source']['extroversion_label'] == 0:
+            hit['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
+        if hit['_source']['extroversion_label'] == 2:
+            hit['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
+        if hit['_source']['openn_label'] == 0:
+            hit['_source']['big_five_list'].append({'开放性': '0'})
+        if hit['_source']['openn_label'] == 2:
+            hit['_source']['big_five_list'].append({'开放性': '1'})
+        if hit['_source']['agreeableness_label'] == 0:
+            hit['_source']['big_five_list'].append({'宜人性': '0'})
+        if hit['_source']['agreeableness_label'] == 2:
+            hit['_source']['big_five_list'].append({'宜人性': '1'})
+        if hit['_source']['conscientiousness_label'] == 0:
+            hit['_source']['big_five_list'].append({'尽责性': '0'})
+        if hit['_source']['conscientiousness_label'] == 2:
+            hit['_source']['big_five_list'].append({'尽责性': '1'})
+        if hit['_source']['nervousness_label'] == 0:
+            hit['_source']['big_five_list'].append({'神经质': '0'})
+        if hit['_source']['nervousness_label'] == 2:
+            hit['_source']['big_five_list'].append({'神经质': '1'})
+
+        if hit['_source']['machiavellianism_label'] == 0:
+            hit['_source']['dark_list'].append({'马基雅维里主义': '0'})
+        if hit['_source']['machiavellianism_label'] == 2:
+            hit['_source']['dark_list'].append({'马基雅维里主义': '1'})
+        if hit['_source']['psychopathy_label'] == 0:
+            hit['_source']['dark_list'].append({'精神病态': '0'})
+        if hit['_source']['psychopathy_label'] == 2:
+            hit['_source']['dark_list'].append({'精神病态': '1'})
+        if hit['_source']['narcissism_label'] == 0:
+            hit['_source']['dark_list'].append({'自怜': '0'})
+        if hit['_source']['narcissism_label'] == 2:
+            hit['_source']['dark_list'].append({'自恋': '1'})
+
+        hit['_source']['name'] = hit['_source']['username']
+
+
         item = hit['_source']
         # 为前端返回es的_id字段,为删除功能做支持
         item['id'] = hit['_id']
