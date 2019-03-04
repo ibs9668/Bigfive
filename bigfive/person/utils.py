@@ -156,6 +156,9 @@ def get_basic_info(uid):
     star_result = es.get(index='user_ranking', doc_type='text', id=uid)['_source']
     result['political_bias'] = political_bias_dic[result['political_bias']]
     result['liveness_star'] = star_result['liveness_star']
+    result['importance_star'] = star_result['importance_star']
+    result['sensitive_star'] = star_result['sensitive_star']
+    result['influence_star'] = star_result['influence_star']
     return result
 
 
