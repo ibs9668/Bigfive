@@ -154,13 +154,13 @@ def get_basic_info(uid):
     political_bias_dic = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
     result = es.get(index='user_information', doc_type='text', id=uid)['_source']
     star_result = es.get(index='user_ranking', doc_type='text', id=uid)['_source']
+    result['domain'] = labels_dict[result['domain']]
     result['political_bias'] = political_bias_dic[result['political_bias']]
     result['liveness_star'] = star_result['liveness_star']
     result['importance_star'] = star_result['importance_star']
     result['sensitive_star'] = star_result['sensitive_star']
     result['influence_star'] = star_result['influence_star']
     return result
-
 
 
 def user_emotion(uid, interval):
@@ -493,16 +493,21 @@ def get_preference_identity(uid):
     result['topic_result'] = topic_result
 
     result['keywords'] = []
-    for i in analysis_result['keywords']:
-        result['keywords'].append({i['keyword']: i['count']})
+    if analysis_result['keywords']:
+        for i in analysis_result['keywords']:
+            result['keywords'].append({i['keyword']: i['count']})
 
     result['hastags'] = []
-    for i in analysis_result['hastags']:
-        result['hastags'].append({i['hastag']: i['count']})
+    if analysis_result['hastags']:
+        for i in analysis_result['hastags']:
+            result['hastags'].append({i['hastag']: i['count']})
 
     result['sensitive_words'] = []
-    for i in analysis_result['sensitive_words']:
-        result['sensitive_word'].append({i['sensitive_word']: i['count']})
+    if analysis_result['sensitive_words']:
+        print(analysis_result['sensitive_words'])
+        for i in analysis_result['sensitive_words']:
+            print(i)
+            result['sensitive_words'].append({i['sensitive_word']: i['count']})
 
     result['domain_dict'] = domain_dict
 
