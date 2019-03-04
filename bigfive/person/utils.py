@@ -32,7 +32,7 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
     size = size if size else '10'
     sort_list = []
     if order_dict:
-        for order_name, order_type in order_dict.items():
+        for order_name, order_type in json.loads(order_dict).items():
             sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
     # if order_name == 'name':
     #     order_name = 'username'
@@ -151,7 +151,36 @@ def delete_by_id(index, doc_type, id):
 
 
 def get_basic_info(uid):
-    query_basic_info = {}
+    star_query = {
+        "query": {
+            "bool": {
+                "must": {
+                    "term": {"uid": uid}
+                }
+            }
+        }
+    }
+    political_bias_dic = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
+    result = es.get(index='user_information', doc_type='text', id=uid)['_source']
+    star_result = es.search(index='user_ranking', doc_type='text', body=star_query)['hits']['hits'][-1]['_source']
+    result['domain'] = labels_dict[result['domain']]
+    result['political_bias'] = political_bias_dic[result['political_bias']]
+    result['liveness_star'] = star_result['liveness_star']
+    result['importance_star'] = star_result['importance_star']
+    result['sensitive_star'] = star_result['sensitive_star']
+    result['influence_star'] = star_result['influence_star']
+
+    result['machiavellianism'] = star_result['machiavellianism_index']
+    result['psychopathy'] = star_result['psychopathy_index']
+    result['narcissism'] = star_result['narcissism_index']
+
+    result['extroversion'] = star_result['extroversion_index']
+    result['nervousness'] = star_result['nervousness_index']
+    result['openn'] = star_result['openn_index']
+    result['agreeableness'] = star_result['agreeableness_index']
+    result['conscientiousness'] = star_result['conscientiousness_index']
+
+    return result
 
 
 def user_emotion(uid, interval):
@@ -214,8 +243,10 @@ def user_emotion(uid, interval):
 
 
 def get_user_activity(uid):
-    today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    today = "2016-11-21"
+    # today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
+    # a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
     result = {}
 
     # ip一天排名
@@ -230,8 +261,8 @@ def get_user_activity(uid):
                     },
                     {
                         "term": {
-                            "date": "2016-11-21"
-                            # "date": str(today)
+                            # "date": "2016-11-21"
+                            "date": str(today)
                         }
                     }
                 ]
@@ -246,13 +277,22 @@ def get_user_activity(uid):
         ]
     }
 
-    one_day_result_list = []
+    one_day_ip_rank = []
     one_day_rank = 1
     one_day_result = es.search(index='user_activity', doc_type='text', body=one_day_query)['hits']['hits']
+    one_day_geo_item = {}
     for one_day_data in one_day_result:
+        one_day_geo_item.setdefault(one_day_data['_source']['geo'].split('&')[1], 0)
+        one_day_geo_item[one_day_data['_source']['geo'].split('&')[1]] += one_day_data['_source']['count']
         item = {'rank': one_day_rank, 'count': one_day_data['_source']['count'], 'ip': one_day_data['_source']['ip']}
-        one_day_result_list.append(item)
+        one_day_ip_rank.append(item)
         one_day_rank += 1
+
+    one_day_geo_rank = []
+    one_day_geo_sorted = sorted(one_day_geo_item.items(), key=lambda x: x[1], reverse=True)
+    for i in range(len(one_day_geo_sorted)):
+        print(one_day_geo_sorted[i])
+        one_day_geo_rank.append({'rank': i + 1, 'count': int(one_day_geo_sorted[i][1]), 'geo': one_day_geo_sorted[i][0]})
 
     # ip一周排名
     one_week_query = {
@@ -267,10 +307,10 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                "gte": "2016-11-14",
-                                # "gte": a_week_ago,
-                                "lte": "2016-11-21"
-                                # "lte": today
+                                # "gte": "2016-11-14",
+                                "gte": a_week_ago,
+                                # "lte": "2016-11-21"
+                                "lte": today
                             }
                         }
                     }
@@ -293,9 +333,8 @@ def get_user_activity(uid):
             }
         }
     }
-
     print(one_week_query)
-    one_week_result_list = []
+    one_week_ip_rank = []
     one_week_result = \
     es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']
     one_week_dic = {}
@@ -305,7 +344,7 @@ def get_user_activity(uid):
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(len(l)):
         item = {'rank': i + 1, 'count': int(l[i][1]), 'ip': l[i][0]}
-        one_week_result_list.append(item)
+        one_week_ip_rank.append(item)
 
     # 活跃度分析
     geo_query = {
@@ -341,13 +380,15 @@ def get_user_activity(uid):
     }
 
     geo_result = es.search(index='user_activity', doc_type='text', body=geo_query)['hits']['hits']
+    one_week_geo_rank = []
     if geo_result:
         geo_dict = {}
         print(geo_query)
+        one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
-            # item.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
-            # item[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
+            one_week_geo_dict.setdefault(geo_data['_source']['geo'].split('&')[1], 0)
+            one_week_geo_dict[geo_data['_source']['geo'].split('&')[1]] += geo_data['_source']['count']
             geo_dict.setdefault(geo_data['_source']['date'], {})
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
@@ -358,9 +399,12 @@ def get_user_activity(uid):
             geo_dict[geo_data['_source']['date']][geo_data['_source']['geo'].split('&')[1]] += geo_data['_source'][
                 'count']
 
-        print(geo_dict)
+        one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
+        for i in range(len(one_week_geo_sorted)):
+            one_week_geo_rank.append(
+                {'rank': i + 1, 'count': int(one_week_geo_sorted[i][1]), 'geo': one_week_geo_sorted[i][0]})
+
         geo_dict_item = list(geo_dict.items())
-        print(geo_dict_item)
         route_list = []
         for i in range(len(geo_dict_item)):
             if not geo_dict_item[i][1]:
@@ -379,8 +423,10 @@ def get_user_activity(uid):
     else:
         route_list = []
 
-    result['one_day_rank'] = one_day_result_list
-    result['one_week_rank'] = one_week_result_list
+    result['one_day_ip_rank'] = one_day_ip_rank
+    result['one_day_geo_rank'] = one_day_geo_rank
+    result['one_week_ip_rank'] = one_week_ip_rank
+    result['one_week_geo_rank'] = one_week_geo_rank
     result['route_list'] = route_list
 
     return result
@@ -452,22 +498,36 @@ def get_preference_identity(uid):
     topic_result[topic_dict[l[4][0].replace('topic_', '')]] = int(l[4][1] * 100)
 
     print(preference_and_topic_data)
-    node_main = {'name': labels_dict[preference_and_topic_data['main_domain']]}
+    node_main = {'name': labels_dict[preference_and_topic_data['main_domain']], 'id': preference_and_topic_data['uid']}
     node_followers = {'name': labels_dict[preference_and_topic_data['domain_followers']]}
     node_verified = {'name': labels_dict[preference_and_topic_data['domain_verified']]}
     node_weibo = {'name': labels_dict[preference_and_topic_data['domain_weibo']]}
-    m_to_f_link = {'source': node_main, 'target': node_followers}
-    m_to_v_link = {'source': node_main, 'target': node_verified}
-    m_to_w_link = {'source': node_main, 'target': node_weibo}
+    m_to_f_link = {'source': node_main, 'target': node_followers, 'relation': '根据转发结构分类'}
+    m_to_v_link = {'source': node_main, 'target': node_verified, 'relation': '根据注册信息分类'}
+    m_to_w_link = {'source': node_main, 'target': node_weibo, 'relation': '根据发帖内容分类'}
     node = [node_main, node_followers, node_verified, node_weibo]
     link = [m_to_f_link, m_to_v_link, m_to_w_link]
     domain_dict = {'node': node, 'link': link}
 
     analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
     result['topic_result'] = topic_result
-    result['keyword'] = analysis_result['keywords']
-    result['hastags'] = analysis_result['hastags']
-    result['sensitive_words'] = analysis_result['sensitive_words']
+
+    result['keywords'] = []
+    if analysis_result['keywords']:
+        for i in analysis_result['keywords']:
+            result['keywords'].append({i['keyword']: i['count']})
+
+    result['hastags'] = []
+    if analysis_result['hastags']:
+        for i in analysis_result['hastags']:
+            result['hastags'].append({i['hastag']: i['count']})
+
+    result['sensitive_words'] = []
+    if analysis_result['sensitive_words']:
+        print(analysis_result['sensitive_words'])
+        for i in analysis_result['sensitive_words']:
+            print(i)
+            result['sensitive_words'].append({i['sensitive_word']: i['count']})
     result['domain_dict'] = domain_dict
 
     return result
@@ -496,7 +556,7 @@ def get_influence_feature(uid):
         "size": 1000
     }
     result_list = []
-    es_result = scan(client=es, index='user_influence', doc_type='text', query=query)
+    es_result = es.search(index='user_influence', doc_type='text', body=query)['hits']['hits']
     for data in es_result:
         item = {}
         item['sensitivity'] = data['_source']['sensitivity']

@@ -2,7 +2,7 @@
 
 import json
 import time
-from collections import Counter
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
@@ -72,7 +72,8 @@ def delete_user():
     return jsonify(1)
 
 
-@mod.route('/basic_info/', methods=['POST'])
+# 用户基本信息
+@mod.route('/basic_info/', methods=['GET', 'POST'])
 def basic_info():
     uid = request.args.get('person_id')
     result = get_basic_info(uid)
@@ -87,6 +88,7 @@ def user_activity():
     return json.dumps(result, ensure_ascii=False)
 
 
+# 偏好特征
 @mod.route('/preference_identity', methods=['POST', 'GET'])
 def preference_identity():
     uid = request.args.get('person_id')

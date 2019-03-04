@@ -31,6 +31,8 @@ GROUP_RANKING = 'group_ranking'
 GROUP_TASK = 'group_task'
 GROUP_INFLUENCE = 'group_influence'
 GROUP_PERSONALITY = 'group_personality'
+GROUP_DOMAIN_TOPIC = 'group_domain_topic'
+GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 
 # cron_user parameter
 USER_ITER_COUNT = 100
@@ -114,7 +116,7 @@ topic_dict = {'art': '文体类_娱乐', 'computer': '科技类', 'economic': '�
               'medicine': '民生类_健康', 'military': '军事类', 'politics': '政治类_外交', 'sports': '文体类_体育', 'traffic': '民生类_交通',
               'life': '其他类', 'anti_corruption': '政治类_反腐', 'employment': '民生类_就业', 'fear_of_violence': '政治类_暴恐',
               'house': '民生类_住房', 'law': '民生类_法律', 'peace': '政治类_地区和平', 'religion': '政治类_宗教',
-              'social_security': '民生类_社会保障'}
+              'social_security': '民生类_社会保障', 'violence': '政治类_暴恐',}
 
 outlist = [u'海外', u'香港', u'台湾', u'澳门']
 lawyerw = [u'律师', u'法律', u'法务', u'辩护']

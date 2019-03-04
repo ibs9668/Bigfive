@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint ,request,jsonify
+from flask import Blueprint ,request,jsonify,Response
 
 import json
 import time
@@ -7,7 +7,7 @@ from datetime import datetime,timedelta
 from collections import Counter
 
 from bigfive.group.utils import *
-
+import os
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 
@@ -19,7 +19,7 @@ def test():
 
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
-    """创建群体"""
+    """创建群体计算任务"""
     # data = request.form.to_dict()
     try:
         data = request.json
@@ -31,7 +31,7 @@ def cgroup():
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
-    """删除群体"""
+    """删除群体任务/群体记录"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
     index = request.json.get('index')
@@ -43,7 +43,7 @@ def dgroup():
 
 @mod.route('/search_group/',methods=['GET'])
 def sgroup():
-    """搜索群体"""
+    """搜索群体任务"""
     group_name = request.args.get('gname','')
     remark = request.args.get('remark','')
     create_time = request.args.get('ctime','')
@@ -52,15 +52,34 @@ def sgroup():
     order_name = request.args.get('oname','create_time')
     order = request.args.get('order','desc')
     index = request.args.get('index')
-    result = search_group_information(group_name,remark,create_time,page,size,order_name,order,index)
+    result = search_group_task(group_name,remark,create_time,page,size,order_name,order,index)
     return jsonify(result)
 
 
-@mod.route('/group_ranking/',methods=['GET'])
+@mod.route('/group_ranking/',methods=['POST'])
 def group_ranking():
     """群体排名"""
-    result = search_group_ranking()
+    parameters = request.form.to_dict()
+    keyword = parameters.get('keyword')
+    page = parameters.get('page')
+    size = parameters.get('size')
+    order_dict = parameters.get('order_dict')
+    sensitive_index = parameters.get('sensitive_index')
+    machiavellianism_index = parameters.get('machiavellianism_index')
+    narcissism_index = parameters.get('narcissism_index')
+    psychopathy_index = parameters.get('psychopathy_index')
+    extroversion_index = parameters.get('extroversion_index')
+    nervousness_index = parameters.get('nervousness_index')
+    openn_index = parameters.get('openn_index')
+    agreeableness_index = parameters.get('agreeableness_index')
+    conscientiousness_index = parameters.get('conscientiousness_index')
+    order_name = parameters.get('order_name')
+    order_type = parameters.get('order_type')
+
+    result = search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
     return jsonify(result)
+
+
 @mod.route('/delete_group_ranking/',methods=['POST'])
 def delete_ranking():
     """群体排名"""
@@ -69,9 +88,18 @@ def delete_ranking():
     return jsonify(1)
 
 
+@mod.route('/basic_info/', methods=['GET'])
+def basic_info():
+    gid = request.args.get('gid')
+    remark = request.args.get('remark', '')
+    result = get_group_basic_info(gid, remark)
+    return json.dumps(result, ensure_ascii=False)
+
+
+
 ################################ 宋慧慧负责 ###########################
 
-@mod.route('/group_personality',methods=['POST','GET'])##group_id=mingxing_1548746836
+@mod.route('/group_personality/',methods=['POST','GET'])##group_id=mingxing_1548746836
 def group_personality():
     group_id = request.args.get("group_id")
     query_body = {
@@ -103,66 +131,21 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity',methods=['POST','GET'])  # group_id=2
+@mod.route('/group_activity/',methods=['POST','GET'])
 def group_activity():
     group_id = request.args.get("group_id")
-
-    day = datetime.today().date() - timedelta(days=30)####接真实数据时改成【6】
-    ts = int(time.mktime(time.strptime(str(day), '%Y-%m-%d')))
-
-    query_body = {
-        "query": {
-            "bool": {
-                "must": [{
-                    "range": {
-                    "timestamp": {
-                    "gt": ts,
-                    "lt": int(time.time())}
-                        }
-                    },
-                {
-                "term": {"group_id": group_id}
-                }
-                ]
-            }
-        }
-    }
-    activity_table = es.search(index = 'group_activity', doc_type = 'text', body = query_body)['hits']['hits']
-    activity_lst = [i["_source"] for i in activity_table]
-
-    geo_lst = [i["_source"]["location"].split("&")[1] for i in activity_table]
-    geo_dict = dict(Counter(geo_lst[1:]))
-
-    query_body2= {
-        "query":{
-            "bool":{
-                "must":{
-                    "term":{"group_id":group_id}
-                }
-            }
-        }
-    }
-    # source_location = es.search(index = 'group_information', doc_type = 'text', body = query_body2)['hits']['hits'][0]["_source"]["belong_home"].split(u"国")[1]
-
-    activity_dict = dict()
-    activity_dict["table"] = activity_lst
-    activity_dict["source_location"] = geo_lst[0]
-    activity_dict["geo_dict"] = geo_dict
-    # activity_dict["source_location"] = source_location
-
-    return json.dumps(activity_dict,ensure_ascii=False)
+    result = get_group_activity(group_id)
+    return jsonify(result)
 
 
 ################################ 李宛星负责 ###########################
 
-@mod.route('/perference_identity', methods=['POST','GET'])
+@mod.route('/perference_identity/', methods=['POST','GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
-    group_inf = group_preference(group_id)
+    result = group_preference(group_id)
 
-    identity = group_inf["_source"]["domain"]
-
-    return json.dumps(identity,ensure_ascii=False)
+    return jsonify(result)
 
 
 @mod.route('/perference_topic', methods=['POST','GET'])
@@ -224,3 +207,4 @@ def social_contact():
     map_type = request.args.get("type")
     social_contact = group_social_contact(group_id,map_type)
     return jsonify(social_contact)
+
