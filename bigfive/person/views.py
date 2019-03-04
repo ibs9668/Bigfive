@@ -2,7 +2,7 @@
 
 import json
 import time
-from collections import Counter
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
