@@ -22,9 +22,6 @@ index_info = {
     },
     "mappings": {
         "text": { #索引类型
-            "_id":{
-            "path":"uid"
-            },
             "properties": {
                  "uid":{ #用户uid
                    "index":"not_analyzed",
@@ -95,6 +92,38 @@ index_info = {
                     "type" : "long"
                 },
                 "influence_star":{#影响力星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "machiavellianism_label":{#马基雅维里主义标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "narcissism_label":{#自恋标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "psychopathy_label":{#精神病态标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "extroversion_label":{#外倾性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "nervousness_label":{#神经质标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "openn_label":{#开放性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "agreeableness_label":{#宜人性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "conscientiousness_label":{#尽责性标签
                     "index":"not_analyzed",
                     "type" : "long"
                 },

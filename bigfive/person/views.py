@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
 from bigfive.person.utils import es, user_emotion, user_social_contact, user_preference, portrait_table, \
-    delete_by_id, get_influence_feature, get_user_activity
+    delete_by_id, get_influence_feature, get_user_activity, get_preference_identity, get_basic_info
 
 mod = Blueprint('person', __name__, url_prefix='/person')
 
@@ -19,28 +19,48 @@ def test():
 
 
 # portrait表格
-@mod.route('/portrait/', methods=['POST', 'GET'])
+@mod.route('/portrait/', methods=['POST'])
 def return_portrait_table():
-    keyword = request.args.get("keyword", default='').lower()
-    page = request.args.get('page', default='1')
-    size = request.args.get('size', default='10')
+    # keyword = request.args.get("keyword", default='').lower()
+    # page = request.args.get('page', default='1')
+    # size = request.args.get('size', default='10')
+    #
+    # order_name = request.args.get('order_name', default='username')
+    # order_type = request.args.get('order_type', default='asc')
+    #
+    # sensitive_index = request.args.get('sensitive_index', default='')
+    # machiavellianism_index = request.args.get('machiavellianism_index', default=0)
+    # narcissism_index = request.args.get('narcissism_index', default=0)
+    # psychopathy_index = request.args.get('psychopathy_index', default=0)
+    # extroversion_index = request.args.get('extroversion_index', default=0)
+    # nervousness_index = request.args.get('nervousness_index', default=0)
+    # openn_index = request.args.get('openn_index', default=0)
+    # agreeableness_index = request.args.get('agreeableness_index', default=0)
+    # conscientiousness_index = request.args.get('conscientiousness_index', default=0)
+    # print(request.json())
+    parameters = request.form.to_dict()
+    # print(request.form.to_dict())
+    # print(dir(request.form))
+    keyword = parameters.get('keyword')
+    page = parameters.get('page')
+    size = parameters.get('size')
+    order_dict = parameters.get('order_dict')
+    sensitive_index = parameters.get('sensitive_index')
+    machiavellianism_index = parameters.get('machiavellianism_index')
+    narcissism_index = parameters.get('narcissism_index')
+    psychopathy_index = parameters.get('psychopathy_index')
+    extroversion_index = parameters.get('extroversion_index')
+    nervousness_index = parameters.get('nervousness_index')
+    openn_index = parameters.get('openn_index')
+    agreeableness_index = parameters.get('agreeableness_index')
+    conscientiousness_index = parameters.get('conscientiousness_index')
+    order_name = parameters.get('order_name')
+    order_type = parameters.get('order_type')
 
-    order_name = request.args.get('order_name', default='username')
-    order_type = request.args.get('order_type', default='asc')
-
-    sensitive_index = request.args.get('sensitive_index', default='')
-    machiavellianism_index = request.args.get('machiavellianism_index', default=0)
-    narcissism_index = request.args.get('narcissism_index', default=0)
-    psychopathy_index = request.args.get('psychopathy_index', default=0)
-    extroversion_index = request.args.get('extroversion_index', default=0)
-    nervousness_index = request.args.get('nervousness_index', default=0)
-    openn_index = request.args.get('openn_index', default=0)
-    agreeableness_index = request.args.get('agreeableness_index', default=0)
-    conscientiousness_index = request.args.get('conscientiousness_index', default=0)
-
-    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
+    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
 
     return json.dumps(result, ensure_ascii=False)
+    # return jsonify(1)
 
 
 # 根据uid删除一条记录
@@ -52,11 +72,25 @@ def delete_user():
     return jsonify(1)
 
 
+@mod.route('/basic_info/', methods=['POST'])
+def basic_info():
+    uid = request.args.get('person_id')
+    result = get_basic_info(uid)
+    return json.dumps(result, ensure_ascii=False)
+
+
 # 活动特征
 @mod.route('/person_activity', methods=['POST', 'GET'])
 def user_activity():
     uid = request.args.get('person_id')
     result = get_user_activity(uid)
+    return json.dumps(result, ensure_ascii=False)
+
+
+@mod.route('/preference_identity', methods=['POST', 'GET'])
+def preference_identity():
+    uid = request.args.get('person_id')
+    result = get_preference_identity(uid)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -144,24 +178,24 @@ def user_personality():
 #     return json.dumps(activity_dict, ensure_ascii=False)
 
 
-@mod.route('/perference_identity', methods=['POST', 'GET'])
-def perference_identity():
-    uid = request.args.get('person_id')
-    user_inf = user_preference(uid)
-    node = []
-    link = []
-    user_pre_identity = {}
-    main_domain = user_inf["_source"]["main_domain"]
-    for key, value in user_inf["_source"]["domain"].items():
-        link_dict = {}
-        link_dict["source"] = main_domain
-        link_dict["target"] = value
-        link_dict["relation"] = key
-        node.append(value)
-        link.append(link_dict)
-    user_pre_identity["node"] = node
-    user_pre_identity["link"] = link
-    return json.dumps(user_pre_identity, ensure_ascii=False)
+# @mod.route('/perference_identity', methods=['POST', 'GET'])
+# def perference_identity():
+#     uid = request.args.get('person_id')
+#     user_inf = user_preference(uid)
+#     node = []
+#     link = []
+#     user_pre_identity = {}
+#     main_domain = user_inf["_source"]["main_domain"]
+#     for key, value in user_inf["_source"]["domain"].items():
+#         link_dict = {}
+#         link_dict["source"] = main_domain
+#         link_dict["target"] = value
+#         link_dict["relation"] = key
+#         node.append(value)
+#         link.append(link_dict)
+#     user_pre_identity["node"] = node
+#     user_pre_identity["link"] = link
+#     return json.dumps(user_pre_identity, ensure_ascii=False)
 
 
 @mod.route('/perference_topic', methods=['POST', 'GET'])
