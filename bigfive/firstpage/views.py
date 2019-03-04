@@ -66,14 +66,14 @@ def dark_group_info():
     return json.dumps(result, ensure_ascii=False)
     
 @mod.route('/bigfive_person_info/', methods=['GET', 'POST'])
-def dark_group_info():
+def bigfive_person_info():
 
     result = bigfive_personality()
 
     return json.dumps(result, ensure_ascii=False)
 
 @mod.route('/bigfive_group_info/', methods=['GET', 'POST'])
-def dark_group_info():
+def bigfive_group_info():
 
     result = bigfive_group()
 
