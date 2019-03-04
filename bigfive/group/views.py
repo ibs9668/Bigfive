@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint ,request,jsonify
+from flask import Blueprint ,request,jsonify,Response
 
 import json
 import time
@@ -7,7 +7,7 @@ from datetime import datetime,timedelta
 from collections import Counter
 
 from bigfive.group.utils import *
-
+import os
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 
@@ -19,7 +19,7 @@ def test():
 
 @mod.route('/create_group/',methods=['POST'])
 def cgroup():
-    """创建群体"""
+    """创建群体计算任务"""
     # data = request.form.to_dict()
     try:
         data = request.json
@@ -31,7 +31,7 @@ def cgroup():
 
 @mod.route('/delete_group/',methods=['POST'])
 def dgroup():
-    """删除群体"""
+    """删除群体任务/群体记录"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
     index = request.json.get('index')
@@ -43,7 +43,7 @@ def dgroup():
 
 @mod.route('/search_group/',methods=['GET'])
 def sgroup():
-    """搜索群体"""
+    """搜索群体任务"""
     group_name = request.args.get('gname','')
     remark = request.args.get('remark','')
     create_time = request.args.get('ctime','')
@@ -82,7 +82,7 @@ def basic_info():
 
 ################################ 宋慧慧负责 ###########################
 
-@mod.route('/group_personality',methods=['POST','GET'])##group_id=mingxing_1548746836
+@mod.route('/group_personality/',methods=['POST','GET'])##group_id=mingxing_1548746836
 def group_personality():
     group_id = request.args.get("group_id")
     query_body = {
@@ -114,7 +114,7 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity',methods=['POST','GET'])
+@mod.route('/group_activity/',methods=['POST','GET'])
 def group_activity():
     group_id = request.args.get("group_id")
     result = get_group_activity(group_id)
@@ -123,14 +123,12 @@ def group_activity():
 
 ################################ 李宛星负责 ###########################
 
-@mod.route('/perference_identity', methods=['POST','GET'])
+@mod.route('/perference_identity/', methods=['POST','GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
-    group_inf = group_preference(group_id)
+    result = group_preference(group_id)
 
-    identity = group_inf["_source"]["domain"]
-
-    return json.dumps(identity,ensure_ascii=False)
+    return jsonify(result)
 
 
 @mod.route('/perference_topic', methods=['POST','GET'])
@@ -192,3 +190,4 @@ def social_contact():
     map_type = request.args.get("type")
     social_contact = group_social_contact(group_id,map_type)
     return jsonify(social_contact)
+

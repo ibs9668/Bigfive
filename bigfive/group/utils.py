@@ -147,29 +147,16 @@ def get_group_basic_info(gid, remark):
 
 
 def group_preference(group_id):
-    query_body = {
-        "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
-                            "term": {
-                                "group_id": group_id
+    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
+    hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
+    if not hits:
+        return {}
 
-                            }
-                        }
-                        ]
-                    }
-                }
-            }
-        },
-        "size": 1000
-    }
-
-    es_result = es.search(index="group_preference", doc_type="text", body=query_body)[
-        "hits"]["hits"][0]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+    item = hits[0]['_source']
+    domain_static = {one['domain']:one['count'] for one in item['domain_static'] if one['count']}
+    topic_static = {one['topic']:one['count'] for one in item['topic_static'] if one['count']}
+    result = {'domain_static':domain_static,'topic_static':topic_static}
+    return result
 
 
 def group_influence(group_id):
@@ -323,10 +310,9 @@ if __name__ == '__main__':
     print(r)
 
 def get_group_activity(group_id):
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1000,"sort":[],"aggs":{}}
+    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_activity',doc_type='text',body=query)['hits']['hits']
     if not hits:
         return {}
-    for hit in hits:
-        domain_static = hit
 
+    return hits
