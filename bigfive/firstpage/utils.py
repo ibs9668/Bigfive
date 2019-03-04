@@ -108,7 +108,286 @@ def get_statistics_user_info(timestamp):
 
     return result
 
+def dark_personality():
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                {
+                    "range": {
+                        "influence_index": {
+                        "gt": "50"
+                        }
+                    }
+                }
+            ]
+         }
+    },"size":15000
+    }
+    if es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+        es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+        user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
+        final_high_dict = dict()
+        final_low_dict = dict()
+        for i in ["machiavellianism_index","narcissism_index","psychopathy_index"]:
+            sorted_high  = sorted(user_list,key=operator.itemgetter(i),reverse=True)[:5]
+            sorted_low = sorted(user_list,key=operator.itemgetter(i),reverse=False)[:5]
+            high_index_list = []
+            low_index_list = []
+            high_dict = dict()
+            low_dict = dict()
+
+            for j in range(len(sorted_high)):
+                a_dict = dict()
+                a_dict["name"] = sorted_high[j]["username"]
+
+                query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
+                photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_high[j][i]
+
+                high_index_list.append(a_dict)
+
+
+            for m in range(len(sorted_low)):
+                a_dict = dict()
+                a_dict["name"] = sorted_low[m]["username"]
+
+                query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
+                photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_low[m][i]
+                low_index_list.append(a_dict)
+
+            final_high_dict[i] = high_index_list
+            final_low_dict[i] = low_index_list
+
+        result_dict = dict()
+        result_dict["high"] = final_high_dict
+        result_dict["low"] = final_low_dict
+
+        return result_dict
+
+def dark_group():
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                {
+                    "range": {
+                        "influence_index": {
+                        "gt": "50"
+                        }
+                    }
+                }
+            ]
+         }
+    },"size":15000
+    }
+    if es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+        es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+        user_list = [es_result[i]["_source"] for i in range(len(es_result))]
+
+        final_high_dict = dict()
+        final_low_dict = dict()
+        for i in ["machiavellianism_index","narcissism_index","psychopathy_index"]:
+            sorted_high  = sorted(user_list,key=operator.itemgetter(i),reverse=True)[:5]
+            sorted_low = sorted(user_list,key=operator.itemgetter(i),reverse=False)[:5]
+            high_index_list = []
+            low_index_list = []
+            high_dict = dict()
+            low_dict = dict()
+
+            for j in range(len(sorted_high)):
+                a_dict = dict()
+                a_dict["name"] = sorted_high[j]["group_name"]
+
+                # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
+                # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                # a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_high[j][i]
+
+                high_index_list.append(a_dict)
+
+
+            for m in range(len(sorted_low)):
+                a_dict = dict()
+                a_dict["name"] = sorted_low[m]["group_name"]
+
+                # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
+                # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                # a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_low[m][i]
+                low_index_list.append(a_dict)
+
+            final_high_dict[i] = high_index_list
+            final_low_dict[i] = low_index_list
+
+        result_dict = dict()
+        result_dict["high"] = final_high_dict
+        result_dict["low"] = final_low_dict
+
+        return result_dict
+
+def bigfive_personality():
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                {
+                    "range": {
+                        "influence_index": {
+                        "gt": "50"
+                        }
+                    }
+                }
+            ]
+         }
+    },"size":15000
+    }
+    if es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+        es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+        user_list = [es_result[i]["_source"] for i in range(len(es_result))]
+
+        final_high_dict = dict()
+        final_low_dict = dict()
+        for i in ["extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]:
+            sorted_high  = sorted(user_list,key=operator.itemgetter(i),reverse=True)[:5]
+            sorted_low = sorted(user_list,key=operator.itemgetter(i),reverse=False)[:5]
+            high_index_list = []
+            low_index_list = []
+            high_dict = dict()
+            low_dict = dict()
+
+            for j in range(len(sorted_high)):
+                a_dict = dict()
+                a_dict["name"] = sorted_high[j]["username"]
+                a_dict["extroversion_index"] = sorted_high[j]["extroversion_index"]
+                a_dict["nervousness_index"] = sorted_high[j]["nervousness_index"]
+                a_dict["openn_index"] = sorted_high[j]["openn_index"]
+                a_dict["agreeableness_index"] = sorted_high[j]["agreeableness_index"]
+                a_dict["conscientiousness_index"] = sorted_high[j]["conscientiousness_index"]
+
+
+                query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
+                photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_high[j][i]
+
+                high_index_list.append(a_dict)
+
+
+            for m in range(len(sorted_low)):
+                a_dict = dict()
+                a_dict["name"] = sorted_low[m]["username"]
+                a_dict["extroversion_index"] = sorted_low[m]["extroversion_index"]
+                a_dict["nervousness_index"] = sorted_low[m]["nervousness_index"]
+                a_dict["openn_index"] = sorted_low[m]["openn_index"]
+                a_dict["agreeableness_index"] = sorted_low[m]["agreeableness_index"]
+                a_dict["conscientiousness_index"] = sorted_low[m]["conscientiousness_index"]
+
+                query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
+                photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_low[m][i]
+                low_index_list.append(a_dict)
+
+            final_high_dict[i] = high_index_list
+            final_low_dict[i] = low_index_list
+
+        result_dict = dict()
+        result_dict["high"] = final_high_dict
+        result_dict["low"] = final_low_dict
+
+        return result_dict
+
+def bigfive_group():
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                {
+                    "range": {
+                        "influence_index": {
+                        "gt": "50"
+                        }
+                    }
+                }
+            ]
+         }
+    },"size":15000
+    }
+    if es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+        es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+        user_list = [es_result[i]["_source"] for i in range(len(es_result))]
+
+        final_high_dict = dict()
+        final_low_dict = dict()
+        for i in ["extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]:
+            sorted_high  = sorted(user_list,key=operator.itemgetter(i),reverse=True)[:5]
+            sorted_low = sorted(user_list,key=operator.itemgetter(i),reverse=False)[:5]
+            high_index_list = []
+            low_index_list = []
+            high_dict = dict()
+            low_dict = dict()
+
+            for j in range(len(sorted_high)):
+                a_dict = dict()
+                a_dict["name"] = sorted_high[j]["group_name"]
+                a_dict["extroversion_index"] = sorted_high[j]["extroversion_index"]
+                a_dict["nervousness_index"] = sorted_high[j]["nervousness_index"]
+                a_dict["openn_index"] = sorted_high[j]["openn_index"]
+                a_dict["agreeableness_index"] = sorted_high[j]["agreeableness_index"]
+                a_dict["conscientiousness_index"] = sorted_high[j]["conscientiousness_index"]
+
+                # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
+                # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                # a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_high[j][i]
+
+                high_index_list.append(a_dict)
+
+
+            for m in range(len(sorted_low)):
+                a_dict = dict()
+                a_dict["name"] = sorted_low[m]["group_name"]
+                a_dict["extroversion_index"] = sorted_low[m]["extroversion_index"]
+                a_dict["nervousness_index"] = sorted_low[m]["nervousness_index"]
+                a_dict["openn_index"] = sorted_low[m]["openn_index"]
+                a_dict["agreeableness_index"] = sorted_low[m]["agreeableness_index"]
+                a_dict["conscientiousness_index"] = sorted_low[m]["conscientiousness_index"]
+
+                # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
+                # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
+
+                # a_dict["photo_url"] = photo_url
+
+                a_dict[i] = sorted_low[m][i]
+                low_index_list.append(a_dict)
+
+            final_high_dict[i] = high_index_list
+            final_low_dict[i] = low_index_list
+
+        result_dict = dict()
+        result_dict["high"] = final_high_dict
+        result_dict["low"] = final_low_dict
+
+        return result_dict
     
 
 
