@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-from bigfive.config import es
+from bigfive.config import es,USER_RANKING,USER_INFORMATION,GROUP_INFORMATION,GROUP_RANKING
 
 
 
