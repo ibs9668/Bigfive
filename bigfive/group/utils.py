@@ -299,20 +299,17 @@ def group_social_contact(group_id, map_type):
 
 
 
-if __name__ == '__main__':
-    data = {"remark": "某市政府多人涉嫌贪污，目前正接受调查",
-            "create_condition": {"openn_index": 1, "sensitive_index": 3, "extroversion_index": 3, "liveness_index": 2,
-                                 "conscientiousness_index": 3, "compactness_index": 4,
-                                 "importance_index": 3, "event": "gangdu", "psychopathy_index": 3,
-                                 "narcissism_index": 4, "machiavellianism_index": 3, "agreeableness_index": 5,
-                                 "nervousness_index": 1}, "group_name": "政府"}
-    r = create_group_task(data)
-    print(r)
-
 def get_group_activity(group_id):
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_activity',doc_type='text',body=query)['hits']['hits']
     if not hits:
         return {}
-
-    return hits
+    result = {'one':[],'two':[],'three':[],'four':[]}
+    item = hits[0]['_source']
+    activity_direction = sorted(item['activity_direction'],key=lambda x:x['count'],reverse=True)[:5]
+    for i in activity_direction:
+        start_end = i['geo2geo'].split('&')
+        result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
+    result['two'] = sorted(item['main_start_geo'],key=lambda x:x['count'],reverse=True)[:5]
+    result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
+    return result
