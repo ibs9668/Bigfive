@@ -151,7 +151,13 @@ def delete_by_id(index, doc_type, id):
 
 
 def get_basic_info(uid):
-    query_basic_info = {}
+    political_bias_dic = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
+    result = es.get(index='user_information', doc_type='text', id=uid)['_source']
+    star_result = es.get(index='user_ranking', doc_type='text', id=uid)['_source']
+    result['political_bias'] = political_bias_dic[result['political_bias']]
+    result['liveness_star'] = star_result['liveness_star']
+    return result
+
 
 
 def user_emotion(uid, interval):
@@ -214,8 +220,10 @@ def user_emotion(uid, interval):
 
 
 def get_user_activity(uid):
-    today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    today = "2016-11-21"
+    # today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
+    # a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
     result = {}
 
     # ip一天排名
@@ -230,8 +238,8 @@ def get_user_activity(uid):
                     },
                     {
                         "term": {
-                            "date": "2016-11-21"
-                            # "date": str(today)
+                            # "date": "2016-11-21"
+                            "date": str(today)
                         }
                     }
                 ]
@@ -249,8 +257,12 @@ def get_user_activity(uid):
     one_day_result_list = []
     one_day_rank = 1
     one_day_result = es.search(index='user_activity', doc_type='text', body=one_day_query)['hits']['hits']
+    geo_item = {}
     for one_day_data in one_day_result:
+
+
         item = {'rank': one_day_rank, 'count': one_day_data['_source']['count'], 'ip': one_day_data['_source']['ip']}
+
         one_day_result_list.append(item)
         one_day_rank += 1
 
@@ -267,10 +279,10 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                "gte": "2016-11-14",
-                                # "gte": a_week_ago,
-                                "lte": "2016-11-21"
-                                # "lte": today
+                                # "gte": "2016-11-14",
+                                "gte": a_week_ago,
+                                # "lte": "2016-11-21"
+                                "lte": today
                             }
                         }
                     }
@@ -465,9 +477,19 @@ def get_preference_identity(uid):
 
     analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
     result['topic_result'] = topic_result
-    result['keyword'] = analysis_result['keywords']
-    result['hastags'] = analysis_result['hastags']
-    result['sensitive_words'] = analysis_result['sensitive_words']
+
+    result['keywords'] = []
+    for i in analysis_result['keywords']:
+        result['keywords'].append({i['keyword']: i['count']})
+
+    result['hastags'] = []
+    for i in analysis_result['hastags']:
+        result['hastags'].append({i['hastag']: i['count']})
+
+    result['sensitive_words'] = []
+    for i in analysis_result['sensitive_words']:
+        result['sensitive_word'].append({i['sensitive_word']: i['count']})
+
     result['domain_dict'] = domain_dict
 
     return result

@@ -72,7 +72,8 @@ def delete_user():
     return jsonify(1)
 
 
-@mod.route('/basic_info/', methods=['POST'])
+# 用户基本信息
+@mod.route('/basic_info/', methods=['GET', 'POST'])
 def basic_info():
     uid = request.args.get('person_id')
     result = get_basic_info(uid)
