@@ -452,13 +452,13 @@ def get_preference_identity(uid):
     topic_result[topic_dict[l[4][0].replace('topic_', '')]] = int(l[4][1] * 100)
 
     print(preference_and_topic_data)
-    node_main = {'name': labels_dict[preference_and_topic_data['main_domain']]}
+    node_main = {'name': labels_dict[preference_and_topic_data['main_domain']], 'id': preference_and_topic_data['uid']}
     node_followers = {'name': labels_dict[preference_and_topic_data['domain_followers']]}
     node_verified = {'name': labels_dict[preference_and_topic_data['domain_verified']]}
     node_weibo = {'name': labels_dict[preference_and_topic_data['domain_weibo']]}
-    m_to_f_link = {'source': node_main, 'target': node_followers}
-    m_to_v_link = {'source': node_main, 'target': node_verified}
-    m_to_w_link = {'source': node_main, 'target': node_weibo}
+    m_to_f_link = {'source': node_main, 'target': node_followers, 'relation': '根据转发结构分类'}
+    m_to_v_link = {'source': node_main, 'target': node_verified, 'relation': '根据注册信息分类'}
+    m_to_w_link = {'source': node_main, 'target': node_weibo, 'relation': '根据发帖内容分类'}
     node = [node_main, node_followers, node_verified, node_weibo]
     link = [m_to_f_link, m_to_v_link, m_to_w_link]
     domain_dict = {'node': node, 'link': link}
@@ -496,7 +496,7 @@ def get_influence_feature(uid):
         "size": 1000
     }
     result_list = []
-    es_result = scan(client=es, index='user_influence', doc_type='text', query=query)
+    es_result = es.search(index='user_influence', doc_type='text', body=query)['hits']['hits']
     for data in es_result:
         item = {}
         item['sensitivity'] = data['_source']['sensitivity']

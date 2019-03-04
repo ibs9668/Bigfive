@@ -87,6 +87,7 @@ def user_activity():
     return json.dumps(result, ensure_ascii=False)
 
 
+# 偏好特征
 @mod.route('/preference_identity', methods=['POST', 'GET'])
 def preference_identity():
     uid = request.args.get('person_id')
