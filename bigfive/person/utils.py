@@ -25,15 +25,19 @@ def index_to_score_rank(index):
     return index_to_score_rank_dict[int(index)]
 
 
-def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index,
+def portrait_table(keyword, page, size, order_dict, sensitive_index, machiavellianism_index,
                    narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index,
                    agreeableness_index, conscientiousness_index):
     page = page if page else '1'
     size = size if size else '10'
-    if order_name == 'name':
-        order_name = 'username'
-    order_name = order_name if order_name else 'username'
-    order_type = order_type if order_type else 'asc'
+    sort_list = []
+    for order_name, order_type in order_dict.items():
+        sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
+    # if order_name == 'name':
+    #     order_name = 'username'
+    # order_name = order_name if order_name else 'username'
+    # order_type = order_type if order_type else 'asc'
+
     machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
     narcissism_index = narcissism_index if narcissism_index else 0
     psychopathy_index = psychopathy_index if psychopathy_index else 0
@@ -88,8 +92,10 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
-    query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
+    query['sort'] = sort_list
+    # query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
     # query['sort'] = [{order_name: {"order": order_type}}]
+    print(query)
 
     hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
 
@@ -409,6 +415,7 @@ def get_preference_identity(uid):
     }
 
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
     preference_item["topic_violence"] = preference_and_topic_data["topic_violence"]
     preference_item["topic_sports"] = preference_and_topic_data["topic_sports"]
