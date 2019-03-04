@@ -22,15 +22,12 @@ index_info = {
     },
     "mappings": {
         "text": { #索引类型
-            # "_id":{
-            # "path":"group_id"
-            # },
             "properties": {
-                 "group_id":{ #用户uid
+                 "group_id":{ #群体id
                    "index":"not_analyzed",
                     "type" : "string"
                 },
-                "group_name":{#昵称
+                "group_name":{#群体名称
                     "analyzer":"ik_max_word",
                     "type" : "string"
                 },
@@ -86,7 +83,26 @@ index_info = {
                     "index":"not_analyzed",
                     "type" : "long"
                 },
-  
+                "liveness_star":{#活跃度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "importance_star":{#重要度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "sensitive_star":{#敏感度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "influence_star":{#影响力星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "compactness_star":{#紧密度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
             }
         }
     }

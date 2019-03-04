@@ -23,8 +23,11 @@ index_info = {
       "text":{
           "properties":{
               "timestamp":{#记录时间
-                      "type" : "long",
-                      "index" : "not_analyzed"
+                      "type" : "long"
+              },
+              "date":{#记录时间
+                      "format": "dateOptionalTime",
+                      "type" : "date"
               },
               "uid":{                             
                   "type":"string",
@@ -45,8 +48,8 @@ index_info = {
                     
               }
               ,
-              "warning":{#是否达到预警值
-                  "type":"boolean"
+              "importance":{#重要度
+                  "type":"double"
                     
               }
                 

@@ -213,23 +213,9 @@ def influence_feature():
 @mod.route('/emotion_feature', methods=['POST','GET'])
 def emotion_feature():
     group_id=request.args.get('group_id')
-    group_inf = group_emotion(group_id)
-    nuetral = []
-    negtive = []
-    positive =[]
-    time_list = []
-    dict_emo = {}
-    for i ,_ in enumerate(group_inf):
-        time_list.append(_["_source"]["timestamp"])
-        nuetral.append(_["_source"]["nuetral"])
-        negtive.append(_["_source"]["negtive"])
-        positive.append(_["_source"]["positive"])
-    dict_emo["time"] = time_list
-    dict_emo["nuetral_line"] = nuetral
-    dict_emo["negtive_line"] = negtive
-    dict_emo["positive_line"] = positive
-
-    return json.dumps(dict_emo,ensure_ascii=False)
+    interval = request.args.get('type','day')
+    result = group_emotion(group_id,interval)
+    return jsonify(result)
 
 
 @mod.route('/social_contact', methods=['POST','GET'])
@@ -237,4 +223,4 @@ def social_contact():
     group_id=request.args.get('group_id')
     map_type = request.args.get("type")
     social_contact = group_social_contact(group_id,map_type)
-    return json.dumps(social_contact,ensure_ascii=False)
+    return jsonify(social_contact)

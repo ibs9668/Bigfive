@@ -17,6 +17,10 @@ index_info = {
                 "timestamp":{#记录时间
                     "type" : "long"
                 },
+                "date":{
+                    "format": "dateOptionalTime",
+                    "type": "date"
+                }，
                 "uid":{                             
                     "type":"string",
                     "index":"not_analyzed"
