@@ -25,9 +25,9 @@ def index_to_score_rank(index):
     return index_to_score_rank_dict[int(index)]
 
 
-def portrait_table(keyword, page, size, order_dict, sensitive_index, machiavellianism_index,
+def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index,
                    narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index,
-                   agreeableness_index, conscientiousness_index):
+                   agreeableness_index, conscientiousness_index, order_dict):
     page = page if page else '1'
     size = size if size else '10'
     sort_list = []
@@ -35,8 +35,9 @@ def portrait_table(keyword, page, size, order_dict, sensitive_index, machiavelli
         sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append({order_name: {"order": "asc"}})
     # if order_name == 'name':
     #     order_name = 'username'
-    # order_name = order_name if order_name else 'username'
-    # order_type = order_type if order_type else 'asc'
+    order_name = order_name if order_name else 'username'
+    order_type = order_type if order_type else 'asc'
+    sort_list.append({order_name: {"order": order_type}})
 
     machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
     narcissism_index = narcissism_index if narcissism_index else 0
