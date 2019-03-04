@@ -51,3 +51,30 @@ def statistics_user_info():
 
     return json.dumps(result, ensure_ascii=False)
 
+@mod.route('/dark_user_info/', methods=['GET', 'POST'])
+def dark_user_info():
+
+    result = dark_personality()
+
+    return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/dark_group_info/', methods=['GET', 'POST'])
+def dark_group_info():
+
+    result = dark_group()
+
+    return json.dumps(result, ensure_ascii=False)
+    
+@mod.route('/bigfive_person_info/', methods=['GET', 'POST'])
+def bigfive_person_info():
+
+    result = bigfive_personality()
+
+    return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/bigfive_group_info/', methods=['GET', 'POST'])
+def bigfive_group_info():
+
+    result = bigfive_group()
+
+    return json.dumps(result, ensure_ascii=False)

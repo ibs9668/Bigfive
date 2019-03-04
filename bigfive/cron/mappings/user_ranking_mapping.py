@@ -24,11 +24,11 @@ index_info = {
         "text": { #索引类型
             "properties": {
                  "uid":{ #用户uid
-                   "index":"not_analyzed",
+                    "index":"not_analyzed",
                     "type" : "string"
                 },
                 "username":{#昵称
-                    "analyzer":"ik_max_word",
+                    "index":"not_analyzed",
                     "type" : "string"
                 },
                 "influence_index":{#影响力指数

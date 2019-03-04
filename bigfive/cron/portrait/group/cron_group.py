@@ -106,10 +106,10 @@ def group_activity(group_id, uid_list, date, days):
     }
     es.index(index=GROUP_ACTIVITY, doc_type='text', id=str(group_id)+'_'+str(date_end_ts), body=dic)
 
-#计算群组的重要度、活跃度、敏感度与影响力，利用群组内用户对应指标在全库中排名的均值计算
+#计算群组的重要度、活跃度、敏感度、影响力与紧密度，利用群组内用户对应指标在全库中排名的均值计算
 #输入：群组id
-#输出：将该群组的四项属性以分数与星级的形式存入数据库
-def group_attribute(uid_list, date):
+#输出：将该群组的五项属性以分数与星级的形式存入数据库
+def group_attribute(group_id, uid_list, date):
     date_ts = date2ts(date)
     iter_count = 0
     group_all_user_count = len(uid_list)
@@ -118,6 +118,7 @@ def group_attribute(uid_list, date):
     activeness_list = []
     sensitivity_list = []
     while iter_count < group_all_user_count:   #一下获取多个用户以减少查询次数
+        print('iter_num: %d' % iter_count)
         iter_uid_list = uid_list[iter_count: iter_count + GROUP_ITER_COUNT]
         iter_uid_list = [uid + '_' + str(date_ts) for uid in iter_uid_list]
         try:
@@ -195,7 +196,27 @@ def group_attribute(uid_list, date):
     else:
         sensitivity_star = 3
 
-    return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
+    density, density_star = group_density_attribute(uid_list, date, 15)
+
+    dic = {
+        'timestamp':date_ts,
+        'date':date,
+        'group_id':group_id,
+        'activity':activity,
+        'sensitivity':sensitivity,
+        'influence':influence,
+        'importance':importance,
+        'density':density,
+        'activeness_star':activeness_star,
+        'influence_star':influence_star,
+        'importance_star':importance_star,
+        'sensitivity_star':sensitivity_star,
+        'density_star':density_star
+    }
+
+    es.index(index=GROUP_INFLUENCE,doc_type='text',id=group_id + '_' + str(date_ts),body=dic)
+
+    # return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
 
 
 ###获得对应的数值在用户列表中的排名
@@ -227,7 +248,7 @@ def get_index_rank(attr_value, attr_name, timestamp):
 
 #计算群组的紧密性，根据转发评论用户之间的边计算
 #输入：群组id
-#输出：将该群组的四项属性以星级的形式存入数据库
+#输出：紧密性、紧密性星级
 def group_density_attribute(uid_list, date, days):
     date_end_ts = date2ts(date)
     date_start_ts = date_end_ts - 24*3600*days
@@ -317,17 +338,6 @@ def filter_union_dict(objs, filter_uid_list, mark):
         for _key in _in_keys:
             _in_total[_key] = sum([int(obj.get(_key,0)) for obj in objs])
         return _in_total
-
-def group_personality(uid_list):
-    machiavellianism_index = int(random.random() * 100)
-    narcissism_index = int(random.random() * 100)
-    psychopathy_index = int(random.random() * 100)
-    extroversion_index = int(random.random() * 100)
-    nervousness_index = int(random.random() * 100)
-    openn_index = int(random.random() * 100)
-    agreeableness_index = int(random.random() * 100)
-    conscientiousness_index = int(random.random() * 100)
-    return machiavellianism_index,narcissism_index,psychopathy_index,extroversion_index,nervousness_index,openn_index,agreeableness_index,conscientiousness_index
 
 if __name__=='__main__':
     # group_activity('minggelihai_1551358645','2016-11-21',15)
