@@ -52,8 +52,10 @@ def return_portrait_table():
     openn_index = request.json.get('openn_index')
     agreeableness_index = request.json.get('agreeableness_index')
     conscientiousness_index = request.json.get('conscientiousness_index')
+    order_name = request.json.get('order_name')
+    order_type = request.json.get('order_type')
 
-    result = portrait_table(keyword, page, size, order_dict, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index)
+    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
 
     return json.dumps(result, ensure_ascii=False)
 
