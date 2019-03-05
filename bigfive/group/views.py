@@ -90,10 +90,10 @@ def delete_ranking():
 
 @mod.route('/basic_info/', methods=['GET'])
 def basic_info():
-    gid = request.args.get('gid')
+    gid = request.args.get('group_id')
     remark = request.args.get('remark', '')
     result = get_group_basic_info(gid, remark)
-    return json.dumps(result, ensure_ascii=False)
+    return jsonify(result)
 
 
 
@@ -211,3 +211,11 @@ def social_contact():
         return jsonify({})
     return jsonify(social_contact)
 
+
+@mod.route('/group_image_arrange', methods=['POST','GET'])
+def group_image_arrange():
+    group_id = request.args.get('id')
+    source_path = request.args.get('source_path')
+    target_path = request.args.get('target_path')
+    image_arrange(group_id, source_path, target_path)
+    return jsonify(1)
