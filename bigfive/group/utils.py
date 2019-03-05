@@ -5,7 +5,7 @@ from bigfive.time_utils import *
 from xpinyin import Pinyin
 
 from bigfive.config import es
-
+from bigfive.cache import cache
 
 def index_to_score_rank(index):
     index_to_score_rank_dict = {
@@ -299,26 +299,18 @@ def group_influence(group_id):
         "size": 1000
     }
 
-    es_result = es.search(index="group_influence", doc_type="text", body=query_body)[
-        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
-    dict_inf = {}
-    time_list = []
-    activity = []
-    sensitivity = []
-    influence = []
-    warning = []
-    for i,_ in enumerate(es_result):
-        time_list.append(_["_source"]["timestamp"])
-        activity.append(_["_source"]["activity"])
-        sensitivity.append(_["_source"]["sensitivity"])
-        influence.append(_["_source"]["influence"])
-        # warning.append(_["_source"]["warning"])
-    dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
-    return dict_inf
+    es_result = es.search(index="group_influence", doc_type="text", body=query_body)["hits"]["hits"]
+    result_list = []
+    for data in es_result:
+        item = {}
+        item['sensitivity'] = data['_source']['sensitivity']
+        item['influence'] = data['_source']['influence']
+        item['activity'] = data['_source']['activity']
+        item['importance'] = data['_source']['importance']
+        item['timestamp'] = data['_source']['timestamp']
+        item['date'] = time.strftime('%Y-%m-%d', time.localtime(item['timestamp']))
+        result_list.append(item)
+    return result_list
 
 
 def group_emotion(group_id, interval):
@@ -380,7 +372,7 @@ def group_emotion(group_id, interval):
         result["nuetral_line"].append(bucket['nuetral']['sum'])
     return result
 
-
+@cache.memoize(60)
 def group_social_contact(group_id, map_type):
     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
         '_source']['userlist']

@@ -7,7 +7,7 @@ import time
 from elasticsearch.helpers import scan
 
 from bigfive.config import es, labels_dict, topic_dict
-
+from bigfive.cache import cache
 
 def judge_uid_or_nickname(keyword):
     return True if re.findall('^\d+$', keyword) else False
@@ -592,7 +592,7 @@ def get_influence_feature(uid):
 #
 #     return es_result
 
-
+@cache.memoize(60)
 def user_social_contact(uid, map_type):
     # map_type 1 2 3 4 转发 被转发 评论 被评论
     # message_type 1 原创 2 评论 3转发
