@@ -136,7 +136,6 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
-
     if machiavellianism_index:
         query['query']['bool']['must'].append({"range": {
             "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
@@ -439,9 +438,16 @@ def get_group_activity(group_id):
     result = {'one':[],'two':[],'three':[],'four':[]}
     item = hits[0]['_source']
     activity_direction = sorted(item['activity_direction'],key=lambda x:x['count'],reverse=True)[:5]
+    for i in activity_direction:
+        start_end = i['geo2geo'].split('&')
+        result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
+
+        # s_end
+
     start_geo_item = {}
     end_geo_item = {}
-    for i in activity_direction:
+    route_list = []
+    for i in sorted(item['activity_direction'],key=lambda x:x['count'],reverse=True):
         try:
             if i['geo2geo'].split('&')[0].split(' ')[1] == '其他' or i['geo2geo'].split('&')[1].split(' ')[1] == '其他':
                 continue
@@ -451,15 +457,17 @@ def get_group_activity(group_id):
         start_geo_item[i['geo2geo'].split('&')[0].split(' ')[1]] += i['count']
         end_geo_item.setdefault(i['geo2geo'].split('&')[1].split(' ')[1], 0)
         end_geo_item[i['geo2geo'].split('&')[1].split(' ')[1]] += i['count']
+        route_dict = {'s': i['geo2geo'].split('&')[0].split(' ')[1], 'e': i['geo2geo'].split('&')[1].split(' ')[1]}
+        if route_dict not in route_list:
+            route_list.append(route_dict)
 
-        start_end = i['geo2geo'].split('&')
-        result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
-
-        # s_end
-
-
-    print('start_geo_item', start_geo_item)
-    print('end_geo_item', end_geo_item)
+    geo_item = {}
+    for ks,vs in start_geo_item.items():
+        for ke, ve in end_geo_item.items():
+            if ks == ke:
+                geo_item[ks] = vs + ve
+                break
     result['two'] = sorted(item['main_start_geo'],key=lambda x:x['count'],reverse=True)[:5]
     result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
+    result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result
