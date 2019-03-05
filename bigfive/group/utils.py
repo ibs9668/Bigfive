@@ -1,8 +1,10 @@
 # coding=utf-8
 import json
+import os
 
 from bigfive.time_utils import *
 from xpinyin import Pinyin
+import PIL.Image as Image
 
 from bigfive.config import es
 
@@ -232,7 +234,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
 
 
 def get_group_basic_info(gid, remark):
-    group_ranking_query = {
+    query = {
         "query": {
             "bool": {
                 "must": [
@@ -246,8 +248,9 @@ def get_group_basic_info(gid, remark):
         }
     }
     group_item = {}
-    result = es.get(index='group_information', id=gid, doc_type='text')['_source']
-    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=group_ranking_query)['hits']['hits'][0]['_source']
+    print(query)
+    result = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=query)['hits']['hits'][0]['_source']
     print(group_ranking_result)
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
     group_item['narcissism'] = group_ranking_result['narcissism_index']
@@ -471,3 +474,73 @@ def get_group_activity(group_id):
     result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
     result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result
+
+
+def read_files(direction='.'):
+    file_list = []
+    for file_path, dirs, fs in os.walk(direction):
+        for f in fs:
+            if file_path == '.' or file_path == '.\\.idea' or file_path == '.\\.ipynb_checkpoints':
+                continue
+            file_list.append(os.path.join(file_path, f))
+            pass
+    return file_list
+
+
+def image_arrange(group_id, source_path, target_path):
+    query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}]}}}
+    user_list = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']['userlist'][0:9]
+    image_names = []
+    for uid in user_list:
+        image_names.append(uid + '.jpg')
+
+    IMAGES_PATH = source_path  # 图片集地址
+    IMAGE_SIZE = 256  # 每张小图片的大小
+    IMAGE_SAVE_PATH = target_path + str(group_id) + '.jpg'  # 图片转换后的地址
+    # image_names = [image.split('\\')[-1] for image in read_files(IMAGES_PATH)]
+
+    # 简单的对于参数的设定和实际图片集的大小进行数量判断
+    if len(image_names) == 1:
+        IMAGE_ROW = 1  # 图片间隔，也就是合并成一张图后，一共有几行
+        IMAGE_COLUMN = 1  # 图片间隔，也就是合并成一张图后，一共有几列
+    elif len(image_names) == 2:
+        IMAGE_ROW = 1
+        IMAGE_COLUMN = 1
+        image_names = image_names[0:1]
+    elif len(image_names) == 3:
+        IMAGE_ROW = 1
+        IMAGE_COLUMN = 1
+        image_names = image_names[0:1]
+    elif len(image_names) == 4:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+    elif len(image_names) == 5:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 6:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 7:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 8:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    else:
+        IMAGE_ROW = 3
+        IMAGE_COLUMN = 3
+        image_names = image_names[0:9]
+
+    to_image = Image.new('RGB', (IMAGE_COLUMN * IMAGE_SIZE, IMAGE_ROW * IMAGE_SIZE))  # 创建一个新图
+    # 循环遍历，把每张图片按顺序粘贴到对应位置上
+    for y in range(1, IMAGE_ROW + 1):
+        for x in range(1, IMAGE_COLUMN + 1):
+            print(IMAGES_PATH + image_names[IMAGE_COLUMN * (y - 1) + x - 1])
+            from_image = Image.open(IMAGES_PATH + image_names[IMAGE_COLUMN * (y - 1) + x - 1]).resize(
+                (IMAGE_SIZE, IMAGE_SIZE), Image.ANTIALIAS)
+            to_image.paste(from_image, ((x - 1) * IMAGE_SIZE, (y - 1) * IMAGE_SIZE))
+    to_image.save(IMAGE_SAVE_PATH)  # 保存新图
