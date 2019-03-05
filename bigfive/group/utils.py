@@ -448,6 +448,8 @@ def get_group_activity(group_id):
         try:
             if i['geo2geo'].split('&')[0].split(' ')[1] == '其他' or i['geo2geo'].split('&')[1].split(' ')[1] == '其他':
                 continue
+            if i['geo2geo'].split('&')[0].split(' ')[0] != '中国' or i['geo2geo'].split('&')[1].split(' ')[0] != '中国':
+                continue
         except:
             continue
         start_geo_item.setdefault(re.sub(r'[省市(自治区)]', r'', i['geo2geo'].split('&')[0].split(' ')[1]), 0)
