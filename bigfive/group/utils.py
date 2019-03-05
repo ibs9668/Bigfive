@@ -115,7 +115,15 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
 
-    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
+    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{
+"constant_score": {
+"filter": {
+"missing": {
+"field": "extroversion_label"
+}
+}
+}
+}
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:

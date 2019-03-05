@@ -41,7 +41,7 @@ def dgroup():
         return jsonify(0)
     return jsonify(1)
 
-@mod.route('/search_group',methods=['GET'])
+@mod.route('/search_group/',methods=['GET'])
 def sgroup():
     """搜索群体任务"""
     group_name = request.args.get('gname','')
@@ -56,7 +56,7 @@ def sgroup():
     return jsonify(result)
 
 
-@mod.route('/group_ranking',methods=['POST'])
+@mod.route('/group_ranking/',methods=['POST'])
 def group_ranking():
     """群体排名"""
     parameters = request.form.to_dict()
@@ -79,7 +79,7 @@ def delete_ranking():
     return jsonify(1)
 
 
-@mod.route('/basic_info', methods=['GET'])
+@mod.route('/basic_info/', methods=['GET'])
 def basic_info():
     gid = request.args.get('group_id')
     remark = request.args.get('remark', '')
@@ -122,7 +122,7 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity',methods=['POST','GET'])
+@mod.route('/group_activity/',methods=['POST','GET'])
 def group_activity():
     group_id = request.args.get("group_id")
     result = get_group_activity(group_id)
