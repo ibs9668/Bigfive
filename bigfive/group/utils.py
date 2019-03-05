@@ -1,5 +1,6 @@
 # coding=utf-8
 import json
+import re
 
 from bigfive.time_utils import *
 from xpinyin import Pinyin
@@ -449,11 +450,11 @@ def get_group_activity(group_id):
                 continue
         except:
             continue
-        start_geo_item.setdefault(i['geo2geo'].split('&')[0].split(' ')[1], 0)
-        start_geo_item[i['geo2geo'].split('&')[0].split(' ')[1]] += i['count']
-        end_geo_item.setdefault(i['geo2geo'].split('&')[1].split(' ')[1], 0)
-        end_geo_item[i['geo2geo'].split('&')[1].split(' ')[1]] += i['count']
-        route_dict = {'s': i['geo2geo'].split('&')[0].split(' ')[1], 'e': i['geo2geo'].split('&')[1].split(' ')[1]}
+        start_geo_item.setdefault(re.sub(r'[省市(自治区)]', r'', i['geo2geo'].split('&')[0].split(' ')[1]), 0)
+        start_geo_item[re.sub(r'[省市(自治区)]', '', i['geo2geo'].split('&')[0].split(' ')[1])] += i['count']
+        end_geo_item.setdefault(re.sub(r'[省市(自治区)]', '', i['geo2geo'].split('&')[1].split(' ')[1]), 0)
+        end_geo_item[re.sub(r'[省市(自治区)]', '', i['geo2geo'].split('&')[1].split(' ')[1])] += i['count']
+        route_dict = {'s': re.sub(r'[省市(自治区)]', '', i['geo2geo'].split('&')[0].split(' ')[1]), 'e': re.sub(r'[省市(自治区)]', '', i['geo2geo'].split('&')[1].split(' ')[1])}
         if route_dict not in route_list:
             route_list.append(route_dict)
 

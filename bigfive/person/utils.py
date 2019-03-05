@@ -245,7 +245,7 @@ def user_emotion(uid, interval):
 def get_user_activity(uid):
     today = "2016-11-21"
     # today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-    a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
+    a_week_ago = time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.strptime(today, '%Y-%m-%d'))) - 7 * 24 * 60 * 60))
     # a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
     result = {}
 
@@ -311,8 +311,8 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                "gte": "2016-11-14",
-                                # "gte": a_week_ago,
+                                # "gte": "2016-11-14",
+                                "gte": a_week_ago,
                                 # "lte": "2016-11-21"
                                 "lte": today
                             }
