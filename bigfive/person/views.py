@@ -12,14 +12,14 @@ from bigfive.person.utils import es, user_emotion, user_social_contact, user_pre
 mod = Blueprint('person', __name__, url_prefix='/person')
 
 
-@mod.route('/test/')
+@mod.route('/test')
 def test():
     result = 'This is person!'
     return json.dumps(result, ensure_ascii=False)
 
 
 # portrait表格
-@mod.route('/portrait/', methods=['POST'])
+@mod.route('/portrait', methods=['POST'])
 def return_portrait_table():
     # keyword = request.args.get("keyword", default='').lower()
     # page = request.args.get('page', default='1')
@@ -64,7 +64,7 @@ def return_portrait_table():
 
 
 # 根据uid删除一条记录
-@mod.route('/delete_user/', methods=['POST'])
+@mod.route('/delete_user', methods=['POST'])
 def delete_user():
     uid = request.json.get('person_id')
     result = es.delete(index='user_ranking', doc_type='text', id=uid)
@@ -73,7 +73,7 @@ def delete_user():
 
 
 # 用户基本信息
-@mod.route('/basic_info/', methods=['GET', 'POST'])
+@mod.route('/basic_info', methods=['GET', 'POST'])
 def basic_info():
     uid = request.args.get('person_id')
     result = get_basic_info(uid)

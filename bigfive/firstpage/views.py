@@ -8,13 +8,13 @@ import os
 mod = Blueprint('firstpage',__name__,url_prefix='/firstpage')
 
 
-@mod.route('/test/')
+@mod.route('/test')
 def test():
     result = 'This is firstpage!'
     return json.dumps(result,ensure_ascii=False)
 
 
-@mod.route('/search/', methods=['GET', 'POST'])
+@mod.route('/search', methods=['GET', 'POST'])
 def search():
     keyword = request.args.get('keyword', default='').lower()
 
@@ -43,35 +43,35 @@ def search():
 #     return json.dumps(result, ensure_ascii=False)
 
 
-@mod.route('/statistics_user_info/', methods=['GET', 'POST'])
+@mod.route('/statistics_user_info', methods=['GET', 'POST'])
 def statistics_user_info():
     timestamp = request.args.get('timestamp')
     result = get_statistics_user_info(timestamp)
     return json.dumps(result, ensure_ascii=False)
 
 
-@mod.route('/dark_user_info/', methods=['GET', 'POST'])
+@mod.route('/dark_user_info', methods=['GET', 'POST'])
 def dark_user_info():
 
     result = dark_personality()
 
     return json.dumps(result, ensure_ascii=False)
 
-@mod.route('/dark_group_info/', methods=['GET', 'POST'])
+@mod.route('/dark_group_info', methods=['GET', 'POST'])
 def dark_group_info():
 
     result = dark_group()
 
     return json.dumps(result, ensure_ascii=False)
 
-@mod.route('/bigfive_user_info/', methods=['GET', 'POST'])
+@mod.route('/bigfive_user_info', methods=['GET', 'POST'])
 def bigfive_user_info():
 
     result = bigfive_personality()
 
     return json.dumps(result, ensure_ascii=False)
 
-@mod.route('/bigfive_group_info/', methods=['GET', 'POST'])
+@mod.route('/bigfive_group_info', methods=['GET', 'POST'])
 def bigfive_group_info():
 
     result = bigfive_group()
@@ -79,7 +79,7 @@ def bigfive_group_info():
     return json.dumps(result, ensure_ascii=False)
 
 
-@mod.route('/head/', methods=['GET', 'POST'])
+@mod.route('/head', methods=['GET', 'POST'])
 def head():
     id = request.args.get('id')
     img_path = 'head_images/' + id + '.jpg'
