@@ -430,7 +430,8 @@ def get_user_activity(uid):
     result['one_day_geo_rank'] = one_day_geo_rank
     result['one_week_ip_rank'] = one_week_ip_rank
     result['one_week_geo_rank'] = one_week_geo_rank
-    result['route_list'] = [route for route in route_list if route['s'] != route['e']]
+    result['route_list'] = route_list
+    # result['route_list'] = [route for route in route_list if route['s'] != route['e']]
 
     return result
 
