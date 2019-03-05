@@ -541,40 +541,65 @@ def get_preference_identity(uid):
     return result
 
 
-def get_influence_feature(uid):
-    query = {
+def get_influence_feature(uid,interval):
+    query_body = {
         "query": {
             "bool": {
                 "must": [
                     {
                         "term": {
-                            "uid": str(uid)
+                            "uid": uid
                         }
                     }
                 ]
             }
         },
-        "sort": [
-            {
-                "timestamp": {
-                    "order": "asc"
+        "from": 0,
+        "size": 0,
+        "sort": [],
+        "aggs": {
+            "groupDate": {
+                "date_histogram": {
+                    "field": "date",
+                    "interval": interval,
+                    "format": "yyyy-MM-dd"
+                },
+                "aggs": {
+                    "sensitivity": {
+                        "stats": {
+                            "field": "sensitivity"
+                        }
+                    },
+                    "influence": {
+                        "stats": {
+                            "field": "influence"
+                        }
+                    },
+                    "activity": {
+                        "stats": {
+                            "field": "activity"
+                        }
+                    },
+                    "importance": {
+                        "stats": {
+                            "field": "importance"
+                        }
+                    }
                 }
             }
-        ],
-        "size": 1000
+        }
     }
+    es_result = es.search(index="user_influence", doc_type="text", body=query_body)["aggregations"]["groupDate"]["buckets"]
     result_list = []
-    es_result = es.search(index='user_influence', doc_type='text', body=query)['hits']['hits']
     for data in es_result:
         item = {}
-        item['sensitivity'] = data['_source']['sensitivity']
-        item['influence'] = data['_source']['influence']
-        item['activity'] = data['_source']['activity']
-        item['importance'] = data['_source']['importance']
-        item['timestamp'] = data['_source']['timestamp']
-        item['date'] = time.strftime('%Y-%m-%d', time.localtime(item['timestamp']))
+        item['sensitivity'] = data['sensitivity']['sum']
+        item['influence'] = data['influence']['sum']
+        item['activity'] = data['activity']['sum']
+        item['importance'] = data['importance']['sum']
+        item['timestamp'] = data['key']//1000
+        item['date'] = data['key_as_string']
         result_list.append(item)
-
     return result_list
 
 

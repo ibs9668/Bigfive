@@ -170,7 +170,8 @@ def perference_word():
 @mod.route('/influence_feature', methods=['POST','GET'])
 def influence_feature():
     group_id=request.args.get('group_id')
-    result = group_influence(group_id)
+    interval=request.args.get('type','day')
+    result = group_influence(group_id,interval)
     return jsonify(result)
 
 
