@@ -6,6 +6,8 @@ ES_HOST = '219.224.134.214'
 ES_PORT = 9200
 ES_HOST_WEIBO = '219.224.134.225'
 ES_PORT_WEIBO = 9225
+REDIS_HOST = '219.224.134.226'
+REDIS_PORT = 10010
 
 es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 es_weibo = Elasticsearch(hosts=[{'host': ES_HOST_WEIBO, 'port': ES_PORT_WEIBO}], timeout=1000)
