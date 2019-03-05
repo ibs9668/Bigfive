@@ -286,18 +286,18 @@ def group_influence(group_id):
     activity = []
     sensitivity = []
     influence = []
-    warning = []
+    importance = []
     for i,_ in enumerate(es_result):
         time_list.append(_["_source"]["timestamp"])
         activity.append(_["_source"]["activity"])
         sensitivity.append(_["_source"]["sensitivity"])
         influence.append(_["_source"]["influence"])
-        # warning.append(_["_source"]["warning"])
+        importance.append(_["_source"]["importance"])
     dict_inf["time"] = time_list
-    dict_inf["active"] = activity
-    dict_inf["sensitive"] = sensitivity
-    dict_inf["influe"] = influence
-    # dict_inf["warning"] = warning
+    dict_inf["activity"] = activity
+    dict_inf["sensitivity"] = sensitivity
+    dict_inf["influence"] = influence
+    dict_inf["importance"] = importance
     return dict_inf
 
 
