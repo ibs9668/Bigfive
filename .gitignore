@@ -5,3 +5,4 @@
 test.*
 bigfive/cron/model/model/
 images/
+images/*.jpg
