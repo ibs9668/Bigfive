@@ -282,8 +282,8 @@ def get_user_activity(uid):
     one_day_geo_item = {}
     for i in range(5):
         try:
-            one_day_geo_item.setdefault(re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', '', one_day_result[i]['_source']['geo'].split('&')[1]), 0)
-            one_day_geo_item[re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', '', one_day_result[i]['_source']['geo'].split('&')[1])] += one_day_result[i]['_source']['count']
+            one_day_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', one_day_result[i]['_source']['geo'].split('&')[1]), 0)
+            one_day_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', one_day_result[i]['_source']['geo'].split('&')[1])] += one_day_result[i]['_source']['count']
             item = {'rank': i+1, 'count': one_day_result[i]['_source']['count'], 'ip': one_day_result[i]['_source']['ip']}
         except:
             item = {'rank': i + 1, 'count': '-', 'ip': '-'}
@@ -394,16 +394,16 @@ def get_user_activity(uid):
         one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
-            one_week_geo_dict.setdefault(re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', r'', geo_data['_source']['geo'].split('&')[1]), 0)
-            one_week_geo_dict[re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source']['count']
+            one_week_geo_dict.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1]), 0)
+            one_week_geo_dict[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source']['count']
             geo_dict.setdefault(geo_data['_source']['date'], {})
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
                     continue
-                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', '', geo_data['_source']['geo'].split('&')[1]), 0)
+                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
             except:
                 continue
-            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|内蒙古|壮族|维吾尔族|回族|(自治区)', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source'][
+            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source'][
                 'count']
 
         one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
