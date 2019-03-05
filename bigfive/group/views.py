@@ -36,7 +36,7 @@ def dgroup():
     gid = request.json.get('gid')
     index = request.json.get('index')
     try:
-        result = delete_by_id(index,'text',gid)
+        delete_by_id(index,'text',gid)
     except:
         return jsonify(0)
     return jsonify(1)
