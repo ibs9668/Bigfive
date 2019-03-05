@@ -5,7 +5,7 @@ from bigfive.time_utils import *
 from xpinyin import Pinyin
 
 from bigfive.config import es
-
+from bigfive.cache import cache
 
 def index_to_score_rank(index):
     index_to_score_rank_dict = {
@@ -279,8 +279,7 @@ def group_influence(group_id):
         "size": 1000
     }
 
-    es_result = es.search(index="group_influence", doc_type="text", body=query_body)[
-        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
+    es_result = es.search(index="group_influence", doc_type="text", body=query_body)["hits"]["hits"]
     result_list = []
     for data in es_result:
         item = {}
@@ -353,7 +352,7 @@ def group_emotion(group_id, interval):
         result["nuetral_line"].append(bucket['nuetral']['sum'])
     return result
 
-
+@cache.memoize(60)
 def group_social_contact(group_id, map_type):
     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
         '_source']['userlist']
