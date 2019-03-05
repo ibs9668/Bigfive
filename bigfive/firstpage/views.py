@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint ,request
+from flask import Blueprint ,request,jsonify,Response
 import json
 from bigfive.firstpage.utils import *
-
+import os
 mod = Blueprint('firstpage',__name__,url_prefix='/firstpage')
 
 
@@ -45,9 +45,17 @@ def search():
 @mod.route('/statistics_user_info/', methods=['GET', 'POST'])
 def statistics_user_info():
     timestamp = request.args.get('timestamp')
-    
-
     result = get_statistics_user_info(timestamp)
-
     return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/head/', methods=['GET', 'POST'])
+def head():
+    uid = request.args.get('uid')
+    img_path = 'images/' + uid + '.jpg'
+    mime = 'image/jpeg'
+    if not os.path.exists(img_path):
+        return jsonify(0)
+    with open(img_path,'rb') as fp:
+        img = fp.read()
+    return Response(img,mimetype=mime)
 
