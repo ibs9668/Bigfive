@@ -101,7 +101,7 @@ def delete_by_id(index, doc_type, id):
     return r2
 
 
-def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict):
+def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
 
     page = page if page else '1'
     size = size if size else '10'
@@ -115,58 +115,12 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
 
-    machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
-    narcissism_index = narcissism_index if narcissism_index else 0
-    psychopathy_index = psychopathy_index if psychopathy_index else 0
-    extroversion_index = extroversion_index if extroversion_index else 0
-    nervousness_index = nervousness_index if nervousness_index else 0
-    openn_index = openn_index if openn_index else 0
-    agreeableness_index = agreeableness_index if agreeableness_index else 0
-    conscientiousness_index = conscientiousness_index if conscientiousness_index else 0
-
-    machiavellianism_rank = index_to_score_rank(machiavellianism_index)
-    narcissism_rank = index_to_score_rank(narcissism_index)
-    psychopathy_rank = index_to_score_rank(psychopathy_index)
-    extroversion_rank = index_to_score_rank(extroversion_index)
-    nervousness_rank = index_to_score_rank(nervousness_index)
-    openn_rank = index_to_score_rank(openn_index)
-    agreeableness_rank = index_to_score_rank(agreeableness_index)
-    conscientiousness_rank = index_to_score_rank(conscientiousness_index)
-
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
-    if machiavellianism_index:
-        query['query']['bool']['must'].append({"range": {
-            "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
-    if narcissism_index:
-        query['query']['bool']['must'].append(
-            {"range": {"narcissism_index": {"gte": str(narcissism_rank[0]), "lt": str(narcissism_rank[1])}}})
-    if psychopathy_index:
-        query['query']['bool']['must'].append(
-            {"range": {"psychopathy_index": {"gte": str(psychopathy_rank[0]), "lt": str(psychopathy_rank[1])}}})
-    if extroversion_index:
-        query['query']['bool']['must'].append(
-            {"range": {"extroversion_index": {"gte": str(extroversion_rank[0]), "lt": str(extroversion_rank[1])}}})
-    if nervousness_index:
-        query['query']['bool']['must'].append(
-            {"range": {"nervousness_index": {"gte": str(nervousness_rank[0]), "lt": str(nervousness_rank[1])}}})
-    if openn_index:
-        query['query']['bool']['must'].append(
-            {"range": {"openn_index": {"gte": str(openn_rank[0]), "lt": str(openn_rank[1])}}})
-    if agreeableness_index:
-        query['query']['bool']['must'].append(
-            {"range": {"agreeableness_index": {"gte": str(agreeableness_rank[0]), "lt": str(agreeableness_rank[1])}}})
-    if conscientiousness_index:
-        query['query']['bool']['must'].append({"range": {
-            "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
         user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(user_query))
-    if sensitive_index:
-        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(
-            sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
-        query['query']['bool']['must'].append(json.loads(sensitive_query))
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
@@ -287,7 +241,7 @@ def group_preference(group_id):
     hastags = {one['hastag']:one['count'] for one in sta_item['hastags']}
     sensitive_words = {one['sensitive_word']:one['count'] for one in sta_item['sensitive_words']}
 
-    result = {'domain_static':domain_static,'topic_static':topic_static, 'keywords': keywords, 'hastags': hastags, 'sensitive_words': sensitive_words}
+    result = {'domain_static':domain_static,'topic_result':topic_static, 'keywords': keywords, 'hastags': hastags, 'sensitive_words': sensitive_words}
     return result
 
 
