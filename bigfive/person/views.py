@@ -93,7 +93,7 @@ def user_activity():
 def preference_identity():
     uid = request.args.get('person_id')
     result = get_preference_identity(uid)
-    return json.dumps(result, ensure_ascii=False)
+    return jsonify(result)
 
 
 # 影响力特征
