@@ -52,7 +52,7 @@ def statistics_user_info():
 @mod.route('/head/', methods=['GET', 'POST'])
 def head():
     uid = request.args.get('uid')
-    img_path = 'images/' + uid + '.jpg'
+    img_path = 'head_images/' + uid + '.jpg'
     mime = 'image/jpeg'
     if not os.path.exists(img_path):
         return jsonify(0)
