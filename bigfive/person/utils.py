@@ -393,7 +393,7 @@ def get_user_activity(uid):
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
                     continue
-                if geo_data['_source']['geo'].split('&')[1] != '中国':
+                if geo_data['_source']['geo'].split('&')[0] != '中国':
                     continue
                 geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
             except:
@@ -422,7 +422,7 @@ def get_user_activity(uid):
 
         if len(route_list) > 1:
             del (route_list[-1])
-        else:
+        elif len(route_list) == 1:
             route_list[0]['e'] = route_list[0]['s']
         print(route_list)
     else:
