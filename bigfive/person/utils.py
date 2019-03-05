@@ -6,7 +6,7 @@ import time
 
 from elasticsearch.helpers import scan
 
-from bigfive.config import es, labels_dict, topic_dict
+from bigfive.config import es, labels_dict, topic_dict, today, a_week_ago
 from bigfive.cache import cache
 
 def judge_uid_or_nickname(keyword):
@@ -243,10 +243,7 @@ def user_emotion(uid, interval):
 
 
 def get_user_activity(uid):
-    today = "2016-11-21"
-    # today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-    a_week_ago = time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.strptime(today, '%Y-%m-%d'))) - 7 * 24 * 60 * 60))
-    # a_week_ago = time.strftime('%Y-%m-%d', time.localtime(time.time() - 7 * 24 * 60 * 60))
+
     result = {}
 
     # ip一天排名
@@ -261,7 +258,6 @@ def get_user_activity(uid):
                     },
                     {
                         "term": {
-                            # "date": "2016-11-21"
                             "date": str(today)
                         }
                     }
@@ -311,9 +307,7 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                # "gte": "2016-11-14",
                                 "gte": a_week_ago,
-                                # "lte": "2016-11-21"
                                 "lte": today
                             }
                         }
@@ -366,8 +360,8 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                "gt": "2016-11-14",
-                                "lte": "2016-11-21"
+                                "gt": a_week_ago,
+                                "lte": today
                             }
                         }
                     }
@@ -390,7 +384,6 @@ def get_user_activity(uid):
     one_week_geo_rank = []
     if geo_result:
         geo_dict = {}
-        print(geo_query)
         one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
@@ -437,15 +430,13 @@ def get_user_activity(uid):
     result['one_day_geo_rank'] = one_day_geo_rank
     result['one_week_ip_rank'] = one_week_ip_rank
     result['one_week_geo_rank'] = one_week_geo_rank
-    result['route_list'] = route_list
+    result['route_list'] = [route for route in route_list if route['s'] != route['e']]
 
     return result
 
 
 def get_preference_identity(uid):
     result = {}
-    # today = '2019-03-01'
-    today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     today_ts = int(time.mktime(time.strptime(today, '%Y-%m-%d')))
     query = {
         "query": {
@@ -479,26 +470,9 @@ def get_preference_identity(uid):
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
-    preference_item["topic_violence"] = preference_and_topic_data["topic_violence"]
-    preference_item["topic_sports"] = preference_and_topic_data["topic_sports"]
-    preference_item["topic_economic"] = preference_and_topic_data["topic_economic"]
-    preference_item["topic_employment"] = preference_and_topic_data["topic_employment"]
-    preference_item["topic_house"] = preference_and_topic_data["topic_house"]
-    preference_item["topic_anti_corruption"] = preference_and_topic_data["topic_anti_corruption"]
-    preference_item["topic_art"] = preference_and_topic_data["topic_art"]
-    preference_item["topic_computer"] = preference_and_topic_data["topic_computer"]
-    preference_item["topic_military"] = preference_and_topic_data["topic_military"]
-    preference_item["topic_education"] = preference_and_topic_data["topic_education"]
-    preference_item["topic_politics"] = preference_and_topic_data["topic_politics"]
-    preference_item["topic_social_security"] = preference_and_topic_data["topic_social_security"]
-    preference_item["topic_peace"] = preference_and_topic_data["topic_peace"]
-    preference_item["topic_environment"] = preference_and_topic_data["topic_environment"]
-    preference_item["topic_religion"] = preference_and_topic_data["topic_religion"]
-    preference_item["topic_medicine"] = preference_and_topic_data["topic_medicine"]
-    preference_item["topic_life"] = preference_and_topic_data["topic_life"]
-    preference_item["topic_law"] = preference_and_topic_data["topic_law"]
-    preference_item["topic_traffic"] = preference_and_topic_data["topic_traffic"]
-
+    for k, v in preference_and_topic_data.items():
+        if k.startswith('topic_'):
+            preference_item[k] = v
     l = sorted(preference_item.items(), key=lambda x:x[1], reverse=True)[0:5]
     topic_result = {}
     topic_result[topic_dict[l[0][0].replace('topic_', '')]] = int(l[0][1] * 100)

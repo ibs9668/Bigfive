@@ -115,16 +115,8 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
 
-    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{
-        "constant_score": {
-        "filter": {
-        "missing": {
-        "field": "extroversion_label"
-        }
-        }
-        }
-        }
-    ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
+    # 数据库中有些数据没有label字段，过滤掉这些数据
+    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{"constant_score": {"filter": {"missing": {"field": "extroversion_label"}}}}], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:
         user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
@@ -184,7 +176,6 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
 
         hit['_source']['name'] = hit['_source']['group_name']
 
-
         item = hit['_source']
         # 为前端返回es的_id字段,为删除功能做支持
         item['id'] = hit['_id']
@@ -230,29 +221,34 @@ def get_group_basic_info(gid, remark):
     result = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']
     group_ranking_result = es.search(index='group_ranking', doc_type='text', body=query)['hits']['hits'][0]['_source']
     print(group_ranking_result)
+
+    # 黑暗人格字段
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
     group_item['narcissism'] = group_ranking_result['narcissism_index']
     group_item['psychopathy'] = group_ranking_result['psychopathy_index']
 
+    # 大五人格字段
     group_item['extroversion'] = group_ranking_result['extroversion_index']
     group_item['conscientiousness'] = group_ranking_result['conscientiousness_index']
     group_item['agreeableness'] = group_ranking_result['agreeableness_index']
     group_item['openn'] = group_ranking_result['openn_index']
     group_item['nervousness'] = group_ranking_result['nervousness_index']
 
+    # 群组基本信息
     group_item['group_name'] = result['group_name']
     group_item['user_count'] = len(result['userlist'])
     group_item['keyword'] = result['keyword']
     group_item['create_time'] = result['create_time']
     group_item['remark'] = result['remark']
 
+    # 群组星级
     group_item['liveness_star'] = group_ranking_result['liveness_star']
     group_item['importance_star'] = group_ranking_result['importance_star']
     group_item['sensitive_star'] = group_ranking_result['sensitive_star']
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
 
-
+    # 传入remark时进行备注修改
     if remark:
         es.update(index='group_information', id=gid, doc_type='text', body={'doc': {'remark': remark}})
     return group_item
@@ -262,7 +258,7 @@ def group_preference(group_id):
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
     sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
-    print(query)
+
     if not hits or not sta_hits:
         return {}
 
@@ -400,6 +396,7 @@ def group_emotion(group_id, interval):
         result["nuetral_line"].append(bucket['nuetral']['sum'])
     return result
 
+
 @cache.memoize(60)
 def group_social_contact(group_id, map_type):
     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
@@ -454,7 +451,6 @@ def group_social_contact(group_id, map_type):
     return {}
 
 
-
 def get_group_activity(group_id):
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_activity',doc_type='text',body=query)['hits']['hits']
@@ -466,8 +462,6 @@ def get_group_activity(group_id):
     for i in activity_direction:
         start_end = i['geo2geo'].split('&')
         result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
-
-        # s_end
 
     start_geo_item = {}
     end_geo_item = {}
@@ -485,11 +479,11 @@ def get_group_activity(group_id):
         end_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1]), 0)
         end_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])] += i['count']
         route_dict = {'s': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(' ')[1]), 'e': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])}
-        if route_dict not in route_list:
+        if route_dict not in route_list and route_dict['s'] != route_dict['e']:
             route_list.append(route_dict)
 
     geo_item = {}
-    for ks,vs in start_geo_item.items():
+    for ks, vs in start_geo_item.items():
         for ke, ve in end_geo_item.items():
             if ks == ke:
                 geo_item[ks] = vs + ve
@@ -498,4 +492,3 @@ def get_group_activity(group_id):
     result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
     result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result
-
