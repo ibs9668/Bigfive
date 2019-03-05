@@ -41,7 +41,7 @@ def dgroup():
         return jsonify(0)
     return jsonify(1)
 
-@mod.route('/search_group/',methods=['GET'])
+@mod.route('/search_group',methods=['GET'])
 def sgroup():
     """搜索群体任务"""
     group_name = request.args.get('gname','')
@@ -56,7 +56,7 @@ def sgroup():
     return jsonify(result)
 
 
-@mod.route('/group_ranking/',methods=['POST'])
+@mod.route('/group_ranking',methods=['POST'])
 def group_ranking():
     """群体排名"""
     parameters = request.form.to_dict()
