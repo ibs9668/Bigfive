@@ -29,7 +29,7 @@ def cgroup():
     return jsonify(1)
 
 
-@mod.route('/delete_group',methods=['POST'])
+@mod.route('/delete_group/',methods=['POST'])
 def dgroup():
     """删除群体任务/群体记录"""
     # gid = request.form.get('gid')
