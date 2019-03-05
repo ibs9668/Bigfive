@@ -97,9 +97,8 @@ def delete_by_id(index, doc_type, id):
         if r['_source']['progress'] != 0:
             raise ValueError('progress is not 0')
     elif index == 'info':
-        es.delete(index='group_information', doc_type=doc_type, id=id)
+        es.delete(index='group_ranking', doc_type=doc_type, id=id)
     es.delete(index='group_task', doc_type=doc_type, id=id)
-    return r2
 
 
 def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
@@ -117,14 +116,14 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     sort_list.append({order_name: {"order": order_type}})
 
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{
-"constant_score": {
-"filter": {
-"missing": {
-"field": "extroversion_label"
-}
-}
-}
-}
+        "constant_score": {
+        "filter": {
+        "missing": {
+        "field": "extroversion_label"
+        }
+        }
+        }
+        }
     ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:

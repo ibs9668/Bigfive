@@ -17,7 +17,7 @@ def test():
     return json.dumps(result,ensure_ascii=False)
 
 
-@mod.route('/create_group',methods=['POST'])
+@mod.route('/create_group/',methods=['POST'])
 def cgroup():
     """创建群体计算任务"""
     # data = request.form.to_dict()
@@ -29,14 +29,14 @@ def cgroup():
     return jsonify(1)
 
 
-@mod.route('/delete_group',methods=['POST'])
+@mod.route('/delete_group/',methods=['POST'])
 def dgroup():
     """删除群体任务/群体记录"""
     # gid = request.form.get('gid')
     gid = request.json.get('gid')
     index = request.json.get('index')
     try:
-        result = delete_by_id(index,'text',gid)
+        delete_by_id(index,'text',gid)
     except:
         return jsonify(0)
     return jsonify(1)
