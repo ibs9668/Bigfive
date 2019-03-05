@@ -4,5 +4,5 @@
 .idea/
 test.*
 bigfive/cron/model/model/
-images/
-images/*.jpg
+head_images/
+head_images/*.jpg
