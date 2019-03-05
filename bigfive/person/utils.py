@@ -497,7 +497,6 @@ def get_preference_identity(uid):
     topic_result[topic_dict[l[3][0].replace('topic_', '')]] = int(l[3][1] * 100)
     topic_result[topic_dict[l[4][0].replace('topic_', '')]] = int(l[4][1] * 100)
 
-    print(preference_and_topic_data)
     node_main = {'name': labels_dict[preference_and_topic_data['main_domain']], 'id': preference_and_topic_data['uid']}
     node_followers = {'name': labels_dict[preference_and_topic_data['domain_followers']]}
     node_verified = {'name': labels_dict[preference_and_topic_data['domain_verified']]}
@@ -526,7 +525,6 @@ def get_preference_identity(uid):
     if analysis_result['sensitive_words']:
         print(analysis_result['sensitive_words'])
         for i in analysis_result['sensitive_words']:
-            print(i)
             result['sensitive_words'].append({i['sensitive_word']: i['count']})
     result['domain_dict'] = domain_dict
 
