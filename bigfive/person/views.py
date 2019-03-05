@@ -100,8 +100,9 @@ def preference_identity():
 @mod.route('/influence_feature', methods=['POST', 'GET'])
 def influence_feature():
     uid = request.args.get('person_id')
-    result = get_influence_feature(uid)
-    return json.dumps(result, ensure_ascii=False)
+    interval = request.args.get('type','day')
+    result = get_influence_feature(uid,interval)
+    return jsonify(result)
 
 
 @mod.route('/person_personality', methods=['POST', 'GET'])
