@@ -49,17 +49,6 @@ def statistics_user_info():
     result = get_statistics_user_info(timestamp)
     return json.dumps(result, ensure_ascii=False)
 
-@mod.route('/head/', methods=['GET', 'POST'])
-def head():
-    uid = request.args.get('uid')
-    img_path = 'head_images/' + uid + '.jpg'
-    mime = 'image/jpeg'
-    if not os.path.exists(img_path):
-        return jsonify(0)
-    with open(img_path,'rb') as fp:
-        img = fp.read()
-    return Response(img,mimetype=mime)
-
 
 @mod.route('/dark_user_info/', methods=['GET', 'POST'])
 def dark_user_info():
@@ -88,3 +77,15 @@ def bigfive_group_info():
     result = bigfive_group()
 
     return json.dumps(result, ensure_ascii=False)
+
+
+@mod.route('/head/', methods=['GET', 'POST'])
+def head():
+    uid = request.args.get('uid')
+    img_path = 'head_images/' + uid + '.jpg'
+    mime = 'image/jpeg'
+    if not os.path.exists(img_path):
+        return jsonify(0)
+    with open(img_path,'rb') as fp:
+        img = fp.read()
+    return Response(img,mimetype=mime)
