@@ -205,6 +205,9 @@ def emotion_feature():
 def social_contact():
     group_id=request.args.get('group_id')
     map_type = request.args.get("type")
-    social_contact = group_social_contact(group_id,map_type)
+    try:
+        social_contact = group_social_contact(group_id,map_type)
+    except:
+        return jsonify({})
     return jsonify(social_contact)
 
