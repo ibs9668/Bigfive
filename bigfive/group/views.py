@@ -17,7 +17,7 @@ def test():
     return json.dumps(result,ensure_ascii=False)
 
 
-@mod.route('/create_group',methods=['POST'])
+@mod.route('/create_group/',methods=['POST'])
 def cgroup():
     """创建群体计算任务"""
     # data = request.form.to_dict()

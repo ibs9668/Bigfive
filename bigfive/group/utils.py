@@ -96,7 +96,7 @@ def delete_by_id(index, doc_type, id):
         if r['_source']['progress'] != 0:
             raise ValueError('progress is not 0')
     elif index == 'info':
-        es.delete(index='group_information', doc_type=doc_type, id=id)
+        es.delete(index='group_ranking', doc_type=doc_type, id=id)
     es.delete(index='group_task', doc_type=doc_type, id=id)
     return r2
 
