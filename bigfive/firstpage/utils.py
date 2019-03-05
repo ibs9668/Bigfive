@@ -124,8 +124,8 @@ def dark_personality():
          }
     },"size":15000
     }
-    if es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
-        es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    if es_result:
         user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
         final_high_dict = dict()
@@ -141,6 +141,7 @@ def dark_personality():
             for j in range(len(sorted_high)):
                 a_dict = dict()
                 a_dict["name"] = sorted_high[j]["username"]
+                a_dict["uid"] = sorted_high[j]["uid"]
 
                 query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
                 photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
@@ -172,7 +173,7 @@ def dark_personality():
         result_dict["low"] = final_low_dict
 
         return result_dict
-
+    return {}
 def dark_group():
     query_body = {
         "query": {
@@ -189,7 +190,8 @@ def dark_group():
          }
     },"size":15000
     }
-    if es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+    es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    if es_result:
         es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
         user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
@@ -237,7 +239,7 @@ def dark_group():
         result_dict["low"] = final_low_dict
 
         return result_dict
-
+    return {}
 def bigfive_personality():
     query_body = {
         "query": {
@@ -388,7 +390,7 @@ def bigfive_group():
         result_dict["low"] = final_low_dict
 
         return result_dict
-    
+
 
 
 
