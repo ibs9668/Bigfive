@@ -294,10 +294,10 @@ def group_influence(group_id):
         influence.append(_["_source"]["influence"])
         # warning.append(_["_source"]["warning"])
     dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
+    dict_inf["activity"] = activity
+    dict_inf["sensitivity"] = sensitivity
+    dict_inf["influence"] = influence
+    dict_inf["warning"] = warning
     return dict_inf
 
 
