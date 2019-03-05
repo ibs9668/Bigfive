@@ -85,7 +85,13 @@ def head():
     img_path = 'head_images/' + uid + '.jpg'
     mime = 'image/jpeg'
     if not os.path.exists(img_path):
-        return jsonify(0)
+        if '_' in uid:
+            try:
+                image_arrange(uid)
+            except:
+                return jsonify(0)
+        else:
+            return jsonify(0)
     with open(img_path,'rb') as fp:
         img = fp.read()
     return Response(img,mimetype=mime)
