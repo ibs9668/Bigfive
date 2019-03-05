@@ -2,6 +2,7 @@
 
 from flask import Blueprint ,request,jsonify,Response
 import json
+
 from bigfive.firstpage.utils import *
 import os
 mod = Blueprint('firstpage',__name__,url_prefix='/firstpage')
@@ -59,3 +60,31 @@ def head():
         img = fp.read()
     return Response(img,mimetype=mime)
 
+
+@mod.route('/dark_user_info/', methods=['GET', 'POST'])
+def dark_user_info():
+
+    result = dark_personality()
+
+    return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/dark_group_info/', methods=['GET', 'POST'])
+def dark_group_info():
+
+    result = dark_group()
+
+    return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/bigfive_user_info/', methods=['GET', 'POST'])
+def bigfive_user_info():
+
+    result = bigfive_personality()
+
+    return json.dumps(result, ensure_ascii=False)
+
+@mod.route('/bigfive_group_info/', methods=['GET', 'POST'])
+def bigfive_group_info():
+
+    result = bigfive_group()
+
+    return json.dumps(result, ensure_ascii=False)

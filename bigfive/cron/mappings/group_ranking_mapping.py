@@ -28,7 +28,7 @@ index_info = {
                     "type" : "string"
                 },
                 "group_name":{#群体名称
-                    "analyzer":"ik_max_word",
+                    "index":"not_analyzed",
                     "type" : "string"
                 },
                 "influence_index":{#影响力指数
@@ -100,6 +100,38 @@ index_info = {
                     "type" : "long"
                 },
                 "compactness_star":{#紧密度星级
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "machiavellianism_label":{#马基雅维里主义标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "narcissism_label":{#自恋标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "psychopathy_label":{#精神病态标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "extroversion_label":{#外倾性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "nervousness_label":{#神经质标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "openn_label":{#开放性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "agreeableness_label":{#宜人性标签
+                    "index":"not_analyzed",
+                    "type" : "long"
+                },
+                "conscientiousness_label":{#尽责性标签
                     "index":"not_analyzed",
                     "type" : "long"
                 },

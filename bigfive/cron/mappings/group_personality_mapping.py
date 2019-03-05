@@ -2,7 +2,7 @@
 from elasticsearch import Elasticsearch
 
 es = Elasticsearch("219.224.134.220:9200")
-index_name = "group_influence"
+index_name = "group_personality"
 
 
 ###用户影响力   user_influence
@@ -34,35 +34,29 @@ index_info = {
                   "index":"not_analyzed"
               },
                 
-              "activity":{#活跃度                         
+              "extroversion_index":{#外倾性                         
                   "type":"double"
               },                              
-              "sensitivity":{#敏感度
+              "agreeableness_index":{#宜人性
                   "type":"double"
               },
-              "influence":{#影响力
+              "conscientiousness_index":{#尽责性
                   "type":"double"
               },
-              "importance":{#重要度
+              "nervousness_index":{#神经质
                   "type":"double"
               },
-              "density":{#紧密度
+              "openn_index":{#开放性
                   "type":"double"
               },
-              "activeness_star":{#活跃度星级
-                  "type":"long"
-              },                              
-              "influence_star":{#敏感度星级
-                  "type":"long"
+              "machiavellianism_index":{#马基雅维利主义
+                  "type":"double"
               },
-              "importance_star":{#影响力星级
-                  "type":"long"
+              "narcissism_index":{#自恋
+                  "type":"double"
               },
-              "sensitivity_star":{#重要度星级
-                  "type":"long"
-              },
-              "density_star":{#紧密度星级
-                  "type":"long"
+              "psychopathy_index":{#精神病态
+                  "type":"double"
               },
           }
       }
