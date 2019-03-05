@@ -81,13 +81,13 @@ def bigfive_group_info():
 
 @mod.route('/head/', methods=['GET', 'POST'])
 def head():
-    uid = request.args.get('uid')
-    img_path = 'head_images/' + uid + '.jpg'
+    id = request.args.get('id')
+    img_path = 'head_images/' + id + '.jpg'
     mime = 'image/jpeg'
     if not os.path.exists(img_path):
-        if '_' in uid:
+        if '_' in id:
             try:
-                image_arrange(uid)
+                image_arrange(id)
             except:
                 return jsonify(0)
         else:
