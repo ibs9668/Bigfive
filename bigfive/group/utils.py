@@ -232,7 +232,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
 
 
 def get_group_basic_info(gid, remark):
-    group_ranking_query = {
+    query = {
         "query": {
             "bool": {
                 "must": [
@@ -246,8 +246,9 @@ def get_group_basic_info(gid, remark):
         }
     }
     group_item = {}
-    result = es.get(index='group_information', id=gid, doc_type='text')['_source']
-    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=group_ranking_query)['hits']['hits'][0]['_source']
+    print(query)
+    result = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=query)['hits']['hits'][0]['_source']
     print(group_ranking_result)
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
     group_item['narcissism'] = group_ranking_result['narcissism_index']

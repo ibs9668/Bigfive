@@ -90,10 +90,10 @@ def delete_ranking():
 
 @mod.route('/basic_info/', methods=['GET'])
 def basic_info():
-    gid = request.args.get('gid')
+    gid = request.args.get('group_id')
     remark = request.args.get('remark', '')
     result = get_group_basic_info(gid, remark)
-    return json.dumps(result, ensure_ascii=False)
+    return jsonify(result)
 
 
 
