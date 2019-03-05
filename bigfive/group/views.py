@@ -11,13 +11,13 @@ import os
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 
-@mod.route('/test/')
+@mod.route('/test')
 def test():
     result = 'This is group!'
     return json.dumps(result,ensure_ascii=False)
 
 
-@mod.route('/create_group/',methods=['POST'])
+@mod.route('/create_group',methods=['POST'])
 def cgroup():
     """创建群体计算任务"""
     # data = request.form.to_dict()
@@ -29,7 +29,7 @@ def cgroup():
     return jsonify(1)
 
 
-@mod.route('/delete_group/',methods=['POST'])
+@mod.route('/delete_group',methods=['POST'])
 def dgroup():
     """删除群体任务/群体记录"""
     # gid = request.form.get('gid')
@@ -41,7 +41,7 @@ def dgroup():
         return jsonify(0)
     return jsonify(1)
 
-@mod.route('/search_group/',methods=['GET'])
+@mod.route('/search_group',methods=['GET'])
 def sgroup():
     """搜索群体任务"""
     group_name = request.args.get('gname','')
@@ -56,7 +56,7 @@ def sgroup():
     return jsonify(result)
 
 
-@mod.route('/group_ranking/',methods=['POST'])
+@mod.route('/group_ranking',methods=['POST'])
 def group_ranking():
     """群体排名"""
     parameters = request.form.to_dict()
@@ -71,7 +71,7 @@ def group_ranking():
     return jsonify(result)
 
 
-@mod.route('/delete_group_ranking/',methods=['POST'])
+@mod.route('/delete_group_ranking',methods=['POST'])
 def delete_ranking():
     """群体排名"""
     gid = request.json.get('gid')
@@ -79,7 +79,7 @@ def delete_ranking():
     return jsonify(1)
 
 
-@mod.route('/basic_info/', methods=['GET'])
+@mod.route('/basic_info', methods=['GET'])
 def basic_info():
     gid = request.args.get('group_id')
     remark = request.args.get('remark', '')
@@ -90,7 +90,7 @@ def basic_info():
 
 ################################ 宋慧慧负责 ###########################
 
-@mod.route('/group_personality/',methods=['POST','GET'])##group_id=mingxing_1548746836
+@mod.route('/group_personality',methods=['POST','GET'])##group_id=mingxing_1548746836
 def group_personality():
     group_id = request.args.get("group_id")
     query_body = {
@@ -122,7 +122,7 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity/',methods=['POST','GET'])
+@mod.route('/group_activity',methods=['POST','GET'])
 def group_activity():
     group_id = request.args.get("group_id")
     result = get_group_activity(group_id)
@@ -131,7 +131,8 @@ def group_activity():
 
 ################################ 李宛星负责 ###########################
 
-@mod.route('/preference_identity/', methods=['POST','GET'])
+
+@mod.route('/preference_identity', methods=['POST','GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
     result = group_preference(group_id)
@@ -162,26 +163,8 @@ def perference_word():
 @mod.route('/influence_feature', methods=['POST','GET'])
 def influence_feature():
     group_id=request.args.get('group_id')
-    group_inf = group_influence(group_id)
-    dict_inf = {}
-    time_list = []
-    activity = []
-    sensitivity = []
-    influence = []
-    warning = []
-    for i,_ in enumerate(group_inf):
-        time_list.append(_["_source"]["timestamp"])
-        activity.append(_["_source"]["activity"])
-        sensitivity.append(_["_source"]["sensitivity"])
-        influence.append(_["_source"]["influence"])
-        warning.append(_["_source"]["warning"])
-    dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
-
-    return json.dumps(dict_inf,ensure_ascii=False)
+    result = group_influence(group_id)
+    return jsonify(result)
 
 
 @mod.route('/emotion_feature', methods=['POST','GET'])
