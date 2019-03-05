@@ -511,21 +511,21 @@ def get_preference_identity(uid):
     analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
     result['topic_result'] = topic_result
 
-    result['keywords'] = []
+    result['keywords'] = {}
     if analysis_result['keywords']:
         for i in analysis_result['keywords']:
-            result['keywords'].append({i['keyword']: i['count']})
+            result['keywords'].update({i['keyword']: i['count']})
 
-    result['hastags'] = []
+    result['hastags'] = {}
     if analysis_result['hastags']:
         for i in analysis_result['hastags']:
-            result['hastags'].append({i['hastag']: i['count']})
+            result['hastags'].update({i['hastag']: i['count']})
 
-    result['sensitive_words'] = []
+    result['sensitive_words'] = {}
     if analysis_result['sensitive_words']:
         print(analysis_result['sensitive_words'])
         for i in analysis_result['sensitive_words']:
-            result['sensitive_words'].append({i['sensitive_word']: i['count']})
+            result['sensitive_words'].update({i['sensitive_word']: i['count']})
     result['domain_dict'] = domain_dict
 
     return result
