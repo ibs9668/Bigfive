@@ -307,8 +307,8 @@ def get_user_activity(uid):
                     {
                         "range": {
                             "date": {
-                                # "gte": "2016-11-14",
-                                "gte": a_week_ago,
+                                "gte": "2016-11-14",
+                                # "gte": a_week_ago,
                                 # "lte": "2016-11-21"
                                 "lte": today
                             }
@@ -333,7 +333,7 @@ def get_user_activity(uid):
             }
         }
     }
-    print(one_week_query)
+    print('one_week_query', one_week_query)
     one_week_ip_rank = []
     one_week_result = \
     es.search(index='user_activity', doc_type='text', body=one_week_query)['aggregations']['ip_count']['buckets']

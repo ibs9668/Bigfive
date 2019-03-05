@@ -193,6 +193,24 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     return {'rows': result, 'total': total}
 
 
+def get_group_user_list(gid):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "group_id": gid
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    result = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']['userlist']
+    return result
+
+
 def get_group_basic_info(gid, remark):
     query = {
         "query": {
@@ -233,6 +251,8 @@ def get_group_basic_info(gid, remark):
     group_item['sensitive_star'] = group_ranking_result['sensitive_star']
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
+
+
     if remark:
         es.update(index='group_information', id=gid, doc_type='text', body={'doc': {'remark': remark}})
     return group_item
