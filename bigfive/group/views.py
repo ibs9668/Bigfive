@@ -208,3 +208,11 @@ def social_contact():
     social_contact = group_social_contact(group_id,map_type)
     return jsonify(social_contact)
 
+
+@mod.route('/group_image_arrange', methods=['POST','GET'])
+def group_image_arrange():
+    group_id = request.args.get('id')
+    source_path = request.args.get('source_path')
+    target_path = request.args.get('target_path')
+    image_arrange(group_id, source_path, target_path)
+    return jsonify(1)
