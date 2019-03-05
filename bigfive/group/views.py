@@ -131,7 +131,8 @@ def group_activity():
 
 ################################ 李宛星负责 ###########################
 
-@mod.route('/perference_identity', methods=['POST','GET'])
+
+@mod.route('/preference_identity', methods=['POST','GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
     result = group_preference(group_id)
@@ -139,7 +140,7 @@ def perference_identity():
     return jsonify(result)
 
 
-@mod.route('/perference_topic', methods=['POST','GET'])
+@mod.route('/preference_topic', methods=['POST','GET'])
 def perference_topic():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -148,7 +149,7 @@ def perference_topic():
     return json.dumps(topic,ensure_ascii=False)
 
 
-@mod.route('/perference_word', methods=['POST','GET'])
+@mod.route('/preference_word', methods=['POST','GET'])
 def perference_word():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -201,4 +202,3 @@ def social_contact():
     except:
         return jsonify({})
     return jsonify(social_contact)
-
