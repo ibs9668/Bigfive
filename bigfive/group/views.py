@@ -79,6 +79,13 @@ def delete_ranking():
     return jsonify(1)
 
 
+@mod.route('/group_user_list', methods=['GET'])
+def group_user_list():
+    gid = request.args.get('group_id')
+    result = get_group_user_list(gid)
+    return jsonify(result)
+
+
 @mod.route('/basic_info/', methods=['GET'])
 def basic_info():
     gid = request.args.get('group_id')
