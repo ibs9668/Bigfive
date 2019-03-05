@@ -219,6 +219,12 @@ def get_group_basic_info(gid, remark):
     group_item['keyword'] = result['keyword']
     group_item['create_time'] = result['create_time']
     group_item['remark'] = result['remark']
+
+    group_item['liveness_star'] = result['liveness_star']
+    group_item['importance_star'] = result['importance_star']
+    group_item['sensitive_star'] = result['sensitive_star']
+    group_item['influence_star'] = result['influence_star']
+    group_item['compactness_star'] = result['compactness_star']
     if remark:
         es.update(index='group_information', id=gid, doc_type='text', body={'doc': {'remark': remark}})
     return group_item
