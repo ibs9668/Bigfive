@@ -163,26 +163,8 @@ def perference_word():
 @mod.route('/influence_feature', methods=['POST','GET'])
 def influence_feature():
     group_id=request.args.get('group_id')
-    group_inf = group_influence(group_id)
-    dict_inf = {}
-    time_list = []
-    activity = []
-    sensitivity = []
-    influence = []
-    warning = []
-    for i,_ in enumerate(group_inf):
-        time_list.append(_["_source"]["timestamp"])
-        activity.append(_["_source"]["activity"])
-        sensitivity.append(_["_source"]["sensitivity"])
-        influence.append(_["_source"]["influence"])
-        warning.append(_["_source"]["warning"])
-    dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
-
-    return json.dumps(dict_inf,ensure_ascii=False)
+    result = group_influence(group_id)
+    return jsonify(result)
 
 
 @mod.route('/emotion_feature', methods=['POST','GET'])

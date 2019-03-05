@@ -267,8 +267,24 @@ def group_influence(group_id):
 
     es_result = es.search(index="group_influence", doc_type="text", body=query_body)[
         "hits"]["hits"]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+    dict_inf = {}
+    time_list = []
+    activity = []
+    sensitivity = []
+    influence = []
+    warning = []
+    for i,_ in enumerate(es_result):
+        time_list.append(_["_source"]["timestamp"])
+        activity.append(_["_source"]["activity"])
+        sensitivity.append(_["_source"]["sensitivity"])
+        influence.append(_["_source"]["influence"])
+        # warning.append(_["_source"]["warning"])
+    dict_inf["time"] = time_list
+    dict_inf["activity_line"] = activity
+    dict_inf["sensitivity_line"] = sensitivity
+    dict_inf["influence_line"] = influence
+    dict_inf["warning_line"] = warning
+    return dict_inf
 
 
 def group_emotion(group_id, interval):
