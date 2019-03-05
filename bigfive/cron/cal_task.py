@@ -495,7 +495,9 @@ def get_group_personality_label(personality_index, personality_name):
 
 if __name__ == '__main__':
     # user_insert()
-    es.delete(index='group_task',doc_type='text',id='aaa_1551347004')
+    es.delete(index='group_task',doc_type='text',id='ceshisi_1551706107')
+    create_time = date2ts('2016-11-27')
+    group_name = "测试四"
     dic = {
         "remark": "第四次群体测试",
         "keyword": "",
@@ -509,9 +511,9 @@ if __name__ == '__main__':
             'agreeableness_index':0,
             'conscientiousness_index':0,
         },
-        "group_name": "测试四",
+        "group_name": group_name,
         "group_pinyin": Pinyin().get_pinyin(group_name, ''),
-        "create_time": int(time.time()),
+        "create_time": create_time,
         "create_date": ts2date(create_time),
         "progress": 0
     }

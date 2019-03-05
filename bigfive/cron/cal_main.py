@@ -5,6 +5,7 @@ sys.path.append('../')
 from config import *
 from time_utils import *
 from portrait.group.group_emotion import group_emotion
+from portrait.group.group_preference_static import domain_topic_static, group_word_static
 from cal_task import user_insert, group_create, group_ranking, cal_group_personality, group_attribute
 from portrait.group.cron_group import group_activity
 
@@ -39,6 +40,12 @@ def group_main(args_dict,keyword,remark,group_name,create_time):
     print('Start calculating group attribute...')
     group_attribute(group_dic['group_id'], group_dic['userlist'], group_dic['create_date'])
 
+    print('Start calculating group topic static...')
+    domain_topic_static(group_dic['group_id'], group_dic['userlist'], group_dic['create_date'])
+
+    print('Start calculating group word static...')
+    group_word_static(group_dic['group_id'], group_dic['userlist'], group_dic['create_date'])
+
     print('Start calculating group emotion...')
     group_emotion(group_dic['group_id'], group_dic['userlist'], group_dic['create_date'])
     
@@ -48,4 +55,4 @@ def group_main(args_dict,keyword,remark,group_name,create_time):
 
 if __name__ == '__main__':
     # user_main()
-    group_main()
+    group_main(1,2,3,4,5)
