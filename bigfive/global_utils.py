@@ -33,6 +33,37 @@ def weibo_generator(weibo_index, query_body, iter_num_per):
         iter_num += 1
         yield es_result
 
+'''
+ es迭代器类 
+ 创建实例所需属性 step：迭代起始点，sort_dict：控制es数据查询排序字段及排序顺序，
+ iter_count：迭代步长（控制每次查询数据量）,index_name :查询索引名字
+ doc_type ：查询类型 ，es：建立的es连接
+ 
+'''
+class ESIterator(object):
+    def __init__(self,step,sort_dict,iter_count,index_name,doc_type,es):
+        self.step=step
+        self.sort_dict = sort_dict
+        self.iter_count =iter_count
+        self.index_name = index_name
+        self.doc_type = doc_type
+        self.es = es
+    def next(self):
+        query_body = {'query':{'match_all':{}},'sort':{},"size":0,"from":0}
+        query_body["sort"] = self.sort_dict
+        query_body["size"] = self.iter_count
+        query_body["from"] = self.step * self.iter_count
+        es_result = self.es.search(index=self.index_name,doc_type=self.doc_type,body=query_body)['hits']['hits']
+        iter_get_num = len(es_result)
+        if iter_get_num != self.iter_count:
+            raise StopIteration
+        self.step +=1
+        return es_result
+    
+    def __iter__(self):
+        return self
+      
+      
 if __name__ == '__main__':
     # query_body = {
     #     'query':{
@@ -58,3 +89,19 @@ if __name__ == '__main__':
     weibo_generator = weibo_generator(weibo_index, query_body, iter_num_per)
     for i in weibo_generator:
         print(i[0])
+
+    
+    #迭代器实例
+    sort_dict = {}
+    sort_dict = {'uid':{'order':'asc'}}
+    my_test = ESIterator(0,sort_dict,1000,"user_information","text",es)
+
+    while True:
+        try:
+            #获得下一批次查询的数据:
+            x = next(my_test)
+            print (len(x))
+        except StopIteration:
+            #遇到StopIteration就退出循环
+            break
+
