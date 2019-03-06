@@ -180,6 +180,7 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
             while (iter_get_weibo == USER_WEIBO_ITER_COUNT):
                 print(weibo_iter_num*USER_WEIBO_ITER_COUNT)
                 weibo_query_body = {
+                    "_source":["uid"],
                     "query":{
                         'match_phrase':{
                             'keywords_string':keyword
@@ -495,7 +496,7 @@ def get_group_personality_label(personality_index, personality_name):
 
 if __name__ == '__main__':
     # user_insert()
-    es.delete(index='group_task',doc_type='text',id='ceshisi_1551706107')
+    # es.delete(index='group_task',doc_type='text',id='ceshisi_1551706107')
     create_time = date2ts('2016-11-27')
     group_name = "测试四"
     dic = {

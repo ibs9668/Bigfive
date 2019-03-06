@@ -218,6 +218,12 @@ def group_attribute(group_id, uid_list, date):
 
     # return activity, influence, importance, sensitivity, activeness_star, influence_star, importance_star, sensitivity_star
 
+def group_attribute_long(group_id,uid_list,date,days):
+    for day in get_datelist_v2(ts2date(date2ts(date)-24*3600*days),date):
+        try:
+            group_attribute(group_id,uid_list,day)
+        except:
+            pass
 
 ###获得对应的数值在用户列表中的排名
 def get_index_rank(attr_value, attr_name, timestamp):
