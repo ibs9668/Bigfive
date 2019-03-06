@@ -221,14 +221,10 @@ def get_group_basic_info(gid, remark):
     group_ranking_result = es.search(index='group_ranking', doc_type='text', body=query)[
         'hits']['hits'][0]['_source']
     print(group_ranking_result)
-<<<<<<< HEAD
-    group_item['machiavellianism'] = group_ranking_result[
-        'machiavellianism_index']
-=======
 
     # 黑暗人格字段
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
->>>>>>> ab49408722c17e9484a7f0d1840b1e829dd05547
+
     group_item['narcissism'] = group_ranking_result['narcissism_index']
     group_item['psychopathy'] = group_ranking_result['psychopathy_index']
 
@@ -254,10 +250,7 @@ def get_group_basic_info(gid, remark):
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
 
-<<<<<<< HEAD
-=======
     # 传入remark时进行备注修改
->>>>>>> ab49408722c17e9484a7f0d1840b1e829dd05547
     if remark:
         es.update(index='group_information', id=gid,
                   doc_type='text', body={'doc': {'remark': remark}})
@@ -265,20 +258,11 @@ def get_group_basic_info(gid, remark):
 
 
 def group_preference(group_id):
-<<<<<<< HEAD
-    query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
-    ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
-    hits = es.search(index='group_domain_topic',
-                     doc_type='text', body=query)['hits']['hits']
-    sta_hits = es.search(index='group_text_analysis_sta',
-                         doc_type='text', body=query)['hits']['hits']
-    print(query)
-=======
+
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
     sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
 
->>>>>>> ab49408722c17e9484a7f0d1840b1e829dd05547
     if not hits or not sta_hits:
         return {}
 
@@ -503,26 +487,13 @@ def get_group_activity(group_id):
                 continue
         except:
             continue
-<<<<<<< HEAD
-        start_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', i[
-                                  'geo2geo'].split('&')[0].split(' ')[1]), 0)
-        start_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[
-                              0].split(' ')[1])] += i['count']
-        end_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i[
-                                'geo2geo'].split('&')[1].split(' ')[1]), 0)
-        end_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[
-                            1].split(' ')[1])] += i['count']
-        route_dict = {'s': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(
-            ' ')[1]), 'e': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])}
-        if route_dict not in route_list:
-=======
+
         start_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', i['geo2geo'].split('&')[0].split(' ')[1]), 0)
         start_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(' ')[1])] += i['count']
         end_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1]), 0)
         end_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])] += i['count']
         route_dict = {'s': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(' ')[1]), 'e': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])}
         if route_dict not in route_list and route_dict['s'] != route_dict['e']:
->>>>>>> ab49408722c17e9484a7f0d1840b1e829dd05547
             route_list.append(route_dict)
 
     geo_item = {}
