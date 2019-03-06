@@ -50,12 +50,12 @@ class ESIterator(object):
         self.query_body = query_body
         self.es = es
     def next(self):
-        query_body["sort"] = self.sort_dict
-        query_body["size"] = self.iter_count
-        query_body["from"] = self.step * self.iter_count
-        es_result = self.es.search(index=self.index_name,doc_type=self.doc_type,body=query_body)['hits']['hits']
+        self.query_body["sort"] = self.sort_dict
+        self.query_body["size"] = self.iter_count
+        self.query_body["from"] = self.step * self.iter_count
+        es_result = self.es.search(index=self.index_name,doc_type=self.doc_type,body=self.query_body)['hits']['hits']
         iter_get_num = len(es_result)
-        if iter_get_num != self.iter_count:
+        if iter_get_num == 0:
             raise StopIteration
         self.step +=1
         return es_result
