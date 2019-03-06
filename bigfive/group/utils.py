@@ -167,7 +167,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
         if hit['_source']['psychopathy_label'] == 2:
             hit['_source']['dark_list'].append({'精神病态': '1'})
         if hit['_source']['narcissism_label'] == 0:
-            hit['_source']['dark_list'].append({'自怜': '0'})
+            hit['_source']['dark_list'].append({'自恋': '0'})
         if hit['_source']['narcissism_label'] == 2:
             hit['_source']['dark_list'].append({'自恋': '1'})
 

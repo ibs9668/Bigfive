@@ -60,12 +60,12 @@ def sgroup():
 def group_ranking():
     """群体排名"""
     parameters = request.form.to_dict()
-    keyword = parameters.get('keyword')
-    page = parameters.get('page')
-    size = parameters.get('size')
-    order_dict = parameters.get('order_dict')
-    order_name = parameters.get('order_name')
-    order_type = parameters.get('order_type')
+    keyword = parameters.get('keyword', '')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '10')
+    order_dict = parameters.get('order_dict', {})
+    order_name = parameters.get('order_name', 'group_name')
+    order_type = parameters.get('order_type', 'asc')
 
     result = search_group_ranking(keyword, page, size, order_name, order_type, order_dict)
     return jsonify(result)
