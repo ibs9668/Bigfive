@@ -25,7 +25,7 @@ def index_to_score_rank(index):
     return index_to_score_rank_dict[int(index)]
 
 
-def portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index,
+def portrait_table(keyword, page, size, order_name, order_type, machiavellianism_index,
                    narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index,
                    agreeableness_index, conscientiousness_index, order_dict):
     page = page if page else '1'
@@ -87,10 +87,6 @@ def portrait_table(keyword, page, size, order_name, order_type, sensitive_index,
         user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(
             keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(user_query))
-    if sensitive_index:
-        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(
-            sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
-        query['query']['bool']['must'].append(json.loads(sensitive_query))
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
@@ -472,7 +468,7 @@ def get_preference_identity(uid):
             }
         ]
     }
-
+    print(query)
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}

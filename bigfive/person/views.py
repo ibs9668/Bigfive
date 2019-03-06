@@ -57,7 +57,7 @@ def return_portrait_table():
     order_name = parameters.get('order_name')
     order_type = parameters.get('order_type')
 
-    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
+    result = portrait_table(keyword, page, size, order_name, order_type, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
 
     return json.dumps(result, ensure_ascii=False)
     # return jsonify(1)
