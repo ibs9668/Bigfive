@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint ,request,jsonify,Response
+from flask import Blueprint,request,jsonify,Response
 import json
 
 from bigfive.firstpage.utils import *
 import os
+
 mod = Blueprint('firstpage',__name__,url_prefix='/firstpage')
 
 
@@ -16,13 +17,13 @@ def test():
 
 @mod.route('/search', methods=['GET', 'POST'])
 def search():
-    keyword = request.args.get('keyword', default='').lower()
+    keyword = request.args.get('keyword', '').lower()
 
-    page = request.args.get('page', default='1')
-    size = request.args.get('size', default='6')
+    page = request.args.get('page', '1')
+    size = request.args.get('size', '6')
 
-    order_name = request.args.get('order_name', default='group_name')
-    order_type = request.args.get('order_type', default='asc')
+    order_name = request.args.get('order_name', 'group_name')
+    order_type = request.args.get('order_type', 'asc')
 
     result = search_group(keyword, page, size, order_name, order_type)
     return json.dumps(result, ensure_ascii=False)
@@ -81,10 +82,12 @@ def bigfive_group_info():
 
 @mod.route('/head', methods=['GET', 'POST'])
 def head():
+    # 个人和群组头像处理
     id = request.args.get('id')
     img_path = 'head_images/' + id + '.jpg'
     mime = 'image/jpeg'
     if not os.path.exists(img_path):
+        # 生成群组头像
         if '_' in id:
             try:
                 image_arrange(id)
