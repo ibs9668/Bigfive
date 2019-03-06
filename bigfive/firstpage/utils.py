@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import operator
+import os
+
+import PIL.Image as Image
+
 from bigfive.config import es,USER_RANKING,USER_INFORMATION,GROUP_INFORMATION,GROUP_RANKING
+
 
 
 
@@ -125,8 +130,8 @@ def dark_personality():
          }
     },"size":15000
     }
-    if es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
-        es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    es_result = es.search(index=USER_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    if es_result:
         user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
         final_high_dict = dict()
@@ -142,6 +147,7 @@ def dark_personality():
             for j in range(len(sorted_high)):
                 a_dict = dict()
                 a_dict["name"] = sorted_high[j]["username"]
+                a_dict["id"] = sorted_high[j]["uid"]
 
                 query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
                 photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
@@ -156,6 +162,7 @@ def dark_personality():
             for m in range(len(sorted_low)):
                 a_dict = dict()
                 a_dict["name"] = sorted_low[m]["username"]
+                a_dict["id"] = sorted_low[m]["uid"]
 
                 query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
                 photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
@@ -173,7 +180,7 @@ def dark_personality():
         result_dict["low"] = final_low_dict
 
         return result_dict
-
+    return {}
 def dark_group():
     query_body = {
         "query": {
@@ -190,7 +197,8 @@ def dark_group():
          }
     },"size":15000
     }
-    if es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
+    es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    if es_result:
         es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
         user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
@@ -207,6 +215,7 @@ def dark_group():
             for j in range(len(sorted_high)):
                 a_dict = dict()
                 a_dict["name"] = sorted_high[j]["group_name"]
+                a_dict["id"] = sorted_high[j]["group_id"]
 
                 # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_high[j]["uid"]}}]}}}
                 # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
@@ -221,6 +230,7 @@ def dark_group():
             for m in range(len(sorted_low)):
                 a_dict = dict()
                 a_dict["name"] = sorted_low[m]["group_name"]
+                a_dict["id"] = sorted_low[m]["group_id"]
 
                 # query_body = {"query":{"bool":{"must":[{"term":{"uid":sorted_low[m]["uid"]}}]}}}
                 # photo_url = es.search(index=USER_INFORMATION,doc_type="text",body = query_body)["hits"]["hits"][0]["_source"]["photo_url"]
@@ -238,7 +248,7 @@ def dark_group():
         result_dict["low"] = final_low_dict
 
         return result_dict
-
+    return {}
 def bigfive_personality():
     query_body = {
         "query": {
@@ -272,6 +282,7 @@ def bigfive_personality():
             for j in range(len(sorted_high)):
                 a_dict = dict()
                 a_dict["name"] = sorted_high[j]["username"]
+                a_dict["id"] = sorted_high[j]["uid"]
                 a_dict["extroversion_index"] = sorted_high[j]["extroversion_index"]
                 a_dict["nervousness_index"] = sorted_high[j]["nervousness_index"]
                 a_dict["openn_index"] = sorted_high[j]["openn_index"]
@@ -292,6 +303,7 @@ def bigfive_personality():
             for m in range(len(sorted_low)):
                 a_dict = dict()
                 a_dict["name"] = sorted_low[m]["username"]
+                a_dict["id"] = sorted_low[m]["uid"]
                 a_dict["extroversion_index"] = sorted_low[m]["extroversion_index"]
                 a_dict["nervousness_index"] = sorted_low[m]["nervousness_index"]
                 a_dict["openn_index"] = sorted_low[m]["openn_index"]
@@ -331,8 +343,8 @@ def bigfive_group():
          }
     },"size":15000
     }
-    if es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]!= []:
-        es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    es_result = es.search(index=GROUP_RANKING,doc_type="text",body = query_body)["hits"]["hits"]
+    if es_result:
         user_list = [es_result[i]["_source"] for i in range(len(es_result))]
 
         final_high_dict = dict()
@@ -348,6 +360,7 @@ def bigfive_group():
             for j in range(len(sorted_high)):
                 a_dict = dict()
                 a_dict["name"] = sorted_high[j]["group_name"]
+                a_dict["id"] = sorted_high[j]["group_id"]
                 a_dict["extroversion_index"] = sorted_high[j]["extroversion_index"]
                 a_dict["nervousness_index"] = sorted_high[j]["nervousness_index"]
                 a_dict["openn_index"] = sorted_high[j]["openn_index"]
@@ -367,6 +380,7 @@ def bigfive_group():
             for m in range(len(sorted_low)):
                 a_dict = dict()
                 a_dict["name"] = sorted_low[m]["group_name"]
+                a_dict["id"] = sorted_low[m]["group_id"]
                 a_dict["extroversion_index"] = sorted_low[m]["extroversion_index"]
                 a_dict["nervousness_index"] = sorted_low[m]["nervousness_index"]
                 a_dict["openn_index"] = sorted_low[m]["openn_index"]
@@ -389,7 +403,73 @@ def bigfive_group():
         result_dict["low"] = final_low_dict
 
         return result_dict
-    
 
 
+def read_files(direction='.'):
+    file_list = []
+    for file_path, dirs, fs in os.walk(direction):
+        for f in fs:
+            if file_path == '.' or file_path == '.\\.idea' or file_path == '.\\.ipynb_checkpoints':
+                continue
+            file_list.append(os.path.join(file_path, f))
+            pass
+    return file_list
 
+
+def image_arrange(group_id):
+    query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}]}}}
+    user_list = es.search(index='group_information', doc_type='text', body=query)['hits']['hits'][0]['_source']['userlist'][0:9]
+    image_names = []
+    for uid in user_list:
+        image_names.append(uid + '.jpg')
+
+    IMAGES_PATH = 'head_images/'  # 图片集地址
+    IMAGE_SIZE = 256  # 每张小图片的大小
+    IMAGE_SAVE_PATH = 'head_images/' + group_id + '.jpg'  # 图片转换后的地址
+    # image_names = [image.split('\\')[-1] for image in read_files(IMAGES_PATH)]
+
+    # 简单的对于参数的设定和实际图片集的大小进行数量判断
+    if len(image_names) == 1:
+        IMAGE_ROW = 1  # 图片间隔，也就是合并成一张图后，一共有几行
+        IMAGE_COLUMN = 1  # 图片间隔，也就是合并成一张图后，一共有几列
+    elif len(image_names) == 2:
+        IMAGE_ROW = 1
+        IMAGE_COLUMN = 1
+        image_names = image_names[0:1]
+    elif len(image_names) == 3:
+        IMAGE_ROW = 1
+        IMAGE_COLUMN = 1
+        image_names = image_names[0:1]
+    elif len(image_names) == 4:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+    elif len(image_names) == 5:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 6:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 7:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    elif len(image_names) == 8:
+        IMAGE_ROW = 2
+        IMAGE_COLUMN = 2
+        image_names = image_names[0:4]
+    else:
+        IMAGE_ROW = 3
+        IMAGE_COLUMN = 3
+        image_names = image_names[0:9]
+
+    to_image = Image.new('RGB', (IMAGE_COLUMN * IMAGE_SIZE, IMAGE_ROW * IMAGE_SIZE))  # 创建一个新图
+    # 循环遍历，把每张图片按顺序粘贴到对应位置上
+    for y in range(1, IMAGE_ROW + 1):
+        for x in range(1, IMAGE_COLUMN + 1):
+            print(IMAGES_PATH + image_names[IMAGE_COLUMN * (y - 1) + x - 1])
+            from_image = Image.open(IMAGES_PATH + image_names[IMAGE_COLUMN * (y - 1) + x - 1]).resize(
+                (IMAGE_SIZE, IMAGE_SIZE), Image.ANTIALIAS)
+            to_image.paste(from_image, ((x - 1) * IMAGE_SIZE, (y - 1) * IMAGE_SIZE))
+    to_image.save(IMAGE_SAVE_PATH)  # 保存新图

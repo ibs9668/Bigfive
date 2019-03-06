@@ -2,6 +2,9 @@
 *.pyc
 *.log
 
+__pycache__
 .idea/
 test.*
 bigfive/cron/model/model/
+head_images/
+head_images/*.jpg

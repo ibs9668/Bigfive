@@ -1,10 +1,12 @@
 # coding=utf-8
 import json
+import re
 
-from bigfive.time_utils import *
 from xpinyin import Pinyin
 
+from bigfive.time_utils import *
 from bigfive.config import es
+from bigfive.cache import cache
 
 
 def index_to_score_rank(index):
@@ -20,7 +22,7 @@ def index_to_score_rank(index):
 
 
 def create_group_task(data):
-    """创建组"""
+    """创建组任务"""
     p = Pinyin()
     data['group_pinyin'] = p.get_pinyin(data['group_name'], '')
     data['create_time'] = nowts()
@@ -52,10 +54,8 @@ def search_group_task(group_name, remark, create_time, page, size, order_name, o
         query['sort'].append({order_name: {"order": order}})
     # 添加组名查询
     if group_name:
-        query['query']['bool']['should'].append(
-            {"wildcard": {"group_name": "*{}*".format(group_name.lower())}})
-        query['query']['bool']['should'].append(
-            {"wildcard": {"keyword": "*{}*".format(group_name.lower())}})
+        query['query']['bool']['should'].append({"wildcard": {"group_name": "*{}*".format(group_name.lower())}})
+        query['query']['bool']['should'].append({"wildcard": {"keyword": "*{}*".format(group_name.lower())}})
     # 添加备注查询
     if remark:
         query['query']['bool']['must'].append(
@@ -73,8 +73,7 @@ def search_group_task(group_name, remark, create_time, page, size, order_name, o
         index = 'group_information'
     else:
         raise ValueError("index is error!")
-    r = es.search(index=index, doc_type='text', body=query, _source_include=[
-        'group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
+    r = es.search(index=index, doc_type='text', body=query, _source_include=['group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
     # 结果为空
     if not r:
         return {}
@@ -82,7 +81,7 @@ def search_group_task(group_name, remark, create_time, page, size, order_name, o
     result = []
     for hit in r:
         item = hit['_source']
-        # 为前端返回es的_id字段,为删除功能做支持
+        # 为前端返回es的_id字段
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
@@ -95,14 +94,12 @@ def delete_by_id(index, doc_type, id):
         r = es.get(index='group_task', doc_type=doc_type, id=id)
         if r['_source']['progress'] != 0:
             raise ValueError('progress is not 0')
+        es.delete(index='group_task', doc_type=doc_type, id=id)
     elif index == 'info':
-        es.delete(index='group_information', doc_type=doc_type, id=id)
-    es.delete(index='group_task', doc_type=doc_type, id=id)
-    return r2
+        es.delete(index='group_ranking', doc_type=doc_type, id=id)
 
 
-def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict):
-
+def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
     page = page if page else '1'
     size = size if size else '10'
     sort_list = []
@@ -115,59 +112,12 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
 
-    machiavellianism_index = machiavellianism_index if machiavellianism_index else 0
-    narcissism_index = narcissism_index if narcissism_index else 0
-    psychopathy_index = psychopathy_index if psychopathy_index else 0
-    extroversion_index = extroversion_index if extroversion_index else 0
-    nervousness_index = nervousness_index if nervousness_index else 0
-    openn_index = openn_index if openn_index else 0
-    agreeableness_index = agreeableness_index if agreeableness_index else 0
-    conscientiousness_index = conscientiousness_index if conscientiousness_index else 0
+    # 数据库中有些数据没有label字段，过滤掉这些数据
+    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{"constant_score": {"filter": {"missing": {"field": "extroversion_label"}}}}], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
-    machiavellianism_rank = index_to_score_rank(machiavellianism_index)
-    narcissism_rank = index_to_score_rank(narcissism_index)
-    psychopathy_rank = index_to_score_rank(psychopathy_index)
-    extroversion_rank = index_to_score_rank(extroversion_index)
-    nervousness_rank = index_to_score_rank(nervousness_index)
-    openn_rank = index_to_score_rank(openn_index)
-    agreeableness_rank = index_to_score_rank(agreeableness_index)
-    conscientiousness_rank = index_to_score_rank(conscientiousness_index)
-
-    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [
-    ], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
-
-
-    if machiavellianism_index:
-        query['query']['bool']['must'].append({"range": {
-            "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
-    if narcissism_index:
-        query['query']['bool']['must'].append(
-            {"range": {"narcissism_index": {"gte": str(narcissism_rank[0]), "lt": str(narcissism_rank[1])}}})
-    if psychopathy_index:
-        query['query']['bool']['must'].append(
-            {"range": {"psychopathy_index": {"gte": str(psychopathy_rank[0]), "lt": str(psychopathy_rank[1])}}})
-    if extroversion_index:
-        query['query']['bool']['must'].append(
-            {"range": {"extroversion_index": {"gte": str(extroversion_rank[0]), "lt": str(extroversion_rank[1])}}})
-    if nervousness_index:
-        query['query']['bool']['must'].append(
-            {"range": {"nervousness_index": {"gte": str(nervousness_rank[0]), "lt": str(nervousness_rank[1])}}})
-    if openn_index:
-        query['query']['bool']['must'].append(
-            {"range": {"openn_index": {"gte": str(openn_rank[0]), "lt": str(openn_rank[1])}}})
-    if agreeableness_index:
-        query['query']['bool']['must'].append(
-            {"range": {"agreeableness_index": {"gte": str(agreeableness_rank[0]), "lt": str(agreeableness_rank[1])}}})
-    if conscientiousness_index:
-        query['query']['bool']['must'].append({"range": {
-            "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
         user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
         query['query']['bool']['must'].append(json.loads(user_query))
-    if sensitive_index:
-        sensitive_query = '{"range":{"sensitive_index":{"gte":60}}}' if eval(
-            sensitive_index) else '{"range":{"sensitive_index":{"lt": 60}}}'
-        query['query']['bool']['must'].append(json.loads(sensitive_query))
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
@@ -223,7 +173,6 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
 
         hit['_source']['name'] = hit['_source']['group_name']
 
-
         item = hit['_source']
         # 为前端返回es的_id字段,为删除功能做支持
         item['id'] = hit['_id']
@@ -232,8 +181,27 @@ def search_group_ranking(keyword, page, size, order_name, order_type, sensitive_
     return {'rows': result, 'total': total}
 
 
+def get_group_user_list(gid):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "group_id": gid
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    result = es.search(index='group_information', doc_type='text', body=query)[
+        'hits']['hits'][0]['_source']['userlist']
+    return result
+
+
 def get_group_basic_info(gid, remark):
-    group_ranking_query = {
+    query = {
         "query": {
             "bool": {
                 "must": [
@@ -247,74 +215,135 @@ def get_group_basic_info(gid, remark):
         }
     }
     group_item = {}
-    result = es.get(index='group_information', id=gid, doc_type='text')['_source']
-    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=group_ranking_query)['hits']['hits'][0]['_source']
+    print(query)
+    result = es.search(index='group_information', doc_type='text', body=query)[
+        'hits']['hits'][0]['_source']
+    group_ranking_result = es.search(index='group_ranking', doc_type='text', body=query)[
+        'hits']['hits'][0]['_source']
     print(group_ranking_result)
+
+    # 黑暗人格字段
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
+
     group_item['narcissism'] = group_ranking_result['narcissism_index']
     group_item['psychopathy'] = group_ranking_result['psychopathy_index']
 
+    # 大五人格字段
     group_item['extroversion'] = group_ranking_result['extroversion_index']
-    group_item['conscientiousness'] = group_ranking_result['conscientiousness_index']
+    group_item['conscientiousness'] = group_ranking_result[
+        'conscientiousness_index']
     group_item['agreeableness'] = group_ranking_result['agreeableness_index']
     group_item['openn'] = group_ranking_result['openn_index']
     group_item['nervousness'] = group_ranking_result['nervousness_index']
 
+    # 群组基本信息
     group_item['group_name'] = result['group_name']
     group_item['user_count'] = len(result['userlist'])
     group_item['keyword'] = result['keyword']
     group_item['create_time'] = result['create_time']
     group_item['remark'] = result['remark']
+
+    # 群组星级
+    group_item['liveness_star'] = group_ranking_result['liveness_star']
+    group_item['importance_star'] = group_ranking_result['importance_star']
+    group_item['sensitive_star'] = group_ranking_result['sensitive_star']
+    group_item['influence_star'] = group_ranking_result['influence_star']
+    group_item['compactness_star'] = group_ranking_result['compactness_star']
+
+    # 传入remark时进行备注修改
     if remark:
-        es.update(index='group_information', id=gid, doc_type='text', body={'doc': {'remark': remark}})
+        es.update(index='group_information', id=gid,
+                  doc_type='text', body={'doc': {'remark': remark}})
     return group_item
 
 
 def group_preference(group_id):
+
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
     sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
-    print(query)
+
     if not hits or not sta_hits:
         return {}
 
     item = hits[0]['_source']
-    domain_static = {one['domain']:one['count'] for one in item['domain_static'] if one['count']}
-    topic_static = {one['topic']:one['count'] for one in item['topic_static'] if one['count']}
+    domain_static = {one['domain']: one['count']
+                     for one in item['domain_static'] if one['count']}
+    topic_static = {one['topic']: one['count']
+                    for one in item['topic_static'] if one['count']}
 
     sta_item = sta_hits[0]['_source']
-    keywords = {one['keyword']:one['count'] for one in sta_item['keywords']}
-    hastags = {one['hastag']:one['count'] for one in sta_item['hastags']}
-    sensitive_words = {one['sensitive_word']:one['count'] for one in sta_item['sensitive_words']}
+    keywords = {one['keyword']: one['count'] for one in sta_item['keywords']}
+    hastags = {one['hastag']: one['count'] for one in sta_item['hastags']}
+    sensitive_words = {one['sensitive_word']: one['count']
+                       for one in sta_item['sensitive_words']}
 
-    result = {'domain_static':domain_static,'topic_static':topic_static, 'keywords': keywords, 'hastags': hastags, 'sensitive_words': sensitive_words}
+    result = {'domain_static': domain_static, 'topic_result': topic_static,
+              'keywords': keywords, 'hastags': hastags, 'sensitive_words': sensitive_words}
     return result
 
 
-def group_influence(group_id):
+def group_influence(group_id, interval):
     query_body = {
         "query": {
-            "filtered": {
-                "filter": {
-                    "bool": {
-                        "must": [{
-                            "term": {
-                                "group_id": group_id
-
-                            }
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "group_id": group_id
                         }
-                        ]
+                    }
+                ]
+            }
+        },
+        "from": 0,
+        "size": 0,
+        "sort": [],
+        "aggs": {
+            "groupDate": {
+                "date_histogram": {
+                    "field": "date",
+                    "interval": interval,
+                    "format": "yyyy-MM-dd"
+                },
+                "aggs": {
+                    "sensitivity": {
+                        "stats": {
+                            "field": "sensitivity"
+                        }
+                    },
+                    "influence": {
+                        "stats": {
+                            "field": "influence"
+                        }
+                    },
+                    "activity": {
+                        "stats": {
+                            "field": "activity"
+                        }
+                    },
+                    "importance": {
+                        "stats": {
+                            "field": "importance"
+                        }
                     }
                 }
             }
-        },
-        "size": 1000
+        }
     }
-
     es_result = es.search(index="group_influence", doc_type="text", body=query_body)[
-        "hits"]["hits"]  # 默认取第0条一个用户的最新一条
-
-    return es_result
+        "aggregations"]["groupDate"]["buckets"]
+    result_list = []
+    for data in es_result:
+        item = {}
+        item['sensitivity'] = data['sensitivity']['sum']
+        item['influence'] = data['influence']['sum']
+        item['activity'] = data['activity']['sum']
+        item['importance'] = data['importance']['sum']
+        item['timestamp'] = data['key'] // 1000
+        item['date'] = data['key_as_string']
+        result_list.append(item)
+    return result_list
 
 
 def group_emotion(group_id, interval):
@@ -377,6 +406,7 @@ def group_emotion(group_id, interval):
     return result
 
 
+@cache.memoize(60)
 def group_social_contact(group_id, map_type):
     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
         '_source']['userlist']
@@ -430,36 +460,51 @@ def group_social_contact(group_id, map_type):
     return {}
 
 
-
 def get_group_activity(group_id):
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
-    hits = es.search(index='group_activity',doc_type='text',body=query)['hits']['hits']
+    query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
+    ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
+    hits = es.search(index='group_activity', doc_type='text',
+                     body=query)['hits']['hits']
     if not hits:
         return {}
-    result = {'one':[],'two':[],'three':[],'four':[]}
+    result = {'one': [], 'two': [], 'three': [], 'four': []}
     item = hits[0]['_source']
-    activity_direction = sorted(item['activity_direction'],key=lambda x:x['count'],reverse=True)[:5]
+    activity_direction = sorted(item['activity_direction'], key=lambda x: x[
+                                'count'], reverse=True)[:5]
+    for i in activity_direction:
+        start_end = i['geo2geo'].split('&')
+        result['one'].append(
+            {'start': start_end[0], 'end': start_end[1], 'count': i['count']})
+
     start_geo_item = {}
     end_geo_item = {}
-    for i in activity_direction:
+    route_list = []
+    for i in sorted(item['activity_direction'], key=lambda x: x['count'], reverse=True):
         try:
             if i['geo2geo'].split('&')[0].split(' ')[1] == '其他' or i['geo2geo'].split('&')[1].split(' ')[1] == '其他':
                 continue
+            if i['geo2geo'].split('&')[0].split(' ')[0] != '中国' or i['geo2geo'].split('&')[1].split(' ')[0] != '中国':
+                continue
         except:
             continue
-        start_geo_item.setdefault(i['geo2geo'].split('&')[0].split(' ')[1], 0)
-        start_geo_item[i['geo2geo'].split('&')[0].split(' ')[1]] += i['count']
-        end_geo_item.setdefault(i['geo2geo'].split('&')[1].split(' ')[1], 0)
-        end_geo_item[i['geo2geo'].split('&')[1].split(' ')[1]] += i['count']
 
-        start_end = i['geo2geo'].split('&')
-        result['one'].append({'start':start_end[0],'end':start_end[1],'count':i['count']})
+        start_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', i['geo2geo'].split('&')[0].split(' ')[1]), 0)
+        start_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(' ')[1])] += i['count']
+        end_geo_item.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1]), 0)
+        end_geo_item[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])] += i['count']
+        route_dict = {'s': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[0].split(' ')[1]), 'e': re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', i['geo2geo'].split('&')[1].split(' ')[1])}
+        if route_dict not in route_list and route_dict['s'] != route_dict['e']:
+            route_list.append(route_dict)
 
-        # s_end
-
-
-    print('start_geo_item', start_geo_item)
-    print('end_geo_item', end_geo_item)
-    result['two'] = sorted(item['main_start_geo'],key=lambda x:x['count'],reverse=True)[:5]
-    result['three'] = sorted(item['main_end_geo'],key=lambda x:x['count'],reverse=True)[:5]
+    geo_item = {}
+    for ks, vs in start_geo_item.items():
+        for ke, ve in end_geo_item.items():
+            if ks == ke:
+                geo_item[ks] = vs + ve
+                break
+    result['two'] = sorted(item['main_start_geo'], key=lambda x: x[
+                           'count'], reverse=True)[:5]
+    result['three'] = sorted(item['main_end_geo'], key=lambda x: x[
+                             'count'], reverse=True)[:5]
+    result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result

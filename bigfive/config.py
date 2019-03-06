@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 
 from elasticsearch import Elasticsearch
 
@@ -6,6 +7,8 @@ ES_HOST = '219.224.134.214'
 ES_PORT = 9200
 ES_HOST_WEIBO = '219.224.134.225'
 ES_PORT_WEIBO = 9225
+REDIS_HOST = '219.224.134.226'
+REDIS_PORT = 10010
 
 es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 es_weibo = Elasticsearch(hosts=[{'host': ES_HOST_WEIBO, 'port': ES_PORT_WEIBO}], timeout=1000)
@@ -122,3 +125,7 @@ outlist = [u'海外', u'香港', u'台湾', u'澳门']
 lawyerw = [u'律师', u'法律', u'法务', u'辩护']
 STATUS_THRE = 4000
 FOLLOWER_THRE = 1000
+
+# 测试用的逻辑"今天"及"一周前"
+today = '2016-11-27'
+a_week_ago = time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.strptime(today, '%Y-%m-%d'))) - 7 * 24 * 60 * 60))

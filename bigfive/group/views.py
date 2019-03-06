@@ -11,7 +11,7 @@ import os
 mod = Blueprint('group',__name__,url_prefix='/group')
 
 
-@mod.route('/test/')
+@mod.route('/test')
 def test():
     result = 'This is group!'
     return json.dumps(result,ensure_ascii=False)
@@ -36,7 +36,7 @@ def dgroup():
     gid = request.json.get('gid')
     index = request.json.get('index')
     try:
-        result = delete_by_id(index,'text',gid)
+        delete_by_id(index,'text',gid)
     except:
         return jsonify(0)
     return jsonify(1)
@@ -64,23 +64,14 @@ def group_ranking():
     page = parameters.get('page')
     size = parameters.get('size')
     order_dict = parameters.get('order_dict')
-    sensitive_index = parameters.get('sensitive_index')
-    machiavellianism_index = parameters.get('machiavellianism_index')
-    narcissism_index = parameters.get('narcissism_index')
-    psychopathy_index = parameters.get('psychopathy_index')
-    extroversion_index = parameters.get('extroversion_index')
-    nervousness_index = parameters.get('nervousness_index')
-    openn_index = parameters.get('openn_index')
-    agreeableness_index = parameters.get('agreeableness_index')
-    conscientiousness_index = parameters.get('conscientiousness_index')
     order_name = parameters.get('order_name')
     order_type = parameters.get('order_type')
 
-    result = search_group_ranking(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
+    result = search_group_ranking(keyword, page, size, order_name, order_type, order_dict)
     return jsonify(result)
 
 
-@mod.route('/delete_group_ranking/',methods=['POST'])
+@mod.route('/delete_group_ranking',methods=['POST'])
 def delete_ranking():
     """群体排名"""
     gid = request.json.get('gid')
@@ -88,18 +79,25 @@ def delete_ranking():
     return jsonify(1)
 
 
+@mod.route('/group_user_list', methods=['GET'])
+def group_user_list():
+    gid = request.args.get('group_id')
+    result = get_group_user_list(gid)
+    return jsonify(result)
+
+
 @mod.route('/basic_info/', methods=['GET'])
 def basic_info():
-    gid = request.args.get('gid')
+    gid = request.args.get('group_id')
     remark = request.args.get('remark', '')
     result = get_group_basic_info(gid, remark)
-    return json.dumps(result, ensure_ascii=False)
+    return jsonify(result)
 
 
 
 ################################ 宋慧慧负责 ###########################
 
-@mod.route('/group_personality/',methods=['POST','GET'])##group_id=mingxing_1548746836
+@mod.route('/group_personality',methods=['POST','GET'])##group_id=mingxing_1548746836
 def group_personality():
     group_id = request.args.get("group_id")
     query_body = {
@@ -140,7 +138,8 @@ def group_activity():
 
 ################################ 李宛星负责 ###########################
 
-@mod.route('/perference_identity/', methods=['POST','GET'])
+
+@mod.route('/preference_identity', methods=['POST','GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
     result = group_preference(group_id)
@@ -148,7 +147,7 @@ def perference_identity():
     return jsonify(result)
 
 
-@mod.route('/perference_topic', methods=['POST','GET'])
+@mod.route('/preference_topic', methods=['POST','GET'])
 def perference_topic():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -157,7 +156,7 @@ def perference_topic():
     return json.dumps(topic,ensure_ascii=False)
 
 
-@mod.route('/perference_word', methods=['POST','GET'])
+@mod.route('/preference_word', methods=['POST','GET'])
 def perference_word():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -171,26 +170,9 @@ def perference_word():
 @mod.route('/influence_feature', methods=['POST','GET'])
 def influence_feature():
     group_id=request.args.get('group_id')
-    group_inf = group_influence(group_id)
-    dict_inf = {}
-    time_list = []
-    activity = []
-    sensitivity = []
-    influence = []
-    warning = []
-    for i,_ in enumerate(group_inf):
-        time_list.append(_["_source"]["timestamp"])
-        activity.append(_["_source"]["activity"])
-        sensitivity.append(_["_source"]["sensitivity"])
-        influence.append(_["_source"]["influence"])
-        warning.append(_["_source"]["warning"])
-    dict_inf["time"] = time_list
-    dict_inf["activity_line"] = activity
-    dict_inf["sensitivity_line"] = sensitivity
-    dict_inf["influence_line"] = influence
-    dict_inf["warning_line"] = warning
-
-    return json.dumps(dict_inf,ensure_ascii=False)
+    interval=request.args.get('type','day')
+    result = group_influence(group_id,interval)
+    return jsonify(result)
 
 
 @mod.route('/emotion_feature', methods=['POST','GET'])
@@ -205,6 +187,8 @@ def emotion_feature():
 def social_contact():
     group_id=request.args.get('group_id')
     map_type = request.args.get("type")
-    social_contact = group_social_contact(group_id,map_type)
+    try:
+        social_contact = group_social_contact(group_id,map_type)
+    except:
+        return jsonify({})
     return jsonify(social_contact)
-
