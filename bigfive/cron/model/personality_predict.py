@@ -157,39 +157,45 @@ def save_predict_result(y):  # 将预测结果存入文件
     #[['2146717162'，"uid2"], [2.850552158006373,a], [3.674095918821599,b], [3.2880626149813974], [3.1653211890612742], [3.246121272128871], [3.324488726243067], [2.726574264907801], [2.4002086889189544]]
     '''
 #预测用户的人格得分，返回对应用户的人格得分列表，使用时调用此函数,
+# def predict_personality(uid_list,start_time,end_time):
+
+#     bigfive_keywords_filepath = '%s/model/bigfive_keywords.npy' % father_path
+#     dark_keywords_filepath = '%s/model/dark_keywords.npy' % father_path
+
+#     print('Start getting weibo data...')
+#     user_weibo = read_weibo_text_data(uid_list,start_time,end_time)
+
+
+#     user_list = list(user_weibo.keys())
+#     print('Start getting user else feature...')
+#     else_feature = get_user_else_feature(user_list)
+
+#     per_predict = []
+#     per_predict.append(user_list)
+#     per_name = ['Extraversion','Agreeableness','Conscientiousness','Neuroticism','Openness','马基雅维利主义','自恋','精神病态']
+
+#     for i in range(8):
+#         print('Predict %s...' % per_name[i])
+#         if i < 5:
+#             word_feature = get_word_feature(user_weibo, user_list, bigfive_keywords_filepath)
+#         else:
+#             word_feature = get_word_feature(user_weibo, user_list, dark_keywords_filepath)
+
+#         x = np.concatenate((word_feature, else_feature), axis=1)
+#         model_name = father_path + '/model/'+per_name[i] + '_regression_model.pkl'
+#         regression_model = joblib.load(model_name)
+#         y = regression_model.predict(x)
+#         per_predict.append(list(y))
+
+#     # save_predict_result(per_predict)
+
+#     return per_predict
+
 def predict_personality(uid_list,start_time,end_time):
-
-    bigfive_keywords_filepath = '%s/model/bigfive_keywords.npy' % father_path
-    dark_keywords_filepath = '%s/model/dark_keywords.npy' % father_path
-
-    print('Start getting weibo data...')
-    user_weibo = read_weibo_text_data(uid_list,start_time,end_time)
-
-
-    user_list = list(user_weibo.keys())
-    print('Start getting user else feature...')
-    else_feature = get_user_else_feature(user_list)
-
-    per_predict = []
-    per_predict.append(user_list)
-    per_name = ['Extraversion','Agreeableness','Conscientiousness','Neuroticism','Openness','马基雅维利主义','自恋','精神病态']
-
-    for i in range(8):
-        print('Predict %s...' % per_name[i])
-        if i < 5:
-            word_feature = get_word_feature(user_weibo, user_list, bigfive_keywords_filepath)
-        else:
-            word_feature = get_word_feature(user_weibo, user_list, dark_keywords_filepath)
-
-        x = np.concatenate((word_feature, else_feature), axis=1)
-        model_name = father_path + '/model/'+per_name[i] + '_regression_model.pkl'
-        regression_model = joblib.load(model_name)
-        y = regression_model.predict(x)
-        per_predict.append(list(y))
-
-    # save_predict_result(per_predict)
-
-    return per_predict
+    import random
+    result = [uid_list]
+    result.extend([[int(random.random() * 100) for j in range(len(uid_list))] for i in range(9)])
+    return result
 
 if __name__ == "__main__":
     

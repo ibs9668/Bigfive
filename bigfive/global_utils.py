@@ -62,7 +62,8 @@ class ESIterator(object):
     
     def __iter__(self):
         return self
-
+      
+      
 if __name__ == '__main__':
     # query_body = {
     #     'query':{
@@ -103,3 +104,4 @@ if __name__ == '__main__':
         except StopIteration:
             #遇到StopIteration就退出循环
             break
+

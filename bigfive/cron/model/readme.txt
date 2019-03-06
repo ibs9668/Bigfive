@@ -14,4 +14,4 @@ Model 文件中是训练好的回归模型
 
 8个维度的排序：['Extraversion','Agreeableness','Conscientiousness','Neuroticism','Openness','马基雅维利主义','自恋','精神病态']
 
-[外倾性，宜人性，尽责性，神经质，开放性，马基雅维利主义,自恋,精神病态]
+[外倾性，宜人性，尽责性，神经质，开放性，马基雅维利主义，自恋，精神病态]

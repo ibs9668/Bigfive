@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 
 from elasticsearch import Elasticsearch
 
@@ -6,6 +7,8 @@ ES_HOST = '219.224.134.214'
 ES_PORT = 9200
 ES_HOST_WEIBO = '219.224.134.225'
 ES_PORT_WEIBO = 9225
+REDIS_HOST = '219.224.134.226'
+REDIS_PORT = 10010
 
 es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 es_weibo = Elasticsearch(hosts=[{'host': ES_HOST_WEIBO, 'port': ES_PORT_WEIBO}], timeout=1000)
@@ -29,6 +32,10 @@ GROUP_ACTIVITY = 'group_activity'
 GROUP_INFORMATION = 'group_information'
 GROUP_RANKING = 'group_ranking'
 GROUP_TASK = 'group_task'
+GROUP_INFLUENCE = 'group_influence'
+GROUP_PERSONALITY = 'group_personality'
+GROUP_DOMAIN_TOPIC = 'group_domain_topic'
+GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 
 # cron_user parameter
 USER_ITER_COUNT = 100
@@ -43,6 +50,11 @@ USER_OPENN_THRESHOLD = [20,80]
 USER_AGREEABLENESS_THRESHOLD = [20,80]
 USER_CONSCIENTIOUSNESS_THRESHOLD = [20,80]
 
+USER_NORMALIZATION_IMPORTANCE = [25,172]
+USER_NORMALIZATION_SENSITIVITY = [0,100]
+USER_NORMALIZATION_INFLUENCE = [0,1000]
+USER_NORMALIZATION_ACTIVITY = [0,4.33472983]
+
 # cron_group parameter
 GROUP_ITER_COUNT = 100
 
@@ -53,7 +65,24 @@ GROUP_AVE_SENSITIVITY_RANK_THRESHOLD = [0.3, 0.7]
 GROUP_DENSITY_THRESHOLD = [0.1, 0.3]
 
 #人格字典
-PERSONALITY_DIC = {'machiavellianism_index':{'name':'马基雅维里主义','threshold':USER_MACHIAVELLIANISM_THRESHOLD},'narcissism_index':{'name':'自恋','threshold':USER_NARCISSISM_THRESHOLD},'psychopathy_index':{'name':'精神病态','threshold':USER_PSYCHOPATHY_THRESHOLD},'extroversion_index':{'name':'外倾性','threshold':USER_EXTROVERSION_THRESHOLD},'nervousness_index':{'name':'神经质','threshold':USER_NERVOUSNESS_THRESHOLD},'openn_index':{'name':'开放性','threshold':USER_OPENN_THRESHOLD},'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}}
+PERSONALITY_DIC = {
+    'machiavellianism_index':{'name':'马基雅维里主义','threshold':USER_MACHIAVELLIANISM_THRESHOLD},
+    'narcissism_index':{'name':'自恋','threshold':USER_NARCISSISM_THRESHOLD},
+    'psychopathy_index':{'name':'精神病态','threshold':USER_PSYCHOPATHY_THRESHOLD},
+    'extroversion_index':{'name':'外倾性','threshold':USER_EXTROVERSION_THRESHOLD},
+    'nervousness_index':{'name':'神经质','threshold':USER_NERVOUSNESS_THRESHOLD},
+    'openn_index':{'name':'开放性','threshold':USER_OPENN_THRESHOLD},
+    'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},
+    'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}
+}
+
+#画像字典
+ATTRIBUTE_DIC = {
+    'importance':{'name':'重要度',"threshold":USER_NORMALIZATION_IMPORTANCE},
+    'sensitivity':{'name':'敏感度',"threshold":USER_NORMALIZATION_SENSITIVITY},
+    'influence':{'name':'影响力',"threshold":USER_NORMALIZATION_INFLUENCE},
+    'activity':{'name':'活跃度',"threshold":USER_NORMALIZATION_ACTIVITY}
+}
 
 # 情感分类 0中性 1积极
 SENTIMENT_INDEX_LIST = [0, 1]
@@ -90,9 +119,13 @@ topic_dict = {'art': '文体类_娱乐', 'computer': '科技类', 'economic': '�
               'medicine': '民生类_健康', 'military': '军事类', 'politics': '政治类_外交', 'sports': '文体类_体育', 'traffic': '民生类_交通',
               'life': '其他类', 'anti_corruption': '政治类_反腐', 'employment': '民生类_就业', 'fear_of_violence': '政治类_暴恐',
               'house': '民生类_住房', 'law': '民生类_法律', 'peace': '政治类_地区和平', 'religion': '政治类_宗教',
-              'social_security': '民生类_社会保障'}
+              'social_security': '民生类_社会保障', 'violence': '政治类_暴恐',}
 
 outlist = [u'海外', u'香港', u'台湾', u'澳门']
 lawyerw = [u'律师', u'法律', u'法务', u'辩护']
 STATUS_THRE = 4000
 FOLLOWER_THRE = 1000
+
+# 测试用的逻辑"今天"及"一周前"
+today = '2016-11-27'
+a_week_ago = time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.strptime(today, '%Y-%m-%d'))) - 7 * 24 * 60 * 60))

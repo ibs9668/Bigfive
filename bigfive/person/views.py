@@ -2,7 +2,7 @@
 
 import json
 import time
-from collections import Counter
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 
@@ -12,14 +12,14 @@ from bigfive.person.utils import es, user_emotion, user_social_contact, user_pre
 mod = Blueprint('person', __name__, url_prefix='/person')
 
 
-@mod.route('/test/')
+@mod.route('/test')
 def test():
     result = 'This is person!'
     return json.dumps(result, ensure_ascii=False)
 
 
 # portrait表格
-@mod.route('/portrait/', methods=['POST'])
+@mod.route('/portrait', methods=['POST'])
 def return_portrait_table():
     # keyword = request.args.get("keyword", default='').lower()
     # page = request.args.get('page', default='1')
@@ -38,30 +38,33 @@ def return_portrait_table():
     # agreeableness_index = request.args.get('agreeableness_index', default=0)
     # conscientiousness_index = request.args.get('conscientiousness_index', default=0)
     # print(request.json())
-    # parameters = json.loads(request.json())
-    keyword = request.form.get('keyword')
-    page = request.form.get('page')
-    size = request.form.get('size')
-    order_dict = request.form.get('order_dict')
-    sensitive_index = request.form.get('sensitive_index')
-    machiavellianism_index = request.form.get('machiavellianism_index')
-    narcissism_index = request.form.get('narcissism_index')
-    psychopathy_index = request.form.get('psychopathy_index')
-    extroversion_index = request.form.get('extroversion_index')
-    nervousness_index = request.form.get('nervousness_index')
-    openn_index = request.form.get('openn_index')
-    agreeableness_index = request.form.get('agreeableness_index')
-    conscientiousness_index = request.form.get('conscientiousness_index')
-    order_name = request.form.get('order_name')
-    order_type = request.form.get('order_type')
+    parameters = request.form.to_dict()
+    # print(request.form.to_dict())
+    # print(dir(request.form))
+    keyword = parameters.get('keyword')
+    page = parameters.get('page')
+    size = parameters.get('size')
+    order_dict = parameters.get('order_dict')
+    sensitive_index = parameters.get('sensitive_index')
+    machiavellianism_index = parameters.get('machiavellianism_index')
+    narcissism_index = parameters.get('narcissism_index')
+    psychopathy_index = parameters.get('psychopathy_index')
+    extroversion_index = parameters.get('extroversion_index')
+    nervousness_index = parameters.get('nervousness_index')
+    openn_index = parameters.get('openn_index')
+    agreeableness_index = parameters.get('agreeableness_index')
+    conscientiousness_index = parameters.get('conscientiousness_index')
+    order_name = parameters.get('order_name')
+    order_type = parameters.get('order_type')
 
-    result = portrait_table(keyword, page, size, order_name, order_type, sensitive_index, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
+    result = portrait_table(keyword, page, size, order_name, order_type, machiavellianism_index, narcissism_index, psychopathy_index, extroversion_index, nervousness_index, openn_index, agreeableness_index, conscientiousness_index, order_dict)
 
     return json.dumps(result, ensure_ascii=False)
+    # return jsonify(1)
 
 
 # 根据uid删除一条记录
-@mod.route('/delete_user/', methods=['POST'])
+@mod.route('/delete_user', methods=['POST'])
 def delete_user():
     uid = request.json.get('person_id')
     result = es.delete(index='user_ranking', doc_type='text', id=uid)
@@ -69,7 +72,8 @@ def delete_user():
     return jsonify(1)
 
 
-@mod.route('/basic_info/', methods=['POST'])
+# 用户基本信息
+@mod.route('/basic_info', methods=['GET', 'POST'])
 def basic_info():
     uid = request.args.get('person_id')
     result = get_basic_info(uid)
@@ -84,19 +88,21 @@ def user_activity():
     return json.dumps(result, ensure_ascii=False)
 
 
+# 偏好特征
 @mod.route('/preference_identity', methods=['POST', 'GET'])
 def preference_identity():
     uid = request.args.get('person_id')
     result = get_preference_identity(uid)
-    return json.dumps(result, ensure_ascii=False)
+    return jsonify(result)
 
 
 # 影响力特征
 @mod.route('/influence_feature', methods=['POST', 'GET'])
 def influence_feature():
     uid = request.args.get('person_id')
-    result = get_influence_feature(uid)
-    return json.dumps(result, ensure_ascii=False)
+    interval = request.args.get('type','day')
+    result = get_influence_feature(uid,interval)
+    return jsonify(result)
 
 
 @mod.route('/person_personality', methods=['POST', 'GET'])
