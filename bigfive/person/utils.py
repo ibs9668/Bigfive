@@ -93,7 +93,6 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
     query['sort'] = sort_list
     # query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
     # query['sort'] = [{order_name: {"order": order_type}}]
-    print(query)
 
     hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
 
@@ -132,7 +131,7 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
         if item['_source']['psychopathy_label'] == 2:
             item['_source']['dark_list'].append({'精神病态': '1'})
         if item['_source']['narcissism_label'] == 0:
-            item['_source']['dark_list'].append({'自怜': '0'})
+            item['_source']['dark_list'].append({'自恋': '0'})
         if item['_source']['narcissism_label'] == 2:
             item['_source']['dark_list'].append({'自恋': '1'})
 

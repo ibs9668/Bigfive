@@ -27,6 +27,43 @@ def search_group(keyword, page, size, order_name, order_type):
     hits = es.search(index='group_ranking', doc_type='text', body=query)['hits']
     result = {'rows': [], 'total': hits['total']}
     for item in hits['hits']:
+        item['_source']['big_five_list'] = []
+        item['_source']['dark_list'] = []
+
+        if item['_source']['extroversion_label'] == 0:
+            item['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
+        if item['_source']['extroversion_label'] == 2:
+            item['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
+        if item['_source']['openn_label'] == 0:
+            item['_source']['big_five_list'].append({'开放性': '0'})
+        if item['_source']['openn_label'] == 2:
+            item['_source']['big_five_list'].append({'开放性': '1'})
+        if item['_source']['agreeableness_label'] == 0:
+            item['_source']['big_five_list'].append({'宜人性': '0'})
+        if item['_source']['agreeableness_label'] == 2:
+            item['_source']['big_five_list'].append({'宜人性': '1'})
+        if item['_source']['conscientiousness_label'] == 0:
+            item['_source']['big_five_list'].append({'尽责性': '0'})
+        if item['_source']['conscientiousness_label'] == 2:
+            item['_source']['big_five_list'].append({'尽责性': '1'})
+        if item['_source']['nervousness_label'] == 0:
+            item['_source']['big_five_list'].append({'神经质': '0'})
+        if item['_source']['nervousness_label'] == 2:
+            item['_source']['big_five_list'].append({'神经质': '1'})
+
+        if item['_source']['machiavellianism_label'] == 0:
+            item['_source']['dark_list'].append({'马基雅维里主义': '0'})
+        if item['_source']['machiavellianism_label'] == 2:
+            item['_source']['dark_list'].append({'马基雅维里主义': '1'})
+        if item['_source']['psychopathy_label'] == 0:
+            item['_source']['dark_list'].append({'精神病态': '0'})
+        if item['_source']['psychopathy_label'] == 2:
+            item['_source']['dark_list'].append({'精神病态': '1'})
+        if item['_source']['narcissism_label'] == 0:
+            item['_source']['dark_list'].append({'自恋': '0'})
+        if item['_source']['narcissism_label'] == 2:
+            item['_source']['dark_list'].append({'自恋': '1'})
+
         item['_source']['name'] = item['_source']['group_name']
         item['_source']['id'] = item['_id']
         result['rows'].append(item['_source'])

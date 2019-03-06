@@ -15,15 +15,16 @@ def test():
     return json.dumps(result,ensure_ascii=False)
 
 
-@mod.route('/search', methods=['GET', 'POST'])
+@mod.route('/search', methods=['POST'])
 def search():
-    keyword = request.args.get('keyword', '').lower()
+    parameters = request.form.to_dict()
+    keyword = parameters.get('keyword', '').lower()
 
-    page = request.args.get('page', '1')
-    size = request.args.get('size', '6')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '6')
 
-    order_name = request.args.get('order_name', 'group_name')
-    order_type = request.args.get('order_type', 'asc')
+    order_name = parameters.get('order_name', 'group_name')
+    order_type = parameters.get('order_type', 'asc')
 
     result = search_group(keyword, page, size, order_name, order_type)
     return json.dumps(result, ensure_ascii=False)
