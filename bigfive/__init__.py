@@ -7,7 +7,7 @@ from bigfive.politics.views import mod as politics_mod
 from bigfive.group.views import mod as group_mod
 
 from bigfive.cache import cache
-
+from flask_cors import CORS
 from flask import Flask
 import os
 
@@ -22,6 +22,7 @@ def create_app():
     app.register_blueprint(hotevent_mod)
     app.register_blueprint(politics_mod)
     app.register_blueprint(group_mod)
-
+    app.secret_key = "ruman"
+    CORS(app, supports_credentials=True)
     return app
 
