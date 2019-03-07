@@ -344,7 +344,7 @@ def get_group_basic_info(gid, remark):
 
 def group_preference(group_id):
 
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
+    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
     sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
 

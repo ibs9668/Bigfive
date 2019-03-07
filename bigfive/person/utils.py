@@ -537,7 +537,26 @@ def get_preference_identity(uid):
             }
         ]
     }
-    print(query)
+
+    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0][
+        '_source']
+    result['keywords'] = {}
+    if analysis_result['keywords']:
+        for i in analysis_result['keywords']:
+            result['keywords'].update({i['keyword']: i['count']})
+
+    result['hastags'] = {}
+    if analysis_result['hastags']:
+        for i in analysis_result['hastags']:
+            result['hastags'].update({i['hastag']: i['count']})
+
+    result['sensitive_words'] = {}
+    if analysis_result['sensitive_words']:
+        print(analysis_result['sensitive_words'])
+        for i in analysis_result['sensitive_words']:
+            result['sensitive_words'].update({i['sensitive_word']: i['count']})
+
+    query['query']['bool']['must'].append({"term": {"has_new_information": "1"}})
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
@@ -563,24 +582,7 @@ def get_preference_identity(uid):
     link = [m_to_f_link, m_to_v_link, m_to_w_link]
     domain_dict = {'node': node, 'link': link}
 
-    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
     result['topic_result'] = topic_result
-
-    result['keywords'] = {}
-    if analysis_result['keywords']:
-        for i in analysis_result['keywords']:
-            result['keywords'].update({i['keyword']: i['count']})
-
-    result['hastags'] = {}
-    if analysis_result['hastags']:
-        for i in analysis_result['hastags']:
-            result['hastags'].update({i['hastag']: i['count']})
-
-    result['sensitive_words'] = {}
-    if analysis_result['sensitive_words']:
-        print(analysis_result['sensitive_words'])
-        for i in analysis_result['sensitive_words']:
-            result['sensitive_words'].update({i['sensitive_word']: i['count']})
     result['domain_dict'] = domain_dict
 
     return result
