@@ -5,7 +5,7 @@ import re
 from xpinyin import Pinyin
 
 from bigfive.time_utils import *
-from bigfive.config import es
+from bigfive.config import es, MAX_VALUE, USER_RANKING
 from bigfive.cache import cache
 
 
@@ -508,3 +508,4 @@ def get_group_activity(group_id):
                              'count'], reverse=True)[:5]
     result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result
+

@@ -6,7 +6,7 @@ import time
 
 from elasticsearch.helpers import scan
 
-from bigfive.config import es, labels_dict, topic_dict, today, a_week_ago
+from bigfive.config import es, labels_dict, topic_dict, today, a_week_ago, MAX_VALUE, USER_RANKING
 from bigfive.cache import cache
 
 def judge_uid_or_nickname(keyword):
@@ -145,6 +145,38 @@ def delete_by_id(index, doc_type, id):
     return result
 
 
+def get_index_rank(personality_value, personality_name, label_type):
+    result = 0
+    query_body = {
+        'query':{
+            'bool':{
+                'must':[
+                    {'range':{
+                        personality_name:{
+                            'from':personality_value,
+                            'to': MAX_VALUE
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    index_rank = es.count(index=USER_RANKING, doc_type='text', body=query_body)
+    if index_rank['_shards']['successful'] != 0:
+       result = index_rank['count']
+    else:
+        print('es index rank error')
+        result = 0
+    all_user_count = es.count(index=USER_RANKING, doc_type='text', body={'query':{'match_all':{}}})['count']
+    if label_type == 'low':
+        return result / all_user_count
+    elif label_type == 'high':
+        return (all_user_count - result) / all_user_count
+    else:
+        raise ValueError
+
+
 def get_basic_info(uid):
     star_query = {
         "query": {
@@ -160,6 +192,7 @@ def get_basic_info(uid):
     star_result = es.search(index='user_ranking', doc_type='text', body=star_query)['hits']['hits'][-1]['_source']
     result['domain'] = labels_dict[result['domain']]
     result['political_bias'] = political_bias_dic[result['political_bias']]
+
     result['liveness_star'] = star_result['liveness_star']
     result['importance_star'] = star_result['importance_star']
     result['sensitive_star'] = star_result['sensitive_star']
@@ -174,6 +207,43 @@ def get_basic_info(uid):
     result['openn'] = star_result['openn_index']
     result['agreeableness'] = star_result['agreeableness_index']
     result['conscientiousness'] = star_result['conscientiousness_index']
+
+    personality_status = {}
+    if star_result['extroversion_label'] == 0:
+        personality_status['外倾性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'low'))/100))
+    if star_result['extroversion_label'] == 2:
+        personality_status['外倾性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'high'))/100))
+    if star_result['openn_label'] == 0:
+        personality_status['开放性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'low'))/100))
+    if star_result['openn_label'] == 2:
+        personality_status['开放性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'high'))/100))
+    if star_result['agreeableness_label'] == 0:
+        personality_status['宜人性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'low'))/100))
+    if star_result['agreeableness_label'] == 2:
+        personality_status['宜人性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'high'))/100))
+    if star_result['conscientiousness_label'] == 0:
+        personality_status['尽责性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'low'))/100))
+    if star_result['conscientiousness_label'] == 2:
+        personality_status['尽责性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'high'))/100))
+    if star_result['nervousness_label'] == 0:
+        personality_status['神经质'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'low'))/100))
+    if star_result['nervousness_label'] == 2:
+        personality_status['神经质'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'high'))/100))
+
+    if star_result['machiavellianism_label'] == 0:
+        personality_status['马基雅维利主义'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'low'))/100))
+    if star_result['machiavellianism_label'] == 2:
+        personality_status['外倾性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'high'))/100))
+    if star_result['psychopathy_label'] == 0:
+        personality_status['精神病态'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'low'))/100))
+    if star_result['psychopathy_label'] == 2:
+        personality_status['精神病态'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'high'))/100))
+    if star_result['narcissism_label'] == 0:
+        personality_status['自恋'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'low'))/100))
+    if star_result['narcissism_label'] == 2:
+        personality_status['自恋'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'high'))/100))
+
+    result['personality_status'] = personality_status
 
     return result
 
