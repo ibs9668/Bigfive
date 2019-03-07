@@ -200,6 +200,38 @@ def get_group_user_list(gid):
     return result
 
 
+def get_index_rank(personality_value, personality_name, label_type):
+    result = 0
+    query_body = {
+        'query':{
+            'bool':{
+                'must':[
+                    {'range':{
+                        personality_name:{
+                            'from':personality_value,
+                            'to': MAX_VALUE
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    index_rank = es.count(index=USER_RANKING, doc_type='text', body=query_body)
+    if index_rank['_shards']['successful'] != 0:
+       result = index_rank['count']
+    else:
+        print('es index rank error')
+        result = 0
+    all_user_count = es.count(index=USER_RANKING, doc_type='text', body={'query':{'match_all':{}}})['count']
+    if label_type == 'low':
+        return result / all_user_count
+    elif label_type == 'high':
+        return (all_user_count - result) / all_user_count
+    else:
+        raise ValueError
+
+
 def get_group_basic_info(gid, remark):
     query = {
         "query": {
@@ -249,6 +281,59 @@ def get_group_basic_info(gid, remark):
     group_item['sensitive_star'] = group_ranking_result['sensitive_star']
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
+
+    personality_status = {}
+    if group_ranking_result['extroversion_label'] == 0:
+        personality_status['外倾性'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['extroversion_index'], 'extroversion_index', 'low')) / 100))
+    if group_ranking_result['extroversion_label'] == 2:
+        personality_status['外倾性'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['extroversion_index'], 'extroversion_index', 'high')) / 100))
+    if group_ranking_result['openn_label'] == 0:
+        personality_status['开放性'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['openn_index'], 'openn_index', 'low')) / 100))
+    if group_ranking_result['openn_label'] == 2:
+        personality_status['开放性'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['openn_index'], 'openn_index', 'high')) / 100))
+    if group_ranking_result['agreeableness_label'] == 0:
+        personality_status['宜人性'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['agreeableness_index'], 'agreeableness_index', 'low')) / 100))
+    if group_ranking_result['agreeableness_label'] == 2:
+        personality_status['宜人性'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['agreeableness_index'], 'agreeableness_index', 'high')) / 100))
+    if group_ranking_result['conscientiousness_label'] == 0:
+        personality_status['尽责性'] = r'低于{}%的群组'.format(str(int(
+            10000 * get_index_rank(group_ranking_result['conscientiousness_index'], 'conscientiousness_index', 'low')) / 100))
+    if group_ranking_result['conscientiousness_label'] == 2:
+        personality_status['尽责性'] = r'高于{}%的群组'.format(str(int(
+            10000 * get_index_rank(group_ranking_result['conscientiousness_index'], 'conscientiousness_index', 'high')) / 100))
+    if group_ranking_result['nervousness_label'] == 0:
+        personality_status['神经质'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['nervousness_index'], 'nervousness_index', 'low')) / 100))
+    if group_ranking_result['nervousness_label'] == 2:
+        personality_status['神经质'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['nervousness_index'], 'nervousness_index', 'high')) / 100))
+
+    if group_ranking_result['machiavellianism_label'] == 0:
+        personality_status['马基雅维利主义'] = r'低于{}%的群组'.format(str(
+            int(10000 * get_index_rank(group_ranking_result['machiavellianism_index'], 'machiavellianism_index', 'low')) / 100))
+    if group_ranking_result['machiavellianism_label'] == 2:
+        personality_status['外倾性'] = r'高于{}%的群组'.format(str(
+            int(10000 * get_index_rank(group_ranking_result['machiavellianism_index'], 'machiavellianism_index', 'high')) / 100))
+    if group_ranking_result['psychopathy_label'] == 0:
+        personality_status['精神病态'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['psychopathy_index'], 'psychopathy_index', 'low')) / 100))
+    if group_ranking_result['psychopathy_label'] == 2:
+        personality_status['精神病态'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['psychopathy_index'], 'psychopathy_index', 'high')) / 100))
+    if group_ranking_result['narcissism_label'] == 0:
+        personality_status['自恋'] = r'低于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['narcissism_index'], 'narcissism_index', 'low')) / 100))
+    if group_ranking_result['narcissism_label'] == 2:
+        personality_status['自恋'] = r'高于{}%的群组'.format(
+            str(int(10000 * get_index_rank(group_ranking_result['narcissism_index'], 'narcissism_index', 'high')) / 100))
+
+    group_item['personality_status'] = personality_status
 
     # 传入remark时进行备注修改
     if remark:
