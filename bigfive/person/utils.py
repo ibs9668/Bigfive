@@ -454,8 +454,8 @@ def get_user_activity(uid):
         one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
-            one_week_geo_dict.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[-1]), 0)
-            one_week_geo_dict[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[-1])] += geo_data['_source']['count']
+            one_week_geo_dict.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo']), 0)
+            one_week_geo_dict[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'])] += geo_data['_source']['count']
             geo_dict.setdefault(geo_data['_source']['date'], {})
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
@@ -467,7 +467,7 @@ def get_user_activity(uid):
             except:
                 continue
             # geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source']['count']
-            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'])] += geo_data['_source']['count']
+            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'])] += geo_data['_source']['count']
 
         one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
         for i in range(5):
