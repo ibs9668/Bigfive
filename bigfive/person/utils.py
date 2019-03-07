@@ -482,11 +482,11 @@ def get_user_activity(uid):
         for i in range(len(geo_dict_item)):
             if not geo_dict_item[i][1]:
                 continue
-            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get), 'e': ''}
+            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1], 'e': ''}
             route_list.append(item)
             print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
             if i > 0:
-                route_list[i - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
+                route_list[i - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1]
 
         if len(route_list) > 1:
             del (route_list[-1])
