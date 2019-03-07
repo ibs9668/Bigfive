@@ -404,13 +404,13 @@ def get_user_activity(uid):
     one_week_dic = {}
     for one_week_data in one_week_result:
         one_week_dic[one_week_data['key']] = one_week_data['ip_count']['sum']
-
+    # .split('&')[-1]
     # print(one_week_dic)
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(5):
         try:
             item = {'rank': i + 1, 'count': int(l[i][1]), 'ip': l[i][0]}
-            item['geo'] = re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', es.search(index='user_activity', doc_type='text', body={"query":{"bool":{"must":[{"term":{"ip":l[i][0]}}]}},"size":1})['hits']['hits'][0]['_source']['geo'].split('&')[-1])
+            item['geo'] = re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', es.search(index='user_activity', doc_type='text', body={"query":{"bool":{"must":[{"term":{"ip":l[i][0]}}]}},"size":1})['hits']['hits'][0]['_source']['geo'])
         except:
             item = {'rank': i + 1, 'count': '-', 'ip': '-', 'geo': '-'}
         one_week_ip_rank.append(item)
