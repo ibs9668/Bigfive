@@ -79,7 +79,7 @@ def delete_ranking():
     return jsonify(1)
 
 
-@mod.route('/group_user_list', methods=['POST'])
+@mod.route('/group_user_list/', methods=['POST'])
 def group_user_list():
     parameters = request.form.to_dict()
     gid = parameters.get('group_id')
