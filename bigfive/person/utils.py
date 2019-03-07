@@ -404,7 +404,6 @@ def get_user_activity(uid):
     one_week_dic = {}
     for one_week_data in one_week_result:
         one_week_dic[one_week_data['key']] = one_week_data['ip_count']['sum']
-    # .split('&')[-1]
     # print(one_week_dic)
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(5):
@@ -463,11 +462,12 @@ def get_user_activity(uid):
                     continue
                 if geo_data['_source']['geo'].split('&')[0] != '中国':
                     continue
-                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
+                # geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
+                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo']), 0)
             except:
                 continue
-            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source'][
-                'count']
+            # geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source']['count']
+            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'])] += geo_data['_source']['count']
 
         one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
         for i in range(5):
