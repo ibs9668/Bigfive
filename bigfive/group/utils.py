@@ -97,7 +97,8 @@ def delete_by_id(index, doc_type, id):
         es.delete(index='group_task', doc_type=doc_type, id=id)
     elif index == 'info':
         es.delete(index='group_ranking', doc_type=doc_type, id=id)
-
+        es.delete(index='group_information', doc_type=doc_type, id=id)
+        es.delete(index='group_task', doc_type=doc_type, id=id)
 
 def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
     page = page if page else '1'
@@ -116,8 +117,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{"constant_score": {"filter": {"missing": {"field": "extroversion_label"}}}}], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:
-        user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
-        query['query']['bool']['must'].append(json.loads(user_query))
+        query['query']['bool']['must'].append({"wildcard":{"group_name": "*%s*" % keyword}})
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
