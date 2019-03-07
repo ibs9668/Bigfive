@@ -614,22 +614,22 @@ def get_influence_feature(uid,interval):
                 "aggs": {
                     "sensitivity": {
                         "stats": {
-                            "field": "sensitivity"
+                            "field": "sensitivity_normalization"
                         }
                     },
                     "influence": {
                         "stats": {
-                            "field": "influence"
+                            "field": "influence_normalization"
                         }
                     },
                     "activity": {
                         "stats": {
-                            "field": "activity"
+                            "field": "activity_normalization"
                         }
                     },
                     "importance": {
                         "stats": {
-                            "field": "importance"
+                            "field": "importance_normalization"
                         }
                     }
                 }
