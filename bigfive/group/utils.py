@@ -331,7 +331,7 @@ def get_group_basic_info(gid, remark):
             openn_high_count += 1
         if user_ranking_dict['nervousness_label'] == 0:
             nervousness_low_count += 1
-        if user_ranking_dict['nervousness_label'] == 0:
+        if user_ranking_dict['nervousness_label'] == 2:
             nervousness_high_count += 1
         # print(user_ranking_dict)
     # 传入remark时进行备注修改
