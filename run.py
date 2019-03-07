@@ -9,8 +9,8 @@ optparser.add_option('-p','--port',dest='port',help='Server Http Port Number', d
 (options, args) = optparser.parse_args()
 
 app = create_app()
-CORS(app, supports_credentials=True)
 app.secret_key = "ruman"
+CORS(app, supports_credentials=True)
 
 # @app.route('/')
 # def redirect_2_login():
