@@ -491,8 +491,7 @@ def get_user_activity(uid):
         if len(route_list) > 1:
             del (route_list[-1])
         elif len(route_list) == 1:
-            # route_list[0]['e'] = route_list[0]['s']
-            route_list[0]['e'] = ''
+            route_list[0]['e'] = route_list[0]['s']
         print(route_list)
     else:
         route_list = []
