@@ -58,7 +58,7 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
     agreeableness_rank = index_to_score_rank(agreeableness_index)
     conscientiousness_rank = index_to_score_rank(conscientiousness_index)
 
-    query = {"query": {"bool": {"must": []}}}
+    query = {"query": {"bool": {"must": [],"should": []}}}
     if machiavellianism_index:
         query['query']['bool']['must'].append({"range": {
             "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
@@ -84,10 +84,10 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
         query['query']['bool']['must'].append({"range": {
             "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
-        user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(
-            keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
-        query['query']['bool']['must'].append(json.loads(user_query))
-
+        # user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(
+        #     keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
+        # query['query']['bool']['must'].append(json.loads(user_query))
+        query['query']['bool']['should'] += [{"wildcard":{"uid": "*{}*".format(keyword)}},{"wildcard":{"username": "*{}*".format(keyword)}}]
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     query['sort'] = sort_list
