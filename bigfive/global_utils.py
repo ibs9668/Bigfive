@@ -49,7 +49,7 @@ class ESIterator(object):
         self.doc_type = doc_type
         self.query_body = query_body
         self.es = es
-    def next(self):
+    def __next__(self):
         self.query_body["sort"] = self.sort_dict
         self.query_body["size"] = self.iter_count
         self.query_body["from"] = self.step * self.iter_count
