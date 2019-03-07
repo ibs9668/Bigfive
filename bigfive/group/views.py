@@ -85,10 +85,10 @@ def group_user_list():
     gid = parameters.get('group_id')
     page = parameters.get('page', '1')
     size = parameters.get('size', '10')
-    order_dict = parameters.get('order_dict', {})
+    # order_dict = parameters.get('order_dict', {})
     order_name = parameters.get('order_name', 'username')
     order_type = parameters.get('order_type', 'asc')
-    result = get_group_user_list(gid, page, size, order_dict, order_name, order_type)
+    result = get_group_user_list(gid, page, size, order_name, order_type)
     return jsonify(result)
 
 

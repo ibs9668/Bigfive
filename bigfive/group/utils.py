@@ -181,7 +181,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     return {'rows': result, 'total': total}
 
 
-def get_group_user_list(gid, page, size, order_dict, order_name, order_type):
+def get_group_user_list(gid, page, size, order_name, order_type):
     query = {
         "query": {
             "bool": {
@@ -202,10 +202,6 @@ def get_group_user_list(gid, page, size, order_dict, order_name, order_type):
         user_ranking_query['query']['bool']['should'].append({"term": {"uid": uid}})
 
     sort_list = []
-    if order_dict:
-        for order_name, order_type in json.loads(order_dict).items():
-            sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append(
-                {order_name: {"order": "asc"}})
     order_name = order_name if order_name else 'username'
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
