@@ -79,10 +79,16 @@ def delete_ranking():
     return jsonify(1)
 
 
-@mod.route('/group_user_list', methods=['GET'])
+@mod.route('/group_user_list/', methods=['POST'])
 def group_user_list():
-    gid = request.args.get('group_id')
-    result = get_group_user_list(gid)
+    parameters = request.form.to_dict()
+    gid = parameters.get('group_id')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '10')
+    # order_dict = parameters.get('order_dict', {})
+    order_name = parameters.get('order_name', 'username')
+    order_type = parameters.get('order_type', 'asc')
+    result = get_group_user_list(gid, page, size, order_name, order_type)
     return jsonify(result)
 
 

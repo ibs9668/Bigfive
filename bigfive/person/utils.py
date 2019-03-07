@@ -210,38 +210,38 @@ def get_basic_info(uid):
 
     personality_status = {}
     if star_result['extroversion_label'] == 0:
-        personality_status['外倾性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'low'))/100))
+        personality_status['extroversion'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'low'))/100))
     if star_result['extroversion_label'] == 2:
-        personality_status['外倾性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'high'))/100))
+        personality_status['extroversion'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'high'))/100))
     if star_result['openn_label'] == 0:
-        personality_status['开放性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'low'))/100))
+        personality_status['openn'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'low'))/100))
     if star_result['openn_label'] == 2:
-        personality_status['开放性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'high'))/100))
+        personality_status['openn'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'high'))/100))
     if star_result['agreeableness_label'] == 0:
-        personality_status['宜人性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'low'))/100))
+        personality_status['agreeableness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'low'))/100))
     if star_result['agreeableness_label'] == 2:
-        personality_status['宜人性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'high'))/100))
+        personality_status['agreeableness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'high'))/100))
     if star_result['conscientiousness_label'] == 0:
-        personality_status['尽责性'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'low'))/100))
+        personality_status['conscientiousness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'low'))/100))
     if star_result['conscientiousness_label'] == 2:
-        personality_status['尽责性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'high'))/100))
+        personality_status['conscientiousness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'high'))/100))
     if star_result['nervousness_label'] == 0:
-        personality_status['神经质'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'low'))/100))
+        personality_status['nervousness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'low'))/100))
     if star_result['nervousness_label'] == 2:
-        personality_status['神经质'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'high'))/100))
+        personality_status['nervousness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'high'))/100))
 
     if star_result['machiavellianism_label'] == 0:
-        personality_status['马基雅维利主义'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'low'))/100))
+        personality_status['machiavellianism'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'low'))/100))
     if star_result['machiavellianism_label'] == 2:
-        personality_status['外倾性'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'high'))/100))
+        personality_status['machiavellianism'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'high'))/100))
     if star_result['psychopathy_label'] == 0:
-        personality_status['精神病态'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'low'))/100))
+        personality_status['psychopathy'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'low'))/100))
     if star_result['psychopathy_label'] == 2:
-        personality_status['精神病态'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'high'))/100))
+        personality_status['psychopathy'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'high'))/100))
     if star_result['narcissism_label'] == 0:
-        personality_status['自恋'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'low'))/100))
+        personality_status['narcissism'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'low'))/100))
     if star_result['narcissism_label'] == 2:
-        personality_status['自恋'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'high'))/100))
+        personality_status['narcissism'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'high'))/100))
 
     result['personality_status'] = personality_status
 
