@@ -256,7 +256,6 @@ def get_group_basic_info(gid, remark):
 
     # 黑暗人格字段
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
-
     group_item['narcissism'] = group_ranking_result['narcissism_index']
     group_item['psychopathy'] = group_ranking_result['psychopathy_index']
 
@@ -282,63 +281,79 @@ def get_group_basic_info(gid, remark):
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
 
-    personality_status = {}
-    if group_ranking_result['extroversion_label'] == 0:
-        personality_status['外倾性'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['extroversion_index'], 'extroversion_index', 'low')) / 100))
-    if group_ranking_result['extroversion_label'] == 2:
-        personality_status['外倾性'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['extroversion_index'], 'extroversion_index', 'high')) / 100))
-    if group_ranking_result['openn_label'] == 0:
-        personality_status['开放性'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['openn_index'], 'openn_index', 'low')) / 100))
-    if group_ranking_result['openn_label'] == 2:
-        personality_status['开放性'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['openn_index'], 'openn_index', 'high')) / 100))
-    if group_ranking_result['agreeableness_label'] == 0:
-        personality_status['宜人性'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['agreeableness_index'], 'agreeableness_index', 'low')) / 100))
-    if group_ranking_result['agreeableness_label'] == 2:
-        personality_status['宜人性'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['agreeableness_index'], 'agreeableness_index', 'high')) / 100))
-    if group_ranking_result['conscientiousness_label'] == 0:
-        personality_status['尽责性'] = r'低于{}%的群组'.format(str(int(
-            10000 * get_index_rank(group_ranking_result['conscientiousness_index'], 'conscientiousness_index', 'low')) / 100))
-    if group_ranking_result['conscientiousness_label'] == 2:
-        personality_status['尽责性'] = r'高于{}%的群组'.format(str(int(
-            10000 * get_index_rank(group_ranking_result['conscientiousness_index'], 'conscientiousness_index', 'high')) / 100))
-    if group_ranking_result['nervousness_label'] == 0:
-        personality_status['神经质'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['nervousness_index'], 'nervousness_index', 'low')) / 100))
-    if group_ranking_result['nervousness_label'] == 2:
-        personality_status['神经质'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['nervousness_index'], 'nervousness_index', 'high')) / 100))
+    machiavellianism_low_count = 0
+    machiavellianism_high_count = 0
+    narcissism_low_count = 0
+    narcissism_high_count = 0
+    psychopathy_low_count = 0
+    psychopathy_high_count = 0
 
-    if group_ranking_result['machiavellianism_label'] == 0:
-        personality_status['马基雅维利主义'] = r'低于{}%的群组'.format(str(
-            int(10000 * get_index_rank(group_ranking_result['machiavellianism_index'], 'machiavellianism_index', 'low')) / 100))
-    if group_ranking_result['machiavellianism_label'] == 2:
-        personality_status['外倾性'] = r'高于{}%的群组'.format(str(
-            int(10000 * get_index_rank(group_ranking_result['machiavellianism_index'], 'machiavellianism_index', 'high')) / 100))
-    if group_ranking_result['psychopathy_label'] == 0:
-        personality_status['精神病态'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['psychopathy_index'], 'psychopathy_index', 'low')) / 100))
-    if group_ranking_result['psychopathy_label'] == 2:
-        personality_status['精神病态'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['psychopathy_index'], 'psychopathy_index', 'high')) / 100))
-    if group_ranking_result['narcissism_label'] == 0:
-        personality_status['自恋'] = r'低于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['narcissism_index'], 'narcissism_index', 'low')) / 100))
-    if group_ranking_result['narcissism_label'] == 2:
-        personality_status['自恋'] = r'高于{}%的群组'.format(
-            str(int(10000 * get_index_rank(group_ranking_result['narcissism_index'], 'narcissism_index', 'high')) / 100))
-
-    group_item['personality_status'] = personality_status
-
+    extroversion_low_count = 0
+    extroversion_high_count = 0
+    conscientiousness_low_count = 0
+    conscientiousness_high_count = 0
+    agreeableness_low_count = 0
+    agreeableness_high_count = 0
+    openn_low_count = 0
+    openn_high_count = 0
+    nervousness_low_count = 0
+    nervousness_high_count = 0
+    user_list = result['userlist']
+    for user_id in user_list:
+        user_ranking_dict = es.get(index='user_ranking', id=user_id, doc_type='text')['_source']
+        if user_ranking_dict['machiavellianism_label'] == 0:
+            machiavellianism_low_count += 1
+        if user_ranking_dict['machiavellianism_label'] == 2:
+            machiavellianism_high_count += 1
+        if user_ranking_dict['narcissism_label'] == 0:
+            narcissism_low_count += 1
+        if user_ranking_dict['narcissism_label'] == 2:
+            narcissism_high_count += 1
+        if user_ranking_dict['psychopathy_label'] == 0:
+            psychopathy_low_count += 1
+        if user_ranking_dict['psychopathy_label'] == 2:
+            psychopathy_high_count += 1
+        if user_ranking_dict['extroversion_label'] == 0:
+            extroversion_low_count += 1
+        if user_ranking_dict['extroversion_label'] == 2:
+            extroversion_high_count += 1
+        if user_ranking_dict['conscientiousness_label'] == 0:
+            conscientiousness_low_count += 1
+        if user_ranking_dict['conscientiousness_label'] == 2:
+            conscientiousness_high_count += 1
+        if user_ranking_dict['agreeableness_label'] == 0:
+            agreeableness_low_count += 1
+        if user_ranking_dict['agreeableness_label'] == 2:
+            agreeableness_high_count += 1
+        if user_ranking_dict['openn_label'] == 0:
+            openn_low_count += 1
+        if user_ranking_dict['openn_label'] == 2:
+            openn_high_count += 1
+        if user_ranking_dict['nervousness_label'] == 0:
+            nervousness_low_count += 1
+        if user_ranking_dict['nervousness_label'] == 0:
+            nervousness_high_count += 1
+        # print(user_ranking_dict)
     # 传入remark时进行备注修改
     if remark:
         es.update(index='group_information', id=gid,
                   doc_type='text', body={'doc': {'remark': remark}})
+    group_item['machiavellianism_low_count'] = machiavellianism_low_count
+    group_item['machiavellianism_high_count'] = machiavellianism_high_count
+    group_item['narcissism_low_count'] = narcissism_low_count
+    group_item['narcissism_high_count'] = narcissism_high_count
+    group_item['psychopathy_low_count'] = psychopathy_low_count
+    group_item['psychopathy_high_count'] = psychopathy_high_count
+    group_item['extroversion_low_count'] = extroversion_low_count
+    group_item['extroversion_high_count'] = extroversion_high_count
+    group_item['conscientiousness_low_count'] = conscientiousness_low_count
+    group_item['conscientiousness_high_count'] = conscientiousness_high_count
+    group_item['agreeableness_low_count'] = agreeableness_low_count
+    group_item['agreeableness_high_count'] = agreeableness_high_count
+    group_item['openn_low_count'] = openn_low_count
+    group_item['openn_high_count'] = openn_high_count
+    group_item['nervousness_low_count'] = nervousness_low_count
+    group_item['nervousness_high_count'] = nervousness_high_count
     return group_item
 
 
