@@ -5,7 +5,7 @@ import re
 from xpinyin import Pinyin
 
 from bigfive.time_utils import *
-from bigfive.config import es, MAX_VALUE, USER_RANKING
+from bigfive.config import es, MAX_VALUE, USER_RANKING, labels_dict, topic_dict
 from bigfive.cache import cache
 
 
@@ -428,9 +428,9 @@ def group_preference(group_id):
         return {}
 
     item = hits[0]['_source']
-    domain_static = {one['domain']: one['count']
+    domain_static = {labels_dict[one['domain']]: one['count']
                      for one in item['domain_static'] if one['count']}
-    topic_static = {one['topic']: one['count']
+    topic_static = {topic_dict[one['topic']]: one['count']
                     for one in item['topic_static'] if one['count']}
 
     sta_item = sta_hits[0]['_source']
