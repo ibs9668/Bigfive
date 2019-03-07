@@ -425,9 +425,9 @@ def group_preference(group_id):
 
     item = hits[0]['_source']
     domain_static = {labels_dict[one['domain']]: one['count']
-                     for one in item['domain_static'] if one['count']}
+                     for one in sorted(item['domain_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
     topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']
-                    for one in item['topic_static'] if one['count']}
+                    for one in sorted(item['topic_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
 
     sta_item = sta_hits[0]['_source']
     keywords = {one['keyword']: one['count'] for one in sta_item['keywords']}
