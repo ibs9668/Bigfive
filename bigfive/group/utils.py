@@ -430,7 +430,7 @@ def group_preference(group_id):
     item = hits[0]['_source']
     domain_static = {labels_dict[one['domain']]: one['count']
                      for one in item['domain_static'] if one['count']}
-    topic_static = {topic_dict[one['topic']]: one['count']
+    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']
                     for one in item['topic_static'] if one['count']}
 
     sta_item = sta_hits[0]['_source']
