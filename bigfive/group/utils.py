@@ -181,7 +181,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     return {'rows': result, 'total': total}
 
 
-def get_group_user_list(gid):
+def get_group_user_list(gid, page, size, order_dict, order_name, order_type):
     query = {
         "query": {
             "bool": {
@@ -195,8 +195,69 @@ def get_group_user_list(gid):
             }
         }
     }
-    result = es.search(index='group_information', doc_type='text', body=query)[
+    user_ranking_query = {"query": {"bool": {"should": []}}}
+    user_list = es.search(index='group_information', doc_type='text', body=query)[
         'hits']['hits'][0]['_source']['userlist']
+    for uid in user_list:
+        user_ranking_query['query']['bool']['should'].append({"term": {"uid": uid}})
+
+    sort_list = []
+    if order_dict:
+        for order_name, order_type in json.loads(order_dict).items():
+            sort_list.append({order_name: {"order": "desc"}}) if order_type else sort_list.append(
+                {order_name: {"order": "asc"}})
+    order_name = order_name if order_name else 'username'
+    order_type = order_type if order_type else 'asc'
+    sort_list.append({order_name: {"order": order_type}})
+
+    user_ranking_query['from'] = str((int(page) - 1) * int(size))
+    user_ranking_query['size'] = str(size)
+    user_ranking_query['sort'] = sort_list
+
+    hits = es.search(index='user_ranking', doc_type='text', body=user_ranking_query)['hits']
+
+    result = {'rows': [], 'total': hits['total']}
+    for item in hits['hits']:
+        item['_source']['big_five_list'] = []
+        item['_source']['dark_list'] = []
+
+        if item['_source']['extroversion_label'] == 0:
+            item['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
+        if item['_source']['extroversion_label'] == 2:
+            item['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
+        if item['_source']['openn_label'] == 0:
+            item['_source']['big_five_list'].append({'开放性': '0'})
+        if item['_source']['openn_label'] == 2:
+            item['_source']['big_five_list'].append({'开放性': '1'})
+        if item['_source']['agreeableness_label'] == 0:
+            item['_source']['big_five_list'].append({'宜人性': '0'})
+        if item['_source']['agreeableness_label'] == 2:
+            item['_source']['big_five_list'].append({'宜人性': '1'})
+        if item['_source']['conscientiousness_label'] == 0:
+            item['_source']['big_five_list'].append({'尽责性': '0'})
+        if item['_source']['conscientiousness_label'] == 2:
+            item['_source']['big_five_list'].append({'尽责性': '1'})
+        if item['_source']['nervousness_label'] == 0:
+            item['_source']['big_five_list'].append({'神经质': '0'})
+        if item['_source']['nervousness_label'] == 2:
+            item['_source']['big_five_list'].append({'神经质': '1'})
+
+        if item['_source']['machiavellianism_label'] == 0:
+            item['_source']['dark_list'].append({'马基雅维里主义': '0'})
+        if item['_source']['machiavellianism_label'] == 2:
+            item['_source']['dark_list'].append({'马基雅维里主义': '1'})
+        if item['_source']['psychopathy_label'] == 0:
+            item['_source']['dark_list'].append({'精神病态': '0'})
+        if item['_source']['psychopathy_label'] == 2:
+            item['_source']['dark_list'].append({'精神病态': '1'})
+        if item['_source']['narcissism_label'] == 0:
+            item['_source']['dark_list'].append({'自恋': '0'})
+        if item['_source']['narcissism_label'] == 2:
+            item['_source']['dark_list'].append({'自恋': '1'})
+
+        item['_source']['name'] = item['_source']['username']
+        result['rows'].append(item['_source'])
+
     return result
 
 
