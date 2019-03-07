@@ -116,7 +116,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{"constant_score": {"filter": {"missing": {"field": "extroversion_label"}}}}], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:
-        query['query']['bool']['should']+=[{"wildcard":{"group_name": "*%s*" % keyword}}]
+        query['query']['bool']['must'].append({"wildcard":{"group_name": "*%s*" % keyword}})
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
