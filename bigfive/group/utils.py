@@ -97,7 +97,8 @@ def delete_by_id(index, doc_type, id):
         es.delete(index='group_task', doc_type=doc_type, id=id)
     elif index == 'info':
         es.delete(index='group_ranking', doc_type=doc_type, id=id)
-
+        es.delete(index='group_information', doc_type=doc_type, id=id)
+        es.delete(index='group_task', doc_type=doc_type, id=id)
 
 def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
     page = page if page else '1'
