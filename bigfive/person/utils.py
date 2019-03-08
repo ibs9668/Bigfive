@@ -527,6 +527,17 @@ def get_preference_identity(uid):
                             }
                         }
                     }
+                ],
+                "must_not": [
+                    {
+                        "constant_score": {
+                            "filter": {
+                                "missing": {
+                                    "field": "topic_computer"
+                                }
+                            }
+                        }
+                    }
                 ]
             }
         },
