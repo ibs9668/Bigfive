@@ -289,7 +289,7 @@ def get_index_rank(personality_value, personality_name, label_type):
         raise ValueError
 
 
-def get_group_basic_info(gid, remark):
+def get_group_basic_info(gid):
     query = {
         "query": {
             "bool": {
@@ -391,10 +391,6 @@ def get_group_basic_info(gid, remark):
         if user_ranking_dict['nervousness_label'] == 2:
             nervousness_high_count += 1
         # print(user_ranking_dict)
-    # 传入remark时进行备注修改
-    if remark:
-        es.update(index='group_information', id=gid,
-                  doc_type='text', body={'doc': {'remark': remark}})
     group_item['machiavellianism_low_count'] = machiavellianism_low_count
     group_item['machiavellianism_high_count'] = machiavellianism_high_count
     group_item['narcissism_low_count'] = narcissism_low_count
@@ -412,6 +408,10 @@ def get_group_basic_info(gid, remark):
     group_item['nervousness_low_count'] = nervousness_low_count
     group_item['nervousness_high_count'] = nervousness_high_count
     return group_item
+
+
+def modify_group_remark(group_id, remark):
+    es.update(index='group_information', id=group_id, doc_type='text', body={'doc': {'remark': remark}})
 
 
 def group_preference(group_id):

@@ -95,10 +95,17 @@ def group_user_list():
 @mod.route('/basic_info', methods=['GET'])
 def basic_info():
     gid = request.args.get('group_id')
-    remark = request.args.get('remark', '')
-    result = get_group_basic_info(gid, remark)
+    result = get_group_basic_info(gid)
     return jsonify(result)
 
+
+@mod.route('/modify_remark/', methods=['POST'])
+def modify_remark():
+    parameters = request.form.to_dict()
+    group_id = parameters.get('group_id')
+    remark = parameters.get('remark', '')
+    modify_group_remark(group_id, remark)
+    return jsonify(1)
 
 
 ################################ 宋慧慧负责 ###########################
