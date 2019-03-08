@@ -60,12 +60,12 @@ def sgroup():
 def group_ranking():
     """群体排名"""
     parameters = request.form.to_dict()
-    keyword = parameters.get('keyword')
-    page = parameters.get('page')
-    size = parameters.get('size')
-    order_dict = parameters.get('order_dict')
-    order_name = parameters.get('order_name')
-    order_type = parameters.get('order_type')
+    keyword = parameters.get('keyword', '')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '10')
+    order_dict = parameters.get('order_dict', {})
+    order_name = parameters.get('order_name', 'group_name')
+    order_type = parameters.get('order_type', 'asc')
 
     result = search_group_ranking(keyword, page, size, order_name, order_type, order_dict)
     return jsonify(result)
@@ -79,20 +79,33 @@ def delete_ranking():
     return jsonify(1)
 
 
-@mod.route('/group_user_list', methods=['GET'])
+@mod.route('/group_user_list/', methods=['POST'])
 def group_user_list():
-    gid = request.args.get('group_id')
-    result = get_group_user_list(gid)
+    parameters = request.form.to_dict()
+    gid = parameters.get('group_id')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '10')
+    # order_dict = parameters.get('order_dict', {})
+    order_name = parameters.get('order_name', 'username')
+    order_type = parameters.get('order_type', 'asc')
+    result = get_group_user_list(gid, page, size, order_name, order_type)
     return jsonify(result)
 
 
-@mod.route('/basic_info/', methods=['GET'])
+@mod.route('/basic_info', methods=['GET'])
 def basic_info():
     gid = request.args.get('group_id')
-    remark = request.args.get('remark', '')
-    result = get_group_basic_info(gid, remark)
+    result = get_group_basic_info(gid)
     return jsonify(result)
 
+
+@mod.route('/modify_remark/', methods=['POST'])
+def modify_remark():
+    parameters = request.form.to_dict()
+    group_id = parameters.get('group_id')
+    remark = parameters.get('remark', '')
+    modify_group_remark(group_id, remark)
+    return jsonify(1)
 
 
 ################################ 宋慧慧负责 ###########################
@@ -129,7 +142,7 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    群体备注--remark
 '''
 
-@mod.route('/group_activity/',methods=['POST','GET'])
+@mod.route('/group_activity/',methods=['GET'])
 def group_activity():
     group_id = request.args.get("group_id")
     result = get_group_activity(group_id)

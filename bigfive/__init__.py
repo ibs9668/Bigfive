@@ -7,7 +7,7 @@ from bigfive.politics.views import mod as politics_mod
 from bigfive.group.views import mod as group_mod
 
 from bigfive.cache import cache
-
+from flask_cors import CORS
 from flask import Flask
 import os
 
@@ -15,13 +15,14 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 def create_app():
     app = Flask(__name__)
-    cache.init_app(app)
     app.register_blueprint(colony_mod)
     app.register_blueprint(firstpage_mod)
     app.register_blueprint(person_mod)
     app.register_blueprint(hotevent_mod)
     app.register_blueprint(politics_mod)
     app.register_blueprint(group_mod)
-
+    cache.init_app(app)
+    app.secret_key = "ruman"
+    CORS(app, supports_credentials=True)
     return app
 

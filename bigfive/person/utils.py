@@ -6,7 +6,7 @@ import time
 
 from elasticsearch.helpers import scan
 
-from bigfive.config import es, labels_dict, topic_dict, today, a_week_ago
+from bigfive.config import es, labels_dict, topic_dict, today, a_week_ago, MAX_VALUE, USER_RANKING
 from bigfive.cache import cache
 
 def judge_uid_or_nickname(keyword):
@@ -58,7 +58,7 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
     agreeableness_rank = index_to_score_rank(agreeableness_index)
     conscientiousness_rank = index_to_score_rank(conscientiousness_index)
 
-    query = {"query": {"bool": {"must": []}}}
+    query = {"query": {"bool": {"must": [],"should": []}}}
     if machiavellianism_index:
         query['query']['bool']['must'].append({"range": {
             "machiavellianism_index": {"gte": str(machiavellianism_rank[0]), "lt": str(machiavellianism_rank[1])}}})
@@ -84,16 +84,15 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
         query['query']['bool']['must'].append({"range": {
             "conscientiousness_index": {"gte": str(conscientiousness_rank[0]), "lt": str(conscientiousness_rank[1])}}})
     if keyword:
-        user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(
-            keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
-        query['query']['bool']['must'].append(json.loads(user_query))
-
+        # user_query = '{"wildcard":{"uid": "%s*"}}' % keyword if judge_uid_or_nickname(
+        #     keyword) else '{"wildcard":{"username": "*%s*"}}' % keyword
+        # query['query']['bool']['must'].append(json.loads(user_query))
+        query['query']['bool']['should'] += [{"wildcard":{"uid": "*{}*".format(keyword)}},{"wildcard":{"username": "*{}*".format(keyword)}}]
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     query['sort'] = sort_list
     # query['sort'] = [{i: {'order': order_type}} for i in order_name.split(',')]
     # query['sort'] = [{order_name: {"order": order_type}}]
-    print(query)
 
     hits = es.search(index='user_ranking', doc_type='text', body=query)['hits']
 
@@ -132,7 +131,7 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
         if item['_source']['psychopathy_label'] == 2:
             item['_source']['dark_list'].append({'精神病态': '1'})
         if item['_source']['narcissism_label'] == 0:
-            item['_source']['dark_list'].append({'自怜': '0'})
+            item['_source']['dark_list'].append({'自恋': '0'})
         if item['_source']['narcissism_label'] == 2:
             item['_source']['dark_list'].append({'自恋': '1'})
 
@@ -144,6 +143,38 @@ def portrait_table(keyword, page, size, order_name, order_type, machiavellianism
 def delete_by_id(index, doc_type, id):
     result = es.delete(index=index, doc_type=doc_type, id=id)
     return result
+
+
+def get_index_rank(personality_value, personality_name, label_type):
+    result = 0
+    query_body = {
+        'query':{
+            'bool':{
+                'must':[
+                    {'range':{
+                        personality_name:{
+                            'from':personality_value,
+                            'to': MAX_VALUE
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    index_rank = es.count(index=USER_RANKING, doc_type='text', body=query_body)
+    if index_rank['_shards']['successful'] != 0:
+       result = index_rank['count']
+    else:
+        print('es index rank error')
+        result = 0
+    all_user_count = es.count(index=USER_RANKING, doc_type='text', body={'query':{'match_all':{}}})['count']
+    if label_type == 'low':
+        return result / all_user_count
+    elif label_type == 'high':
+        return (all_user_count - result) / all_user_count
+    else:
+        raise ValueError
 
 
 def get_basic_info(uid):
@@ -161,6 +192,7 @@ def get_basic_info(uid):
     star_result = es.search(index='user_ranking', doc_type='text', body=star_query)['hits']['hits'][-1]['_source']
     result['domain'] = labels_dict[result['domain']]
     result['political_bias'] = political_bias_dic[result['political_bias']]
+
     result['liveness_star'] = star_result['liveness_star']
     result['importance_star'] = star_result['importance_star']
     result['sensitive_star'] = star_result['sensitive_star']
@@ -175,6 +207,43 @@ def get_basic_info(uid):
     result['openn'] = star_result['openn_index']
     result['agreeableness'] = star_result['agreeableness_index']
     result['conscientiousness'] = star_result['conscientiousness_index']
+
+    personality_status = {}
+    if star_result['extroversion_label'] == 0:
+        personality_status['extroversion'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'low'))/100))
+    if star_result['extroversion_label'] == 2:
+        personality_status['extroversion'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['extroversion_index'], 'extroversion_index', 'high'))/100))
+    if star_result['openn_label'] == 0:
+        personality_status['openn'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'low'))/100))
+    if star_result['openn_label'] == 2:
+        personality_status['openn'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['openn_index'], 'openn_index', 'high'))/100))
+    if star_result['agreeableness_label'] == 0:
+        personality_status['agreeableness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'low'))/100))
+    if star_result['agreeableness_label'] == 2:
+        personality_status['agreeableness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['agreeableness_index'], 'agreeableness_index', 'high'))/100))
+    if star_result['conscientiousness_label'] == 0:
+        personality_status['conscientiousness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'low'))/100))
+    if star_result['conscientiousness_label'] == 2:
+        personality_status['conscientiousness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['conscientiousness_index'], 'conscientiousness_index', 'high'))/100))
+    if star_result['nervousness_label'] == 0:
+        personality_status['nervousness'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'low'))/100))
+    if star_result['nervousness_label'] == 2:
+        personality_status['nervousness'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['nervousness_index'], 'nervousness_index', 'high'))/100))
+
+    if star_result['machiavellianism_label'] == 0:
+        personality_status['machiavellianism'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'low'))/100))
+    if star_result['machiavellianism_label'] == 2:
+        personality_status['machiavellianism'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['machiavellianism_index'], 'machiavellianism_index', 'high'))/100))
+    if star_result['psychopathy_label'] == 0:
+        personality_status['psychopathy'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'low'))/100))
+    if star_result['psychopathy_label'] == 2:
+        personality_status['psychopathy'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['psychopathy_index'], 'psychopathy_index', 'high'))/100))
+    if star_result['narcissism_label'] == 0:
+        personality_status['narcissism'] = r'低于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'low'))/100))
+    if star_result['narcissism_label'] == 2:
+        personality_status['narcissism'] = r'高于{}%的人'.format(str(int(10000 * get_index_rank(star_result['narcissism_index'], 'narcissism_index', 'high'))/100))
+
+    result['personality_status'] = personality_status
 
     return result
 
@@ -335,13 +404,12 @@ def get_user_activity(uid):
     one_week_dic = {}
     for one_week_data in one_week_result:
         one_week_dic[one_week_data['key']] = one_week_data['ip_count']['sum']
-
     # print(one_week_dic)
     l = sorted(one_week_dic.items(), key=lambda x: x[1], reverse=True)
     for i in range(5):
         try:
             item = {'rank': i + 1, 'count': int(l[i][1]), 'ip': l[i][0]}
-            item['geo'] = re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', es.search(index='user_activity', doc_type='text', body={"query":{"bool":{"must":[{"term":{"ip":l[i][0]}}]}},"size":1})['hits']['hits'][0]['_source']['geo'].split('&')[-1])
+            item['geo'] = re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', es.search(index='user_activity', doc_type='text', body={"query":{"bool":{"must":[{"term":{"ip":l[i][0]}}]}},"size":1})['hits']['hits'][0]['_source']['geo'])
         except:
             item = {'rank': i + 1, 'count': '-', 'ip': '-', 'geo': '-'}
         one_week_ip_rank.append(item)
@@ -386,19 +454,20 @@ def get_user_activity(uid):
         one_week_geo_dict = {}
         for geo_data in geo_result:
             # item = {}
-            one_week_geo_dict.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[-1]), 0)
-            one_week_geo_dict[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[-1])] += geo_data['_source']['count']
+            one_week_geo_dict.setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo']), 0)
+            one_week_geo_dict[re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'])] += geo_data['_source']['count']
             geo_dict.setdefault(geo_data['_source']['date'], {})
             try:
                 if geo_data['_source']['geo'].split('&')[1] == '其他':
                     continue
                 if geo_data['_source']['geo'].split('&')[0] != '中国':
                     continue
-                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
+                # geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'].split('&')[1]), 0)
+                geo_dict[geo_data['_source']['date']].setdefault(re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo']), 0)
             except:
                 continue
-            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source'][
-                'count']
+            # geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', r'', geo_data['_source']['geo'].split('&')[1])] += geo_data['_source']['count']
+            geo_dict[geo_data['_source']['date']][re.sub(r'省|市|壮族|维吾尔族|回族|自治区', '', geo_data['_source']['geo'])] += geo_data['_source']['count']
 
         one_week_geo_sorted = sorted(one_week_geo_dict.items(), key=lambda x: x[1], reverse=True)
         for i in range(5):
@@ -413,11 +482,11 @@ def get_user_activity(uid):
         for i in range(len(geo_dict_item)):
             if not geo_dict_item[i][1]:
                 continue
-            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get), 'e': ''}
+            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1], 'e': ''}
             route_list.append(item)
             print('maxmaxmax', max(geo_dict_item[i][1], key=geo_dict_item[i][1].get))
             if i > 0:
-                route_list[i - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get)
+                route_list[i - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1]
 
         if len(route_list) > 1:
             del (route_list[-1])
@@ -468,7 +537,26 @@ def get_preference_identity(uid):
             }
         ]
     }
-    print(query)
+
+    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0][
+        '_source']
+    result['keywords'] = {}
+    if analysis_result['keywords']:
+        for i in analysis_result['keywords']:
+            result['keywords'].update({i['keyword']: i['count']})
+
+    result['hastags'] = {}
+    if analysis_result['hastags']:
+        for i in analysis_result['hastags']:
+            result['hastags'].update({i['hastag']: i['count']})
+
+    result['sensitive_words'] = {}
+    if analysis_result['sensitive_words']:
+        print(analysis_result['sensitive_words'])
+        for i in analysis_result['sensitive_words']:
+            result['sensitive_words'].update({i['sensitive_word']: i['count']})
+
+    query['query']['bool']['must'].append({"term": {"has_new_information": "1"}})
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
@@ -494,24 +582,7 @@ def get_preference_identity(uid):
     link = [m_to_f_link, m_to_v_link, m_to_w_link]
     domain_dict = {'node': node, 'link': link}
 
-    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0]['_source']
     result['topic_result'] = topic_result
-
-    result['keywords'] = {}
-    if analysis_result['keywords']:
-        for i in analysis_result['keywords']:
-            result['keywords'].update({i['keyword']: i['count']})
-
-    result['hastags'] = {}
-    if analysis_result['hastags']:
-        for i in analysis_result['hastags']:
-            result['hastags'].update({i['hastag']: i['count']})
-
-    result['sensitive_words'] = {}
-    if analysis_result['sensitive_words']:
-        print(analysis_result['sensitive_words'])
-        for i in analysis_result['sensitive_words']:
-            result['sensitive_words'].update({i['sensitive_word']: i['count']})
     result['domain_dict'] = domain_dict
 
     return result
@@ -543,22 +614,22 @@ def get_influence_feature(uid,interval):
                 "aggs": {
                     "sensitivity": {
                         "stats": {
-                            "field": "sensitivity"
+                            "field": "sensitivity_normalization"
                         }
                     },
                     "influence": {
                         "stats": {
-                            "field": "influence"
+                            "field": "influence_normalization"
                         }
                     },
                     "activity": {
                         "stats": {
-                            "field": "activity"
+                            "field": "activity_normalization"
                         }
                     },
                     "importance": {
                         "stats": {
-                            "field": "importance"
+                            "field": "importance_normalization"
                         }
                     }
                 }
