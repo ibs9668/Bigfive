@@ -9,10 +9,6 @@ index_info = {
     "settings": {
             "analysis": {
                 "analyzer": {
-                    "my_analyzer": {
-                        "type": "pattern",
-                        "pattern": "&"   #自定义分析器，用&作为分词的间隔
-                    },
                     "caseSensitive": {
                         "type": "custom",
                         "filter": "lowercase",
@@ -96,9 +92,3 @@ exist_indice = es.indices.exists(index = index_name)
 print(exist_indice)
 if not exist_indice:
     print(es.indices.create(index = index_name, body=index_info, ignore = 400))
-
-# 插入数据
-# es.index(index=index_name,doc_type="text",
-#     body={
-    
-#             })
