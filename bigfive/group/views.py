@@ -102,10 +102,16 @@ def basic_info():
 @mod.route('/modify_remark/', methods=['POST'])
 def modify_remark():
     parameters = request.form.to_dict()
+    if not parameters:
+        print('***********************')
+        parameters = request.json
     group_id = parameters.get('group_id')
     remark = parameters.get('remark', '')
-    modify_group_remark(group_id, remark)
-    return jsonify(1)
+    try:
+        modify_group_remark(group_id, remark)
+        return jsonify(1)
+    except:
+        return jsonify(0)
 
 
 ################################ 宋慧慧负责 ###########################

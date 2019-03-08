@@ -494,6 +494,8 @@ def get_user_activity(uid):
             route_list[0]['e'] = route_list[0]['s']
         print(route_list)
     else:
+        for i in range(5):
+            one_week_geo_rank.append({'rank': i + 1, 'count': '-', 'geo': '-'})
         route_list = []
 
     result['one_day_ip_rank'] = one_day_ip_rank
@@ -522,6 +524,17 @@ def get_preference_identity(uid):
                         "range": {
                             "timestamp": {
                                 "lte": str(int(today_ts))
+                            }
+                        }
+                    }
+                ],
+                "must_not": [
+                    {
+                        "constant_score": {
+                            "filter": {
+                                "missing": {
+                                    "field": "topic_computer"
+                                }
                             }
                         }
                     }
