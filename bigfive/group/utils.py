@@ -620,6 +620,8 @@ def group_social_contact(group_id, map_type):
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
+
+    print(query)
     hits = es.search(index='group_activity', doc_type='text',
                      body=query)['hits']['hits']
     if not hits:
