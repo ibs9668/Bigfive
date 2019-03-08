@@ -146,8 +146,6 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    创建人员--去掉此功能字段
                    群体备注--remark
 '''
-
-
 @mod.route('/group_activity', methods=['GET'])
 def group_activity():
     group_id = request.args.get("group_id")
