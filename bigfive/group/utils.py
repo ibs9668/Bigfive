@@ -619,11 +619,11 @@ def group_emotion(group_id, interval):
 def group_social_contact(group_id, map_type):
     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
     hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
-    if hits:
-        hit = hits[0]['_source']
-        node = [{'name':i} for i in hit['node']]
-        return {'node':node,'link':hit['link']}
-    return {}
+    if not hits:
+        return {}
+    hit = hits[0]['_source']
+    node = [{'name':i} for i in hit['node']]
+    return {'node':node,'link':hit['link']}
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
