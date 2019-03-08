@@ -202,6 +202,7 @@ def get_group_user_list(gid, page, size, order_name, order_type):
         user_ranking_query['query']['bool']['should'].append({"term": {"uid": uid}})
 
     sort_list = []
+    order_name = 'username' if order_name == 'name' else order_name
     order_name = order_name if order_name else 'username'
     order_type = order_type if order_type else 'asc'
     sort_list.append({order_name: {"order": order_type}})
@@ -627,6 +628,8 @@ def group_social_contact(group_id, map_type):
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
+
+    print(query)
     hits = es.search(index='group_activity', doc_type='text',
                      body=query)['hits']['hits']
     if not hits:
