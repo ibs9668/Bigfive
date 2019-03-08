@@ -1,68 +1,56 @@
 import sys
 sys.path.append('../../../')
 
-from 
+# from weibo_module import weibo_calculation
 
 from config import *
 from time_utils import *
 from global_utils import *
 
-def main():
-    normal_list = subopinion_content(topic,start_ts,over_ts,weibo_limit) #读主观微博
-    weibo_classify = json.loads(weibo_comments_list(taskid,normal_list,start_ts,over_ts))
+default_cluster_eva_min_size = 5
+default_vsm = 'v1'
 
-def subopinion_content(topic,start_ts,end_ts,weibo_limit):
-    # query_body ={'query':{
-    #                 'bool':{
-    #                     'must_not':[
-    #                         {'wildcard':{'text':'*【*】*'}}],
-    #                     'must':[
-    #                         {'range':{'timestamp':{'lt':end_ts,'gte':start_ts}}
-    #                     }]
-    #                 }
-    #             },
-    #             'size':200#weibo_limit  
-    #             }
-    # subopinion_results = weibo_es.search(index=topic,doc_type=weibo_index_type,body=query_body)['hits']['hits']#['_source']
+def river_main(event_mapping_name):
+    print('Getting event weibo...')
+    normal_list = subopinion_content(event_mapping_name) #读主观微博
+    print('Calculating event river...')
+    weibo_classify = json.loads(weibo_comments_list(normal_list,start_ts,over_ts))
+
+def subopinion_content(event_mapping_name):
     subopinion_results = []
-    for weibo_index in ES_INDEX_LIST:
-        weibo_generator = get_event_weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
-            for res in weibo_generator:
-                subopinion_results.extend(res)
+    weibo_query_body = {
+        'query':{
+            'match_all':{}
+        }
+    }
+    weibo_generator = get_event_weibo_generator(event_mapping_name, weibo_query_body, USER_WEIBO_ITER_COUNT)
+    for res in weibo_generator:
+        subopinion_results.extend(res)
 
     normal_list = []
     for key_weibo in subopinion_results:
         text_weibo = key_weibo['_source']['text']
         mid_weibo = key_weibo['_source']['mid']
         timestamp = key_weibo['_source']['timestamp']
-        try:
-            comment = key_weibo['_source']['comment']
-        except:
-            comment = 0
-        try:
-            retweeted = key_weibo['_source']['retweeted']
-        except:
-            retweeted = 0
-        uid = key_weibo['_source']['uid']
-        normal_list.append({'news_id':'weibo','content':text_weibo,'id':mid_weibo,'datetime':ts2datetime_full(timestamp),'comment':comment,'retweeted':retweeted,'uid':uid})
+        normal_list.append({'content':text_weibo,'id':mid_weibo,'timestamp':timestamp})
+    print('event weibo num:%d' % len(normal_list))
     return normal_list    
 
 def weibo_comments_list(weibo_list,start_ts,end_ts,cluster_num=-1,cluster_eva_min_size=default_cluster_eva_min_size,vsm=default_vsm,calculation_label=1):#weibo_list把微博读进来
-    task_result_file = os.path.join(RESULT_WEIBO_FOLDER, taskid)
-    if os.path.exists(task_result_file) and calculation_label == 0:
-        # 从已有数据文件加载结果集
-        with open(task_result_file) as dump_file:
-            dump_dict = json.loads(dump_file.read())
-            ratio_results = dump_dict["ratio"]
-            sentiratio_results = dump_dict["sentiratio"]
-            before_filter_count = dump_dict["before_filter_count"]
-            after_filter_count = dump_dict["after_filter_count"]
+    # task_result_file = os.path.join(RESULT_WEIBO_FOLDER, taskid)
+    # if os.path.exists(task_result_file) and calculation_label == 0:
+    #     # 从已有数据文件加载结果集
+    #     with open(task_result_file) as dump_file:
+    #         dump_dict = json.loads(dump_file.read())
+    #         ratio_results = dump_dict["ratio"]
+    #         sentiratio_results = dump_dict["sentiratio"]
+    #         before_filter_count = dump_dict["before_filter_count"]
+    #         after_filter_count = dump_dict["after_filter_count"]
 
-        return json.dumps({"ratio": ratio_results, "sentiratio": sentiratio_results, \
-                "before_filter_count": before_filter_count, "after_filter_count": after_filter_count})
+    #     return json.dumps({"ratio": ratio_results, "sentiratio": sentiratio_results, \
+    #             "before_filter_count": before_filter_count, "after_filter_count": after_filter_count})
 
     comments = weibo_list
-    print 'weibo_list:',len(comments)
     cal_results = weibo_calculation(comments, cluster_num=cluster_num, \
             cluster_eva_min_size=int(cluster_eva_min_size), version=vsm)
     features = cal_results['cluster_infos']['features']
@@ -139,10 +127,12 @@ def weibo_comments_list(weibo_list,start_ts,end_ts,cluster_num=-1,cluster_eva_mi
         #print features[key],type(features[key])
         keys = ('_').join(features[key])
         index_body={'name':task[0],'start_ts':start_ts,'end_ts':end_ts,'ratio':json.dumps(ratio_results),'cluster':json.dumps(key),'features':json.dumps(features),'keys':keys,'cluster_dump_dict':json.dumps(cluster_dump_dict[key])}
-        # print index_body
-        #print subopinion_index_type,subopinion_index_name
-        print 'dddddddddddddddddddd'
+
         weibo_es.index(index=subopinion_index_name,doc_type=subopinion_index_type,id=key,body=index_body)
 
 
     return json.dumps({"features":features,"ratio": ratio_results,"cluster_dump_dict":cluster_dump_dict})#features关键词和类的对应
+
+if __name__ == '__main__':
+    event_mapping_name = 'event_ceshishijianyi_1551942139'
+    subopinion_content(event_mapping_name)

@@ -32,6 +32,22 @@ def get_weibo_generator(weibo_index, query_body, iter_num_per):
             break
         iter_num += 1
         yield es_result
+        
+#微博遍历迭代器，输入索引（限于flow_text_yyyy-mm-dd系列），查询条件，每次迭代的次数，则可以迭代输出查询结果
+def get_event_weibo_generator(weibo_index, query_body, iter_num_per):
+    iter_num = 0
+    iter_get_weibo = iter_num_per
+    while (iter_get_weibo == iter_num_per):
+        print("weibo_iter_num: %d" % (iter_num*iter_num_per))
+        query_body['sort'] = {'_id':{'order':'asc'}}
+        query_body['size'] = iter_num_per
+        query_body['from'] = iter_num * iter_num_per
+        es_result = es.search(index=weibo_index,doc_type='text',body=query_body)['hits']['hits']
+        iter_get_weibo = len(es_result)
+        if iter_get_weibo == 0:
+            break
+        iter_num += 1
+        yield es_result
 
 '''
  es迭代器类 

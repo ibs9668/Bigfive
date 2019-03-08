@@ -1,3 +1,6 @@
+from ad_filter import ad_filter
+from opinion_produce import rubbish_classifier,opinion_main
+
 def weibo_calculation(comments, cluster_num=COMMENT_WORDS_CLUSTER_NUM, \
         cluster_eva_min_size=CLUSTER_EVA_MIN_SIZE, \
         version=COMMENT_CLUSTERING_PROCESS_FOR_CLUTO_VERSION):
