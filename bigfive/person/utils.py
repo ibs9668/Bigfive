@@ -561,6 +561,8 @@ def get_preference_identity(uid):
 
     query['query']['bool']['must'].append({"term": {"has_new_information": "1"}})
     query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "topic_computer"}}}})
+    query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "main_domain"}}}})
+    print(query)
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}
