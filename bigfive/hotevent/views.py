@@ -36,7 +36,13 @@ def browser_geo():
     result = get_browser_by_geo(geo,s,e)
     return jsonify(result)
 
-@mod.route('/renge',methods=['GET'])
-def renge():
-    result = get_renge()
+@mod.route('/ingroup_renge',methods=['GET'])
+def ingroup_renge():
+    result = get_in_group_renge()
+    return jsonify(result)
+@mod.route('/ingroup_ranking',methods=['GET'])
+def ingroup_ranking():
+    event_id = request.args.get('eid')
+    mtype = request.args.get('mtype')
+    result = get_in_group_ranking(event_id,mtype)
     return jsonify(result)
