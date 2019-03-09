@@ -273,17 +273,17 @@ def user_emotion(uid, interval):
                 },
                 "aggs": {
                     "nuetral": {
-                        "stats": {
+                        "sum": {
                             "field": "nuetral"
                         }
                     },
                     "negtive": {
-                        "stats": {
+                        "sum": {
                             "field": "negtive"
                         }
                     },
                     "positive": {
-                        "stats": {
+                        "sum": {
                             "field": "positive"
                         }
                     }
@@ -301,9 +301,9 @@ def user_emotion(uid, interval):
     }
     for bucket in buckets:
         result['time'].append(bucket['key_as_string'], )
-        result["positive_line"].append(bucket['positive']['sum'], )
-        result["negtive_line"].append(bucket['negtive']['sum'], )
-        result["nuetral_line"].append(bucket['nuetral']['sum'])
+        result["positive_line"].append(bucket['positive']['value'], )
+        result["negtive_line"].append(bucket['negtive']['value'], )
+        result["nuetral_line"].append(bucket['nuetral']['value'])
     return result
 
 
@@ -619,22 +619,22 @@ def get_influence_feature(uid,interval):
                 },
                 "aggs": {
                     "sensitivity": {
-                        "stats": {
+                        "sum": {
                             "field": "sensitivity_normalization"
                         }
                     },
                     "influence": {
-                        "stats": {
+                        "sum": {
                             "field": "influence_normalization"
                         }
                     },
                     "activity": {
-                        "stats": {
+                        "sum": {
                             "field": "activity_normalization"
                         }
                     },
                     "importance": {
-                        "stats": {
+                        "sum": {
                             "field": "importance_normalization"
                         }
                     }
@@ -646,10 +646,10 @@ def get_influence_feature(uid,interval):
     result_list = []
     for data in es_result:
         item = {}
-        item['sensitivity'] = data['sensitivity']['sum']
-        item['influence'] = data['influence']['sum']
-        item['activity'] = data['activity']['sum']
-        item['importance'] = data['importance']['sum']
+        item['sensitivity'] = data['sensitivity']['value']
+        item['influence'] = data['influence']['value']
+        item['activity'] = data['activity']['value']
+        item['importance'] = data['importance']['value']
         item['timestamp'] = data['key']//1000
         item['date'] = data['key_as_string']
         result_list.append(item)

@@ -35,3 +35,8 @@ def browser_geo():
     geo = request.args.get('geo','')
     result = get_browser_by_geo(geo,s,e)
     return jsonify(result)
+
+@mod.route('/renge',methods=['GET'])
+def renge():
+    result = get_renge()
+    return jsonify(result)

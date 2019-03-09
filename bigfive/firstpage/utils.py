@@ -114,16 +114,13 @@ def get_statistics_user_info(timestamp):
     user_total_count = es.count(index = "user_information",doc_type = "text")["count"]
     timestamp = int(timestamp)
     # print (user_total_count)
-    query_body = {"query": {"bool": {"must":[{"range": {"insert_time": {"gte":timestamp,"lt":timestamp + 24*3600}}}]}},"size" : 10000}
-    today_insert_user_num = len(es.search(index = "user_information",doc_type = "text",body = query_body)["hits"]["hits"])
+    query_body = {"query": {"bool": {"must":[{"range": {"insert_time": {"gte":timestamp,"lt":timestamp + 24*3600}}}]}},"size" : 0}
+    today_insert_user_num = es.search(index = "user_information",doc_type = "text",body = query_body)["hits"]["total"]
     # print (today_insert_user_num)
     personality_index_list = ["machiavellianism_index","narcissism_index","psychopathy_index","extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]
     personality_label_list = ["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label","nervousness_label","openn_label","agreeableness_label","conscientiousness_label"]
     aggs_avg_dict = {}
     aggs_avg_dict = {"aggs": {"aggs_index": {"avg":{}}}}
-
-
-
 
     result =  {}
     result["user_total_count"] = user_total_count
@@ -134,21 +131,18 @@ def get_statistics_user_info(timestamp):
         result[i.split("_")[0]] = {}
         result[i.split("_")[0]]["value"] = es.search(index="user_ranking", doc_type="text", body = aggs_avg_dict)["aggregations"]["aggs_index"]["value"]
 
-    query_body = {"query": {"bool": {"must":{"term": {}}}},"size" : 10000}
+    query_body = {"query": {"bool": {"must":{"term": {}}}},"size" : 0}
     index_list = [0,2]#0低2高
 
     for j in personality_label_list:
         for n in index_list:
-            query_body["query"]["bool"]["must"]["term"][j] = n
+            query_body = {"query": {"bool": {"must":{"term": {j:n}}}},"size" : 0}
             #print (query_body)
             if int(n) ==0:
-                result[j.split("_")[0]]["low"] = len(es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["hits"])
+                result[j.split("_")[0]]["low"] = es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["total"]
             else:
-                result[j.split("_")[0]]["high"] = len(es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["hits"])
-            query_body = {"query": {"bool": {"must":{"term": {}}}},"size" : 10000}
+                result[j.split("_")[0]]["high"] = es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["total"]
     # print (result)
-
-
     return result
 
 def dark_personality():
