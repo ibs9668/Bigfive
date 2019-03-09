@@ -528,17 +528,7 @@ def get_preference_identity(uid):
                         }
                     }
                 ],
-                "must_not": [
-                    {
-                        "constant_score": {
-                            "filter": {
-                                "missing": {
-                                    "field": "topic_computer"
-                                }
-                            }
-                        }
-                    }
-                ]
+                "must_not": []
             }
         },
         "size": 1000,
@@ -570,6 +560,7 @@ def get_preference_identity(uid):
             result['sensitive_words'].update({i['sensitive_word']: i['count']})
 
     query['query']['bool']['must'].append({"term": {"has_new_information": "1"}})
+    query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "topic_computer"}}}})
     preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
     preference_item = {}

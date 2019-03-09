@@ -103,7 +103,6 @@ def basic_info():
 def modify_remark():
     parameters = request.form.to_dict()
     if not parameters:
-        print('***********************')
         parameters = request.json
     group_id = parameters.get('group_id')
     remark = parameters.get('remark', '')
@@ -147,8 +146,7 @@ group_information代表的是群组名称、群体人数、关键词语等群组
                    创建人员--去掉此功能字段
                    群体备注--remark
 '''
-
-@mod.route('/group_activity/',methods=['GET'])
+@mod.route('/group_activity', methods=['GET'])
 def group_activity():
     group_id = request.args.get("group_id")
     result = get_group_activity(group_id)
@@ -158,7 +156,7 @@ def group_activity():
 ################################ 李宛星负责 ###########################
 
 
-@mod.route('/preference_identity', methods=['POST','GET'])
+@mod.route('/preference_identity', methods=['GET'])
 def perference_identity():
     group_id=request.args.get('group_id')
     result = group_preference(group_id)
@@ -166,7 +164,7 @@ def perference_identity():
     return jsonify(result)
 
 
-@mod.route('/preference_topic', methods=['POST','GET'])
+@mod.route('/preference_topic', methods=['GET'])
 def perference_topic():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -175,7 +173,7 @@ def perference_topic():
     return json.dumps(topic,ensure_ascii=False)
 
 
-@mod.route('/preference_word', methods=['POST','GET'])
+@mod.route('/preference_word', methods=['GET'])
 def perference_word():
     group_id=request.args.get('group_id')
     group_inf = group_preference(group_id)
@@ -186,7 +184,7 @@ def perference_word():
     return json.dumps(word,ensure_ascii=False)
 
 
-@mod.route('/influence_feature', methods=['POST','GET'])
+@mod.route('/influence_feature', methods=['GET'])
 def influence_feature():
     group_id=request.args.get('group_id')
     interval=request.args.get('type','day')
@@ -194,7 +192,7 @@ def influence_feature():
     return jsonify(result)
 
 
-@mod.route('/emotion_feature', methods=['POST','GET'])
+@mod.route('/emotion_feature', methods=['GET'])
 def emotion_feature():
     group_id=request.args.get('group_id')
     interval = request.args.get('type','day')
@@ -202,7 +200,7 @@ def emotion_feature():
     return jsonify(result)
 
 
-@mod.route('/social_contact', methods=['POST','GET'])
+@mod.route('/social_contact', methods=['GET'])
 def social_contact():
     group_id=request.args.get('group_id')
     map_type = request.args.get("type")
