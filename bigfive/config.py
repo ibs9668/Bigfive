@@ -37,6 +37,11 @@ GROUP_PERSONALITY = 'group_personality'
 GROUP_DOMAIN_TOPIC = 'group_domain_topic'
 GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 
+# event index
+EVENT_INFORMATION = 'event_information'
+EVENT_WORDCLOUD = 'event_wordcloud'
+EVENT_RIVER = 'event_river'
+
 # cron_user parameter
 USER_ITER_COUNT = 100
 USER_WEIBO_ITER_COUNT = 10000
@@ -75,6 +80,8 @@ PERSONALITY_DIC = {
     'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},
     'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}
 }
+PERSONALITY_LABEL_LIST=["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label",\
+                        "nervousness_label","openn_label", "agreeableness_label", "conscientiousness_label"]
 
 #画像字典
 ATTRIBUTE_DIC = {

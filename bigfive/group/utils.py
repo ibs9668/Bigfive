@@ -564,67 +564,67 @@ def group_emotion(group_id, interval):
     return result
 
 
-# @cache.memoize(60)
-# def group_social_contact(group_id, map_type):
-#     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
-#         '_source']['userlist']
-#     if map_type in ['1', '2']:
-#         message_type = 3
-#     else:
-#         message_type = 2
-#     if map_type in ['1', '3']:
-#         key = 'target'
-#     else:
-#         key = 'source'
-#     query_body = {
-#         "query": {
-#             "filtered": {
-#                 "filter": {
-#                     "bool": {
-#                         "must": [
-#                             {
-#                                 "term": {
-#                                     "message_type": message_type
-#                                 }
-#                             },
-#                             {
-#                                 "terms": {
-#                                     key: user_list
-#                                 }
-#                             }
-#                         ]}
-#                 }}
-#         },
-#         "size": 3000,
-#     }
-#     r = es.search(index="user_social_contact", doc_type="text",
-#                   body=query_body)["hits"]["hits"]
-#     node = []
-#     link = []
-#     for one in r:
-#         item = one['_source']
-#         a = {'id': item['target'], 'name': item['target_name']}
-#         b = {'id': item['source'], 'name': item['source_name']}
-#         c = {'source': item['source_name'], 'target': item['target_name']}
-#         if a not in node:
-#             node.append(a)
-#         if b not in node:
-#             node.append(b)
-#         if c not in link and c['source'] != c['target']:
-#             link.append(c)
-#     social_contact = {'node': node, 'link': link}
-#     if node:
-#         return social_contact
-#     return {}
-
+@cache.memoize(60)
 def group_social_contact(group_id, map_type):
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
-    hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
-    if not hits:
-        return {}
-    hit = hits[0]['_source']
-    node = [{'name':i} for i in hit['node']]
-    return {'node':node,'link':hit['link']}
+    user_list = es.get(index='group_information', doc_type='text', id=group_id)[
+        '_source']['userlist']
+    if map_type in ['1', '2']:
+        message_type = 3
+    else:
+        message_type = 2
+    if map_type in ['1', '3']:
+        key = 'target'
+    else:
+        key = 'source'
+    query_body = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "message_type": message_type
+                                }
+                            },
+                            {
+                                "terms": {
+                                    key: user_list
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 3000,
+    }
+    r = es.search(index="user_social_contact", doc_type="text",
+                  body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    for one in r:
+        item = one['_source']
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in node:
+            node.append(b)
+        if c not in link and c['source'] != c['target']:
+            link.append(c)
+    social_contact = {'node': node, 'link': link}
+    if node:
+        return social_contact
+    return {}
+
+# def group_social_contact(group_id, map_type):
+#     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
+#     hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
+#     if not hits:
+#         return {}
+#     hit = hits[0]['_source']
+#     node = [{'name':i} for i in hit['node']]
+#     return {'node':node,'link':hit['link']}
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
