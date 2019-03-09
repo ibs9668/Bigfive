@@ -3,6 +3,7 @@ import re
 import time
 from collections import OrderedDict
 from elasticsearch.helpers import scan
+from xpinyin import Pinyin
 
 from bigfive.config import *
 from bigfive.cache import cache
@@ -33,6 +34,26 @@ def get_hot_event_list(keyword, page, size, order_name, order_type):
         item['_source']['name'] = item['_source']['event_name']
         result['rows'].append(item['_source'])
     return result
+
+
+def post_create_hot_event(event_name, keywords, start_date, end_date):
+    event_pinyin = Pinyin().get_pinyin(event_name, '')
+    create_date = time.strftime('%Y-%m-%d', time.localtime(int(time.time())))
+    create_time = int(time.mktime(time.strptime(create_date, '%Y-%m-%d')))
+    progress = 1
+    event_id = '{}_{}'.format(event_pinyin, str(create_time))
+    hot_event = {
+        "event_name": event_name,
+        "event_pinyin": event_pinyin,
+        "create_time": create_time,
+        "create_date": create_date,
+        "keywords": keywords,
+        "progress": progress,
+        "event_id": event_id,
+        "start_date": start_date,
+        "end_date": end_date
+    }
+    es.index(index='event_information', doc_type='text', body=hot_event, id=event_id)
 
 
 def get_time_hot(s, e):

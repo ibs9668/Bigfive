@@ -24,6 +24,17 @@ def hot_event_list():
     return jsonify(result)
 
 
+@mod.route('/create_hot_event/', methods=['POST'])
+def create_hot_event():
+    parameters = request.form.to_dict()
+    event_name = parameters.get('event_name', '')
+    keywords = parameters.get('keywords', '')
+    start_date = parameters.get('start_date', '')
+    end_date = parameters.get('end_date', '')
+    post_create_hot_event(event_name, keywords, start_date, end_date)
+    return jsonify(1)
+
+
 @mod.route('/time_hot')
 def time_hot():
     s = request.args.get('s','')
