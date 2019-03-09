@@ -75,6 +75,8 @@ PERSONALITY_DIC = {
     'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},
     'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}
 }
+PERSONALITY_LABEL_LIST=["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label",\
+                        "nervousness_label","openn_label", "agreeableness_label", "conscientiousness_label"]
 
 #画像字典
 ATTRIBUTE_DIC = {
