@@ -5,7 +5,7 @@ import re
 from xpinyin import Pinyin
 
 from bigfive.time_utils import *
-from bigfive.config import es
+from bigfive.config import es, MAX_VALUE, USER_RANKING, labels_dict, topic_dict
 from bigfive.cache import cache
 
 
@@ -97,7 +97,8 @@ def delete_by_id(index, doc_type, id):
         es.delete(index='group_task', doc_type=doc_type, id=id)
     elif index == 'info':
         es.delete(index='group_ranking', doc_type=doc_type, id=id)
-
+        es.delete(index='group_information', doc_type=doc_type, id=id)
+        es.delete(index='group_task', doc_type=doc_type, id=id)
 
 def search_group_ranking(keyword, page, size, order_name, order_type, order_dict):
     page = page if page else '1'
@@ -116,8 +117,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [{"constant_score": {"filter": {"missing": {"field": "extroversion_label"}}}}], "should": []}}, "from": 0, "size": 6, "sort": [], "aggs": {}}
 
     if keyword:
-        user_query = '{"wildcard":{"group_id": "*%s*"}}' % keyword
-        query['query']['bool']['must'].append(json.loads(user_query))
+        query['query']['bool']['must'].append({"wildcard":{"group_name": "*%s*" % keyword}})
 
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
@@ -181,7 +181,7 @@ def search_group_ranking(keyword, page, size, order_name, order_type, order_dict
     return {'rows': result, 'total': total}
 
 
-def get_group_user_list(gid):
+def get_group_user_list(gid, page, size, order_name, order_type):
     query = {
         "query": {
             "bool": {
@@ -195,12 +195,102 @@ def get_group_user_list(gid):
             }
         }
     }
-    result = es.search(index='group_information', doc_type='text', body=query)[
+    user_ranking_query = {"query": {"bool": {"should": []}}}
+    user_list = es.search(index='group_information', doc_type='text', body=query)[
         'hits']['hits'][0]['_source']['userlist']
+    for uid in user_list:
+        user_ranking_query['query']['bool']['should'].append({"term": {"uid": uid}})
+
+    sort_list = []
+    order_name = 'username' if order_name == 'name' else order_name
+    order_name = order_name if order_name else 'username'
+    order_type = order_type if order_type else 'asc'
+    sort_list.append({order_name: {"order": order_type}})
+
+    user_ranking_query['from'] = str((int(page) - 1) * int(size))
+    user_ranking_query['size'] = str(size)
+    user_ranking_query['sort'] = sort_list
+
+    hits = es.search(index='user_ranking', doc_type='text', body=user_ranking_query)['hits']
+
+    result = {'rows': [], 'total': hits['total']}
+    for item in hits['hits']:
+        item['_source']['big_five_list'] = []
+        item['_source']['dark_list'] = []
+
+        if item['_source']['extroversion_label'] == 0:
+            item['_source']['big_five_list'].append({'外倾性': '0'})  # 0代表极端低
+        if item['_source']['extroversion_label'] == 2:
+            item['_source']['big_five_list'].append({'外倾性': '1'})  # 1代表极端高
+        if item['_source']['openn_label'] == 0:
+            item['_source']['big_five_list'].append({'开放性': '0'})
+        if item['_source']['openn_label'] == 2:
+            item['_source']['big_five_list'].append({'开放性': '1'})
+        if item['_source']['agreeableness_label'] == 0:
+            item['_source']['big_five_list'].append({'宜人性': '0'})
+        if item['_source']['agreeableness_label'] == 2:
+            item['_source']['big_five_list'].append({'宜人性': '1'})
+        if item['_source']['conscientiousness_label'] == 0:
+            item['_source']['big_five_list'].append({'尽责性': '0'})
+        if item['_source']['conscientiousness_label'] == 2:
+            item['_source']['big_five_list'].append({'尽责性': '1'})
+        if item['_source']['nervousness_label'] == 0:
+            item['_source']['big_five_list'].append({'神经质': '0'})
+        if item['_source']['nervousness_label'] == 2:
+            item['_source']['big_five_list'].append({'神经质': '1'})
+
+        if item['_source']['machiavellianism_label'] == 0:
+            item['_source']['dark_list'].append({'马基雅维里主义': '0'})
+        if item['_source']['machiavellianism_label'] == 2:
+            item['_source']['dark_list'].append({'马基雅维里主义': '1'})
+        if item['_source']['psychopathy_label'] == 0:
+            item['_source']['dark_list'].append({'精神病态': '0'})
+        if item['_source']['psychopathy_label'] == 2:
+            item['_source']['dark_list'].append({'精神病态': '1'})
+        if item['_source']['narcissism_label'] == 0:
+            item['_source']['dark_list'].append({'自恋': '0'})
+        if item['_source']['narcissism_label'] == 2:
+            item['_source']['dark_list'].append({'自恋': '1'})
+
+        item['_source']['name'] = item['_source']['username']
+        result['rows'].append(item['_source'])
+
     return result
 
 
-def get_group_basic_info(gid, remark):
+def get_index_rank(personality_value, personality_name, label_type):
+    result = 0
+    query_body = {
+        'query':{
+            'bool':{
+                'must':[
+                    {'range':{
+                        personality_name:{
+                            'from':personality_value,
+                            'to': MAX_VALUE
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    index_rank = es.count(index=USER_RANKING, doc_type='text', body=query_body)
+    if index_rank['_shards']['successful'] != 0:
+       result = index_rank['count']
+    else:
+        print('es index rank error')
+        result = 0
+    all_user_count = es.count(index=USER_RANKING, doc_type='text', body={'query':{'match_all':{}}})['count']
+    if label_type == 'low':
+        return result / all_user_count
+    elif label_type == 'high':
+        return (all_user_count - result) / all_user_count
+    else:
+        raise ValueError
+
+
+def get_group_basic_info(gid):
     query = {
         "query": {
             "bool": {
@@ -224,7 +314,6 @@ def get_group_basic_info(gid, remark):
 
     # 黑暗人格字段
     group_item['machiavellianism'] = group_ranking_result['machiavellianism_index']
-
     group_item['narcissism'] = group_ranking_result['narcissism_index']
     group_item['psychopathy'] = group_ranking_result['psychopathy_index']
 
@@ -250,16 +339,85 @@ def get_group_basic_info(gid, remark):
     group_item['influence_star'] = group_ranking_result['influence_star']
     group_item['compactness_star'] = group_ranking_result['compactness_star']
 
-    # 传入remark时进行备注修改
-    if remark:
-        es.update(index='group_information', id=gid,
-                  doc_type='text', body={'doc': {'remark': remark}})
+    machiavellianism_low_count = 0
+    machiavellianism_high_count = 0
+    narcissism_low_count = 0
+    narcissism_high_count = 0
+    psychopathy_low_count = 0
+    psychopathy_high_count = 0
+
+    extroversion_low_count = 0
+    extroversion_high_count = 0
+    conscientiousness_low_count = 0
+    conscientiousness_high_count = 0
+    agreeableness_low_count = 0
+    agreeableness_high_count = 0
+    openn_low_count = 0
+    openn_high_count = 0
+    nervousness_low_count = 0
+    nervousness_high_count = 0
+    user_list = result['userlist']
+    for user_id in user_list:
+        user_ranking_dict = es.get(index='user_ranking', id=user_id, doc_type='text')['_source']
+        if user_ranking_dict['machiavellianism_label'] == 0:
+            machiavellianism_low_count += 1
+        if user_ranking_dict['machiavellianism_label'] == 2:
+            machiavellianism_high_count += 1
+        if user_ranking_dict['narcissism_label'] == 0:
+            narcissism_low_count += 1
+        if user_ranking_dict['narcissism_label'] == 2:
+            narcissism_high_count += 1
+        if user_ranking_dict['psychopathy_label'] == 0:
+            psychopathy_low_count += 1
+        if user_ranking_dict['psychopathy_label'] == 2:
+            psychopathy_high_count += 1
+        if user_ranking_dict['extroversion_label'] == 0:
+            extroversion_low_count += 1
+        if user_ranking_dict['extroversion_label'] == 2:
+            extroversion_high_count += 1
+        if user_ranking_dict['conscientiousness_label'] == 0:
+            conscientiousness_low_count += 1
+        if user_ranking_dict['conscientiousness_label'] == 2:
+            conscientiousness_high_count += 1
+        if user_ranking_dict['agreeableness_label'] == 0:
+            agreeableness_low_count += 1
+        if user_ranking_dict['agreeableness_label'] == 2:
+            agreeableness_high_count += 1
+        if user_ranking_dict['openn_label'] == 0:
+            openn_low_count += 1
+        if user_ranking_dict['openn_label'] == 2:
+            openn_high_count += 1
+        if user_ranking_dict['nervousness_label'] == 0:
+            nervousness_low_count += 1
+        if user_ranking_dict['nervousness_label'] == 2:
+            nervousness_high_count += 1
+        # print(user_ranking_dict)
+    group_item['machiavellianism_low_count'] = machiavellianism_low_count
+    group_item['machiavellianism_high_count'] = machiavellianism_high_count
+    group_item['narcissism_low_count'] = narcissism_low_count
+    group_item['narcissism_high_count'] = narcissism_high_count
+    group_item['psychopathy_low_count'] = psychopathy_low_count
+    group_item['psychopathy_high_count'] = psychopathy_high_count
+    group_item['extroversion_low_count'] = extroversion_low_count
+    group_item['extroversion_high_count'] = extroversion_high_count
+    group_item['conscientiousness_low_count'] = conscientiousness_low_count
+    group_item['conscientiousness_high_count'] = conscientiousness_high_count
+    group_item['agreeableness_low_count'] = agreeableness_low_count
+    group_item['agreeableness_high_count'] = agreeableness_high_count
+    group_item['openn_low_count'] = openn_low_count
+    group_item['openn_high_count'] = openn_high_count
+    group_item['nervousness_low_count'] = nervousness_low_count
+    group_item['nervousness_high_count'] = nervousness_high_count
     return group_item
+
+
+def modify_group_remark(group_id, remark):
+    es.update(index='group_information', id=group_id, doc_type='text', body={'doc': {'remark': remark}})
 
 
 def group_preference(group_id):
 
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
+    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='group_domain_topic',doc_type='text',body=query)['hits']['hits']
     sta_hits = es.search(index='group_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
 
@@ -267,10 +425,10 @@ def group_preference(group_id):
         return {}
 
     item = hits[0]['_source']
-    domain_static = {one['domain']: one['count']
-                     for one in item['domain_static'] if one['count']}
-    topic_static = {one['topic']: one['count']
-                    for one in item['topic_static'] if one['count']}
+    domain_static = {labels_dict[one['domain']]: one['count']
+                     for one in sorted(item['domain_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
+    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']
+                    for one in sorted(item['topic_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
 
     sta_item = sta_hits[0]['_source']
     keywords = {one['keyword']: one['count'] for one in sta_item['keywords']}
@@ -459,10 +617,19 @@ def group_social_contact(group_id, map_type):
         return social_contact
     return {}
 
-
+# def group_social_contact(group_id, map_type):
+#     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
+#     hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
+#     if not hits:
+#         return {}
+#     hit = hits[0]['_source']
+#     node = [{'name':i} for i in hit['node']]
+#     return {'node':node,'link':hit['link']}
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}
+
+    print(query)
     hits = es.search(index='group_activity', doc_type='text',
                      body=query)['hits']['hits']
     if not hits:
@@ -508,3 +675,4 @@ def get_group_activity(group_id):
                              'count'], reverse=True)[:5]
     result['four'] = {'route_list': route_list, 'geo_count': geo_item}
     return result
+

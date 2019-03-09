@@ -13,8 +13,13 @@ index_info = {
         "analysis":{ 
             "analyzer":{
                 "my_analyzer":{
-                    "type":"pattern",
-                    "patern":"&"
+                  "tokenizer":"my_tokenizer"
+                }
+            },
+            "tokenizer":{
+                "my_tokenizer":{
+                    "type": "pattern",
+                    "pattern":"&"
                 }
             }
         }
@@ -30,26 +35,19 @@ index_info = {
                 "uid":{                             
                     "type":"string",
                     "index":"not_analyzed"
-                    
                 },
-                
                 "ip":{  #ip                         
                     "type":"ip",
                     "index":"not_analyzed"
-                    
                 },                              
                 "geo":{#地理位置
                     "type":"string",
-                    "index": "not_analyzed"
-                    
+                    "analyzer": "my_analyzer"
                 },
                 "count":{#统计次数
                     "type":"long",
                     "index":"not_analyzed"
-                    
                 }
-                
-                
             }
         }
     }

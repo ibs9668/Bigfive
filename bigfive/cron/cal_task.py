@@ -9,6 +9,7 @@ from xpinyin import Pinyin
 
 from config import *
 from time_utils import *
+from global_utils import *
 from model.personality_predict import predict_personality
 from cron_group import group_activity, group_attribute
 
@@ -135,29 +136,15 @@ def get_attribute_star(attribute_index):
     return int(attribute_index / 20) + 1
 
 def user_insert():
-    iter_num = 0
-    iter_get_user = USER_ITER_COUNT
-    while (iter_get_user == USER_ITER_COUNT):
-        print('\nUsers that have been calculated: %d\n' % (iter_num*USER_ITER_COUNT))
-        user_query_body = {
-            'query':{
-                'match_all':{}
-            },
-            'sort':{
-                'uid':{
-                    'order':'asc'
-                }
-            },
-            "size":USER_ITER_COUNT,
-            "from":iter_num * USER_ITER_COUNT
+    user_query_body = {
+        'query':{
+            'match_all':{}
         }
-        es_result = es.search(index=USER_INFORMATION,doc_type='text',body=user_query_body)['hits']['hits']
-        iter_get_user = len(es_result)
-        iter_num += 1
-        iter_user_list = [hit['_source']['uid'] for hit in es_result]
-        iter_username_list = [hit['_source']['username'] for hit in es_result]
-        if len(iter_user_list) == 0:
-            break
+    }
+    user_generator = user_generator(USER_INFORMATION, user_query_body, USER_ITER_COUNT)
+    for res in user_generator:
+        iter_user_list = [hit['_source']['uid'] for hit in res]
+        iter_username_list = [hit['_source']['username'] for hit in res]
         cal_user_personality(iter_user_list,'2016-11-27',14)
         time.sleep(1)
         user_ranking(iter_user_list,iter_username_list,'2016-11-27')
@@ -172,35 +159,18 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
     uid_list_keyword = []
     # USER_WEIBO_ITER_COUNT = 1000
     if keyword != '':
-        for weibo_index in ES_INDEX_LIST:
-            print(weibo_index)
-            weibo_iter_num = 0
-            iter_get_weibo = USER_WEIBO_ITER_COUNT
-            es_result = []
-            while (iter_get_weibo == USER_WEIBO_ITER_COUNT):
-                print(weibo_iter_num*USER_WEIBO_ITER_COUNT)
-                weibo_query_body = {
-                    "_source":["uid"],
-                    "query":{
-                        'match_phrase':{
-                            'keywords_string':keyword
-                        }
-                    },
-                    'sort':{
-                        '_id':{
-                            'order':'asc'
-                        }
-                    },
-                    "size":USER_WEIBO_ITER_COUNT,
-                    "from":weibo_iter_num * USER_WEIBO_ITER_COUNT
+        weibo_query_body = {
+            "_source":["uid"],
+            "query":{
+                'match_phrase':{
+                    'keywords_string':keyword
                 }
-                res = es_weibo.search(index=weibo_index,doc_type='text',body=weibo_query_body)['hits']['hits']
-                es_result.extend(res)
-                iter_get_weibo = len(res)
-                weibo_iter_num += 1
-            print(len(es_result))
-
-            uid_list_keyword.extend([hit['_source']['uid'] for hit in es_result])
+            }
+        }
+        for weibo_index in ES_INDEX_LIST:
+            weibo_generator = weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
+            for res in weibo_generator:
+                uid_list_keyword.extend([hit['_source']['uid'] for hit in res])
     uid_list_keyword = set(uid_list_keyword)
 
 
@@ -232,22 +202,13 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
     # es_result = es.search(index=USER_RANKING,doc_type='text',body=user_query_body)['hits']['hits']
     # uid_list_index = [hit['_source']['uid'] for hit in es_result]
     if num:
-        iter_num = 0
-        iter_get_user = USER_ITER_COUNT
-        while (iter_get_user == USER_ITER_COUNT):
-            print(iter_num*USER_ITER_COUNT)
-            user_query_body['size'] = USER_ITER_COUNT
-            user_query_body['from'] = iter_num * USER_ITER_COUNT
-            user_query_body['sort'] = {'uid':{'order':'asc'}}
-            # print(user_query_body)
-            es_result = es.search(index=USER_RANKING,doc_type='text',body=user_query_body)['hits']['hits']
-            iter_get_user = len(es_result)
-            iter_num += 1
-
-            for hit in es_result:
+        user_generator = user_generator(USER_RANKING, user_query_body, USER_ITER_COUNT)
+        for res in user_generator:
+            for hit in res:
                 uid_list_index.append(hit['_source']['uid'])
 
     uid_list_index = set(uid_list_index)
+
 
     if keyword != '' and num != 0:
         uid_list = list(uid_list_index & uid_list_keyword)

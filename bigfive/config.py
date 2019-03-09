@@ -37,6 +37,11 @@ GROUP_PERSONALITY = 'group_personality'
 GROUP_DOMAIN_TOPIC = 'group_domain_topic'
 GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 
+# event index
+EVENT_INFORMATION = 'event_information'
+EVENT_WORDCLOUD = 'event_wordcloud'
+EVENT_RIVER = 'event_river'
+
 # cron_user parameter
 USER_ITER_COUNT = 100
 USER_WEIBO_ITER_COUNT = 10000
