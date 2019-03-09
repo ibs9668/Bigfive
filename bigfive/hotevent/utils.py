@@ -184,5 +184,4 @@ def get_renge():
             if bucket['key'] not in map_dic.keys():
                 continue
             result[k][map_dic[bucket['key']]] = bucket['doc_count']
-    print(result)
     return result
