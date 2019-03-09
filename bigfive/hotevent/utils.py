@@ -242,9 +242,10 @@ def get_in_group_ranking(event_id,mtype):
         "aggs": {}
     }
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
+
     result = {}
     for k,v in r.items():
-        if 'high' not in k or 'low' not in k:
+        if 'high' not in k and 'low' not in k:
             result[k] = v
             continue
         if k.split('_')[0] not in result.keys():
