@@ -163,7 +163,7 @@ def get_browser_by_geo(geo, s, e):
     return result
 
 
-def get_renge():
+def get_in_group_renge():
     query = {
         "size": 0,
         "aggs": {
@@ -198,13 +198,16 @@ def get_renge():
         "aggs": {
         }
     }
-    personality_index_list = ["machiavellianism_index","narcissism_index","psychopathy_index","extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]
-    personality_label_list = ["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label","nervousness_label","openn_label","agreeableness_label","conscientiousness_label"]
+    personality_index_list = ["machiavellianism_index", "narcissism_index", "psychopathy_index",
+                              "extroversion_index", "nervousness_index", "openn_index", "agreeableness_index", "conscientiousness_index"]
+    personality_label_list = ["machiavellianism_label", "narcissism_label", "psychopathy_label",
+                              "extroversion_label", "nervousness_label", "openn_label", "agreeableness_label", "conscientiousness_label"]
 
-    result =  {}
+    result = {}
     for i in personality_index_list:
-        query["aggs"].update({i.split("_")[0]:{'avg':{'field':i}}})
-    result = es.search(index="user_ranking", doc_type="text", body = query)["aggregations"]
+        query["aggs"].update({i.split("_")[0]: {'avg': {'field': i}}})
+    result = es.search(index="user_ranking", doc_type="text",
+                       body=query)["aggregations"]
 
     query = {
         "query": {
@@ -226,13 +229,55 @@ def get_renge():
     }
 
     for i in personality_label_list:
-        query["aggs"].update({i.split("_")[0]:{'terms':{'field':i}}})
-    aggregations = es.search(index="user_ranking", doc_type="text", body = query)["aggregations"]
-    map_dic = {0:'low',2:'high'}
-    for k,v in aggregations.items():
+        query["aggs"].update({i.split("_")[0]: {'terms': {'field': i}}})
+    aggregations = es.search(index="user_ranking", doc_type="text", body=query)[
+        "aggregations"]
+    map_dic = {0: 'low', 2: 'high'}
+    for k, v in aggregations.items():
         for bucket in v['buckets']:
             # print(bucket)
             if bucket['key'] not in map_dic.keys():
                 continue
             result[k][map_dic[bucket['key']]] = bucket['doc_count']
     return result
+
+
+def get_in_group_ranking(event_id,mtype):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "event_id": event_id
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "from": 0,
+        "size": 1,
+        "sort": [],
+        "aggs": {}
+    }
+    r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
+
+    result = {}
+    for k,v in r.items():
+        if 'high' not in k and 'low' not in k:
+            result[k] = v
+            continue
+        if k.split('_')[0] not in result.keys():
+            result[k.split('_')[0]] = {'high':{},'low':{}}
+        for i in v:
+            # print(i)
+            sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
+            result[k.split('_')[0]][k.split('_')[1]] = {i['key']:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            if 'mid_list' in i.keys():
+                mids = i['mid_list']
+                query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
+                hits = es.search(index='event_ceshishijiansan_1551942139',doc_type='text',body=query)['hits']['hits']
+                result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
+    return result[mtype]
