@@ -145,12 +145,44 @@ def get_renge():
         },
         "size": 0,
         "aggs": {
-            "extroversion_index": {
-                "stats": {
-                    "field": "extroversion_index"
-                }
-            }
         }
     }
-    hits = es.search(index='user_ranking', doc_type='text', body=query)
-    return hits
+    personality_index_list = ["machiavellianism_index","narcissism_index","psychopathy_index","extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]
+    personality_label_list = ["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label","nervousness_label","openn_label","agreeableness_label","conscientiousness_label"]
+
+    result =  {}
+    for i in personality_index_list:
+        query["aggs"].update({i.split("_")[0]:{'avg':{'field':i}}})
+    result = es.search(index="user_ranking", doc_type="text", body = query)["aggregations"]
+
+    query = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "terms": {
+                                    'uid': uids
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 0,
+        "aggs": {
+        }
+    }
+
+    for i in personality_label_list:
+        query["aggs"].update({i.split("_")[0]:{'terms':{'field':i}}})
+    aggregations = es.search(index="user_ranking", doc_type="text", body = query)["aggregations"]
+    map_dic = {0:'low',2:'high'}
+    for k,v in aggregations.items():
+        for bucket in v['buckets']:
+            # print(bucket)
+            if bucket['key'] not in map_dic.keys():
+                continue
+            result[k][map_dic[bucket['key']]] = bucket['doc_count']
+    print(result)
+    return result
