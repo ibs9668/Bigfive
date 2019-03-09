@@ -1,7 +1,12 @@
+import copy
 from ad_filter import ad_filter
 from opinion_produce import rubbish_classifier,opinion_main
+from duplicate import duplicate
 
-def weibo_calculation(comments, cluster_num=COMMENT_WORDS_CLUSTER_NUM, \
+CLUSTER_EVA_MIN_SIZE = 5
+COMMENT_CLUSTERING_PROCESS_FOR_CLUTO_VERSION = 'v1'
+
+def weibo_calculation(comments, cluster_num, \
         cluster_eva_min_size=CLUSTER_EVA_MIN_SIZE, \
         version=COMMENT_CLUSTERING_PROCESS_FOR_CLUTO_VERSION):
     """评论计算
@@ -15,21 +20,23 @@ def weibo_calculation(comments, cluster_num=COMMENT_WORDS_CLUSTER_NUM, \
     """
     print('-------------------------------')
     print('start weibo calculation')
+    print('Weibo num:%d' % len(comments))
 
     # backup copy
     comments_copy = copy.deepcopy(comments)
 
     # 观点计算
-    print('start weibo clustering calculation')
-    clustering_results = comments_rubbish_clustering_calculation(comments_copy, logger, \
+    print('Start weibo clustering calculation')
+    clustering_results = comments_rubbish_clustering_calculation(comments_copy, \
             cluster_num=cluster_num, \
             cluster_eva_min_size=cluster_eva_min_size, \
             version=version)
-    print('end weibo clustering calculation')
+    print('End weibo clustering calculation')
+    print('-------------------------------')
 
     return {'cluster_infos': clustering_results['cluster_infos'], 'item_infos': clustering_results['item_infos']}
 
-def comments_rubbish_clustering_calculation(comments, logger, cluster_num=COMMENT_WORDS_CLUSTER_NUM, \
+def comments_rubbish_clustering_calculation(comments, cluster_num, \
         cluster_eva_min_size=CLUSTER_EVA_MIN_SIZE, \
         version=COMMENT_CLUSTERING_PROCESS_FOR_CLUTO_VERSION):
     """评论垃圾过滤、聚类
@@ -58,14 +65,15 @@ def comments_rubbish_clustering_calculation(comments, logger, cluster_num=COMMEN
     items_infos = []
 
     # 数据字段预处理
+    print('\tData preprocess...')
     inputs = []
     for r in comments:
         r['title'] = ''
-        r['content168'] = r['content'].encode('utf-8')
+        r['content168'] = r['content']#.encode('utf-8')
         r['content'] = r['content168']
         r['text'] = r['content']
         if 'news_content' in r and r['news_content']:
-            r['news_content'] = r['news_content'].encode('utf-8')
+            r['news_content'] = r['news_content']#.encode('utf-8')
         else:
             r['news_content'] = ''
 
@@ -76,8 +84,10 @@ def comments_rubbish_clustering_calculation(comments, logger, cluster_num=COMMEN
         else:
             item['clusterid'] = NON_CLUSTER_ID + '_rub'
             items_infos.append(item)
+    print('\tAd filter %d data, data list have: %d' % (len(inputs),len(items_infos)))
 
     # svm去除垃圾
+    print('\tSvm rubbish classify...')
     if len(inputs) == 0:
         items = []
     else:
@@ -89,25 +99,24 @@ def comments_rubbish_clustering_calculation(comments, logger, cluster_num=COMMEN
             items_infos.append(item)
         else:
             inputs.append(item)
+    print('\tSvm rubbish classify %d data, data list have: %d' % (len(inputs),len(items_infos)))
     
-    if len(inputs) >= 500:
-        opinion_name,word_result,text_list = opinion_main(inputs,10)
-    else:
-        opinion_name,word_result,text_list = opinion_main(inputs,5)
+    #开始聚类
+    print('\tStart clustring opinion...')
+    opinion_name,word_result,text_list,word_main = opinion_main(inputs,cluster_num)
+    # if len(inputs) >= 500:
+    #     opinion_name,word_result,text_list = opinion_main(inputs,10)
+    # else:
+    #     opinion_name,word_result,text_list = opinion_main(inputs,5)
+    print('\tEnd clustring opinion...')
 
-    for k,v in word_result.iteritems():
+    for k,v in word_result.items():
         #name = opinion_name[k]
         clusters_infos['features'][k] = v
-
-
-##    for k,v in text_list.iteritems():
-##        for item in v:
-##            row=copy.deepcopy(item)
-##            row['clusterid'] = k
-##            items_infos.append(row)
+    clusters_infos['word_main'] = word_main
     
     final_inputs = []
-    for k,v in text_list.iteritems():
+    for k,v in text_list.items():
         for item in v:
             row=copy.deepcopy(item)
             row['clusterid'] = k
@@ -122,9 +131,8 @@ def comments_rubbish_clustering_calculation(comments, logger, cluster_num=COMMEN
         except KeyError:
             cluster_items[clusterid] = [r]
 
-    for clusterid, items in cluster_items.iteritems():
+    for clusterid, items in cluster_items.items():
         results = duplicate(items)
         items_infos.extend(results)
-    
     
     return {'cluster_infos': clusters_infos, 'item_infos': items_infos}

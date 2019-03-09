@@ -1,12 +1,14 @@
 import sys
+import json
 sys.path.append('../')
 sys.path.append('../../')
 
 from elasticsearch.helpers import bulk
 
-from text_analyze import word_cloud, event_river
+from text_analyze import word_cloud
 
 from get_keywords import text_rank_keywords
+from event_river.river_main import river_main
 
 from config import *
 from time_utils import *
@@ -39,7 +41,7 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
         for res in weibo_generator:
             for hit in res:
                 source = hit['_source']
-                ###计算需要在得到的时候计算的指标
+                ###计算需要在取出事件相关微博数据的时候计算的指标
                 keywords_string = '&'.join(text_rank_keywords(source['text']))
                 sentiment = source['sentiment']
                 geo = source['geo']
@@ -69,7 +71,7 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
                     bulk(es, package)  #存入数据库
                     package = []
                 weibo_num += 1
-            uid_list_keyword.append(source['uid'])
+                uid_list_keyword.append(source['uid'])
         bulk(es, package)
     uid_list_keyword = list(set(uid_list_keyword))
 
@@ -103,8 +105,15 @@ def get_text_analyze(event_id, event_mapping_name):
         'event_id':event_id,
         'keywords':keywords_list
     }
-
     es.index(index=EVENT_WORDCLOUD,doc_type='text',body=cloud_dic,id=event_id)
+
+    cluster_count,cluster_word = river_main(event_mapping_name)
+    cluster_dic = {
+        'event_id':event_id,
+        'cluster_count':json.dumps(cluster_count),
+        'cluster_word':json.dumps(cluster_word)
+    }
+    es.index(index=EVENT_RIVER,doc_type='text',body=cluster_dic,id=event_id)
 
 if __name__ == "__main__":
 	event_create()

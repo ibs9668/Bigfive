@@ -50,6 +50,14 @@ index_info = {
                     "format": "dateOptionalTime",
                     "type": "date"
                 },
+                "start_date":{   #创建日期
+                    "format": "dateOptionalTime",
+                    "type": "date"
+                },
+                "end_date":{   #创建日期
+                    "format": "dateOptionalTime",
+                    "type": "date"
+                },
                 "userlist":{#用户列表
                     "index":"not_analyzed",
                     "type" : "string"

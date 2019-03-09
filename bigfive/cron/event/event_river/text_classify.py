@@ -19,7 +19,7 @@ class TopkHeap(object):
                 heapq.heapreplace(self.data, elem)
  
     def TopK(self):
-        return [x for x in reversed([heapq.heappop(self.data) for x in xrange(len(self.data))])]
+        return [x for x in reversed([heapq.heappop(self.data) for x in range(len(self.data))])]
 
 def load_lable(flag):
     lable = []
@@ -56,7 +56,7 @@ def get_text_net(word, weibo_text,word_weight,min_n):
         weight[str(i)] = float(len(w_list))/float(len(word))#c[str(k)]*(float(len(w_list))/float(len(word)))
 
     r_weibo = TopkHeap(max_n)
-    for k,v in weight.iteritems():
+    for k,v in weight.items():
         r_weibo.Push((v,k))#分类
 
     data = r_weibo.TopK()
@@ -103,7 +103,7 @@ def get_title(words,word_weight):#子话题名称
             word_dict[str(k2)] = word_weight[words[i]]
     
     f_weibo = TopkHeap(5)
-    for k,v in word_dict.iteritems():
+    for k,v in word_dict.items():
         f_weibo.Push((v,k))#排序
 
     data = f_weibo.TopK()
@@ -123,7 +123,7 @@ def text_net(word_result,word_weight,weibo):#提取代表性微博_词网
     title = dict()
     dur_time = dict()
     min_n = len(new_weibo)/len(word_result.keys()) + 1
-    for k,v in word_result.iteritems():
+    for k,v in word_result.items():
         text_list,weight_list = get_text_net(v,new_weibo,word_weight,min_n)
         text_total[k] = text_list
         weight_dict[k] = weight_list

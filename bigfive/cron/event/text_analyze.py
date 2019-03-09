@@ -18,6 +18,3 @@ def word_cloud(keywords_list):
 			except:
 				result[keyword] = 1
 	return result
-
-def event_river():
-	pass

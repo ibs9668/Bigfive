@@ -17,18 +17,14 @@ index_info = {
                     "index":"not_analyzed",
                     "type" : "string"
                 },
-                "keywords":{#关键词
-                    "properties":{
-                        "keyword":{ #群体id
-                            "index":"not_analyzed",
-                            "type" : "string"
-                        },
-                        "count":{ #群体id
-                            "index":"not_analyzed",
-                            "type" : "string"
-                        },
-                    }
-                }
+                "cluster_count":{#每天每个聚类数量的json串
+                    "index":"not_analyzed",
+                    "type" : "string"
+                },
+                "cluster_word":{#每天每个聚类数量的json串
+                    "index":"not_analyzed",
+                    "type" : "string"
+                },
             }
         }
     }

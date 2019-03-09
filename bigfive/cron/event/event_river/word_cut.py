@@ -12,6 +12,9 @@ ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 INPUT_FOLDER = os.path.join(ABS_PATH, 'cluto')
 VCLUTO = os.path.join(ABS_PATH, 'cluto-2.1.2/Linux-i686/vcluster')
 
+fc = fenci()
+fc.init_fenci()
+
 class TopkHeap(object):
     def __init__(self, k):
         self.k = k
@@ -26,7 +29,7 @@ class TopkHeap(object):
                 heapq.heapreplace(self.data, elem)
  
     def TopK(self):
-        return [x for x in reversed([heapq.heappop(self.data) for x in xrange(len(self.data))])]
+        return [x for x in reversed([heapq.heappop(self.data) for x in range(len(self.data))])]
 
 def process_for_cluto(kEigVec,name):
     '''
@@ -91,11 +94,18 @@ def cluto_kmeans_vcluster(k, input_file=None, vcluster=VCLUTO, \
     else:
         result_file = '%s.clustering.%s' % (input_file, k)
 
+    #执行cluto聚类命令
     command = "%s -niter=20 -zscores %s %s" % (vcluster, input_file, k)
     os.popen(command)
+    
+    while(True):
+        if os.path.exists(result_file):
+            with open(result_file) as f:
+                results = [line.strip().split() for line in f]
+            break
+        time.sleep(0.5)
 
-    results = [line.strip().split() for line in open(result_file)]
-
+    time.sleep(0.5)
     if os.path.isfile(result_file):
         os.remove(result_file)
 
@@ -114,7 +124,7 @@ def kmeans(feature,k,name):
 def word_net(weibo,k_cluster):#词频词网
 
     black = load_black_words()
-    sw = load_scws()
+    cx_dict = set(['Ag','a','an','Ng','n','nr','ns','nt','nz','Vg','v','vd','vn','@','j'])
     n = 0
     ts = time.time()
 
@@ -123,12 +133,12 @@ def word_net(weibo,k_cluster):#词频词网
     weibo_word = []
     for i in range(0,len(weibo)):
         text = weibo[i]['content168']
-        words = sw.participle(text)
+        words = fc.get_text_fc(text ,cx=True)
         row = []
         for word in words:
-            if (word[1] in cx_dict) and (3 < len(word[0]) < 30 or word[0] in single_word_whitelist) and (word[0] not in black):#选择分词结果的名词、动词、形容词，并去掉单个词
+            if (word[1] in cx_dict) and (1 < len(word[0]) < 10 or word[0] in single_word_whitelist) and (word[0] not in black):#选择分词结果的名词、动词、形容词，并去掉单个词
                 total = total + 1
-                if f_dict.has_key(str(word[0])):
+                if str(word[0]) in f_dict:
                     f_dict[str(word[0])] = f_dict[str(word[0])] + 1
                 else:
                     f_dict[str(word[0])] = 1
@@ -136,7 +146,7 @@ def word_net(weibo,k_cluster):#词频词网
         weibo_word.append(row)
 
     keyword = TopkHeap(300)
-    for k,v in f_dict.iteritems():#计算单个词的信息量
+    for k,v in f_dict.items():#计算单个词的信息量
         if v >= 2 and (float(v)/float(total)) <= 0.8:#去掉频数小于3，频率高于80%的词
             p = v
             keyword.Push((p,k))#排序
@@ -156,26 +166,26 @@ def word_net(weibo,k_cluster):#词频词网
         for j in range(0,len(row)):
             if row[j] in keyword:
                 if j-1 >= 0 and row[j] != row[j-1]:
-                    if word_net.has_key(str(row[j]+'_'+row[j-1])):
+                    if str(row[j]+'_'+row[j-1]) in word_net:
                         word_net[str(row[j]+'_'+row[j-1])] = word_net[str(row[j]+'_'+row[j-1])] + 1
-                    elif word_net.has_key(str(row[j-1]+'_'+row[j])):
+                    elif str(row[j-1]+'_'+row[j]) in word_net:
                         word_net[str(row[j-1]+'_'+row[j])] = word_net[str(row[j-1]+'_'+row[j])] + 1
                     else:
                         word_net[str(row[j-1]+'_'+row[j])] = 1
                 if j+1 < len(row) and row[j] != row[j+1]:
-                    if word_net.has_key(str(row[j]+'_'+row[j+1])):
+                    if str(row[j]+'_'+row[j+1]) in word_net:
                         word_net[str(row[j]+'_'+row[j+1])] = word_net[str(row[j]+'_'+row[j+1])] + 1
-                    elif word_net.has_key(str(row[j+1]+'_'+row[j])):
+                    elif str(row[j+1]+'_'+row[j]) in word_net:
                         word_net[str(row[j+1]+'_'+row[j])] = word_net[str(row[j+1]+'_'+row[j])] + 1
                     else:
                         word_net[str(row[j]+'_'+row[j+1])] = 1
 
     weight = TopkHeap(500)
-    for k,v in word_net.iteritems():#计算权重
+    for k,v in word_net.items():#计算权重
         k1,k2 = k.split('_')
-        if not k_value.has_key(k1):
+        if k1 not in k_value:
             k_value[k1] = 0
-        if not k_value.has_key(k2):
+        if k2 not in k_value:
             k_value[k2] = 0
         if k_value[k1] > k_value[k2]:
             p = v*k_value[k1]
@@ -205,16 +215,23 @@ def word_net(weibo,k_cluster):#词频词网
     features = np.array(feature)
     result = kmeans(features,k_cluster,'summary')
 
-    word_result = dict()
+    word_result_before = dict()
     for i in range(0,len(result)):
         label = result[i][0]
-        w = word[i]
+        w = (word[i],word_weight[word[i]])
         try:
-            word_result[label].append(w)
+            word_result_before[label].append(w)
         except KeyError:
-            word_result[label] = [w]
-        
-    return word_result,word_weight
+            word_result_before[label] = [w]
+    
+    word_result = dict()
+    word_main = dict()
+    for label in word_result_before:
+        main_words = sorted(word_result_before[label],key = lambda x:x[1],reverse = True)
+        word_result[label] = [i[0] for i in word_result_before[label]]
+        word_main[label] = [i[0] for i in main_words[:k_cluster]]
+
+    return word_result, word_weight, word_main
 
 if __name__ == '__main__':
     word_net('maoming')

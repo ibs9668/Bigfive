@@ -1,7 +1,9 @@
 import time
 import sys
+import json
 sys.path.append('../')
 sys.path.append('event')
+sys.path.append('event/event_river')
 from xpinyin import Pinyin
 
 from config import *
@@ -57,32 +59,29 @@ def group_main(args_dict,keyword,remark,group_name,create_time):
     group_ranking(group_dic)
 
 
-def event_main(keywords, event_id):
-    print('Start calculating event %s...' % event_id)
-    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'progress':1}},id=event_id)   #计算开始，计算状态变为计算中
-
+def event_main(keywords, event_id, start_date, end_date):
     print('Start creating event...')
     event_mapping_name = 'event_%s' % event_id
-    # create_event_mapping(event_mapping_name)
-    # userlist = event_create(event_mapping_name, keywords, '2016-11-13', '2016-11-27')
-    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
+    create_event_mapping(event_mapping_name)
+    userlist = event_create(event_mapping_name, keywords, start_date, end_date)
+    es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
 
     print('Start text analyze...')
-    get_text_analyze(event_id, event_mapping_name)
-
-    print('Successfully calculating event %s...' % event_id)
-    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'progress':2}},id=event_id)   #计算结束，计算状态变为计算中
+    # get_text_analyze(event_id, event_mapping_name)
+    
 
 if __name__ == '__main__':
     # user_main()
     # group_main(1,2,3,4,5)
 
-    event_name = "测试事件一"
+    event_name = "测试事件三"
     event_pinyin = Pinyin().get_pinyin(event_name, '')
     create_time = 1551942139 #int(time.time())
     create_date = ts2date(create_time)
-    keywords = "高兴&牛逼"
-    progress = 0
+    start_date = '2016-11-13'
+    end_date = '2016-11-27'
+    keywords = "崛起"
+    progress = 2
     event_id = event_pinyin + "_" + str(create_time)
     dic = {
         'event_name':event_name,
@@ -92,7 +91,9 @@ if __name__ == '__main__':
         'keywords':keywords,
         'progress':progress,
         'event_id':event_id,
+        'start_date':start_date,
+        'end_date':end_date
     }
     es.index(index=EVENT_INFORMATION,doc_type='text',body=dic,id=event_id)
     time.sleep(1)
-    event_main(keywords, event_id)
+    event_main(keywords, event_id, start_date, end_date)

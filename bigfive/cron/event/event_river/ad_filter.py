@@ -5,6 +5,10 @@ from utils import cut_words
 MARKET_WORDS = 'usedfiles/market_words.txt'
 EXTRA_MARKET_LIST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), MARKET_WORDS)
 
+def file(filepath):
+    with open(filepath) as f:
+        return f.readlines()
+
 def load_market_words():
     one_words = set([line.strip('\r\n') for line in file(EXTRA_MARKET_LIST_PATH)])
     return one_words

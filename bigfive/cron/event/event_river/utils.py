@@ -2,20 +2,16 @@ import sys
 sys.path.append('../../')
 import os
 import time
-from scws_utils import load_scws, cut
+from scws_utils import fenci, load_black_words
 
 CUT_BLACK_WORDS = 'usedfiles/black.txt'
 EXTRA_BLACK_LIST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), CUT_BLACK_WORDS)
 
-s = load_scws()
+fc = fenci()
+fc.init_fenci()
 
-cx_dict = set(['Ag','a','an','Ng','n','nr','ns','nt','nz','Vg','v','vd','vn','@','j']) # 关键词词性词典, 保留名词、动词、形容词
-cx_dict_noun = set(['Ng','n','nr','ns','nt','nz']) # 关键词词性词典, 保留名词
-
-
-def load_black_words():
-    one_words = set([line.strip('\r\n') for line in file(EXTRA_BLACK_LIST_PATH)])
-    return one_words
+cx_dict_utils = set(['Ag','a','an','Ng','n','nr','ns','nt','nz','Vg','v','vd','vn','@','j']) # 关键词词性词典, 保留名词、动词、形容词
+cx_dict_noun_utils = set(['Ng','n','nr','ns','nt','nz']) # 关键词词性词典, 保留名词
 
 black_words = load_black_words()
 
@@ -29,9 +25,9 @@ def cut_words(text):
     if not isinstance(text, str):
         raise ValueError("cut words input text must be string")
 
-    cx_terms = cut(s, text, cx=True)
+    cx_terms = fc.get_text_fc(text, cx=True)
 
-    return [term for term, cx in cx_terms if cx in cx_dict and term not in black_words]
+    return [term for term, cx in cx_terms if cx in cx_dict_utils and term not in black_words]
 
 
 def cut_words_noun(text):
@@ -44,7 +40,7 @@ def cut_words_noun(text):
     if not isinstance(text, str):
         raise ValueError("cut words input text must be string")
 
-    cx_terms = cut(s, text, cx=True)
+    cx_terms = fc.get_text_fc(text, cx=True)
 
-    return [term for term, cx in cx_terms if cx in cx_dict_noun and term not in black_words]
+    return [term for term, cx in cx_terms if cx in cx_dict_noun_utils and term not in black_words]
 

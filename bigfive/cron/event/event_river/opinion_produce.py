@@ -3,26 +3,35 @@
 import os
 import csv
 import time
-from svmutil import *
-from config import *
+import sys
+from libsvm.python.svmutil import *
+sys.path.append('../../')
+from scws_utils import fenci
 from word_cut import word_net
 from text_classify import text_net
 
 ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 
+fc = fenci()
+fc.init_fenci()
+
+def file(filepath):
+    with open(filepath) as f:
+        return f.readlines()
+
 def test_data(weibo,flag):
     word_dict = dict()
-    reader = csv.reader(file(ABS_PATH+'/svm/new_feature.csv', 'rb'))
-    for w,c in reader:
-        word_dict[str(w)] = c 
+    with open(ABS_PATH+'/svm/new_feature.csv', 'r') as f:
+        reader = csv.reader(f)
+        for w,c in reader:
+            word_dict[str(w)] = c 
 
-    sw = load_scws()
     items = []
     for i in range(0,len(weibo)):
-        words = sw.participle(weibo[i]['content168'])
+        words = fc.get_text_fc(weibo[i]['content168'])
         row = dict()
         for word in words:
-            if row.has_key(str(word[0])):
+            if str(word[0]) in row:
                 row[str(word[0])] = row[str(word[0])] + 1
             else:
                 row[str(word[0])] = 1
@@ -34,13 +43,13 @@ def test_data(weibo,flag):
         row = items[i]
         f_row = ''
         f_row = f_row + str(1)
-        for k,v in word_dict.iteritems():
-            if row.has_key(k):
+        for k,v in word_dict.items():
+            if k in row:
                 item = str(word_dict[k])+':'+str(row[k])
                 f_row = f_row + ' ' + str(item) 
         f_items.append(f_row)
 
-    with open(ABS_PATH+'/svm_test/test%s.txt' % flag, 'wb') as f:
+    with open(ABS_PATH+'/svm_test/test%s.txt' % flag, 'w') as f:
         writer = csv.writer(f)
         for i in range(0,len(f_items)):
             row = []
@@ -53,8 +62,12 @@ def choose_ad(flag):
 ##    m = svm_train(y, x, '-c 4')
 ##    svm_save_model('./svm/train.model',m)
     m = svm_load_model(ABS_PATH+'/svm/train.model')
-    y, x = svm_read_problem(ABS_PATH+'/svm_test/test%s.txt' % flag)
+    filename = ABS_PATH+'/svm_test/test%s.txt' % flag
+    y, x = svm_read_problem(filename)
     p_label, p_acc, p_val  = svm_predict(y, x, m)
+    time.sleep(0.5)
+    if os.path.isfile(filename):
+        os.remove(filename)
 
     return p_label
 
@@ -91,12 +104,12 @@ def opinion_main(weibo_data,k_cluster):
         word_result：子话题关键词对，{topic1:[w1,w2,...],topic2:[w1,w2,...],...}
         text_list：子话题对应的文本，{topic1:[text1,text2,...],topic2:[text1,text2,..],..}
     '''
-    
-    word_result,word_weight = word_net(weibo_data,k_cluster)#提取关键词对
-    
-    text_list,opinion_name = text_net(word_result,word_weight,weibo_data)#提取代表文本
+    print('\t\tGetting keywords...')
+    word_result,word_weight,word_main = word_net(weibo_data,k_cluster)#提取关键词对
+    print('\t\tGetting present text...')
+    text_list,opinion_name = text_net(word_result,word_weight,weibo_data)#提取代表文本,会保证每个聚类里面的微博数量是相等的
 
-    return opinion_name,word_result,text_list
+    return opinion_name,word_result,text_list,word_main
 
 if __name__ == '__main__':
     main('0521',5)#生成训练集
