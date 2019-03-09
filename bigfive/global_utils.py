@@ -1,6 +1,19 @@
-from config import *
-from time_utils import *
+# -*-coding=utf-8-*-
+# from config import *
+# from time_utils import *
+import time
 
+from elasticsearch import Elasticsearch
+
+ES_HOST = '219.224.134.214'
+ES_PORT = 9200
+ES_HOST_WEIBO = '219.224.134.225'
+ES_PORT_WEIBO = 9225
+REDIS_HOST = '219.224.134.226'
+REDIS_PORT = 10010
+
+es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
+es_weibo = Elasticsearch(hosts=[{'host': ES_HOST_WEIBO, 'port': ES_PORT_WEIBO}], timeout=1000)
 #用户遍历迭代器，输入索引（限于USER_RANKING与USER_INFORMATION），查询条件，每次迭代的次数，则可以迭代输出查询结果
 def user_generator(user_index, query_body, iter_num_per):
     iter_num = 0
@@ -49,7 +62,8 @@ class ESIterator(object):
         self.doc_type = doc_type
         self.query_body = query_body
         self.es = es
-    def __next__(self):
+    def __next__(self):#python3
+    # def next(self):#python2
         self.query_body["sort"] = self.sort_dict
         self.query_body["size"] = self.iter_count
         self.query_body["from"] = self.step * self.iter_count
@@ -109,4 +123,3 @@ if __name__ == '__main__':
         except StopIteration:
             #遇到StopIteration就退出循环
             break
-
