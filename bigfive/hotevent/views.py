@@ -11,6 +11,19 @@ def test():
     result = 'This is hotevent!'
     return json.dumps(result,ensure_ascii=False)
 
+
+@mod.route('/hot_event_list/', methods=['POST'])
+def hot_event_list():
+    parameters = request.form.to_dict()
+    keyword = parameters.get('keyword', '')
+    page = parameters.get('page', '1')
+    size = parameters.get('size', '10')
+    order_name = parameters.get('order_name', 'name')
+    order_type = parameters.get('order_type', 'asc')
+    result = get_hot_event_list(keyword, page, size, order_name, order_type)
+    return jsonify(result)
+
+
 @mod.route('/time_hot')
 def time_hot():
     s = request.args.get('s','')

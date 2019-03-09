@@ -9,6 +9,32 @@ from bigfive.cache import cache
 from bigfive.time_utils import *
 
 
+def get_hot_event_list(keyword, page, size, order_name, order_type):
+    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [], "should": []}}, "from": 0, "size": 10, "sort": [], "aggs": {}}
+    page = page if page else '1'
+    size = size if size else '10'
+    order_name = 'event_name' if order_name == 'name' else order_name
+    order_name = order_name if order_name else 'event_name'
+    order_type = order_type if order_type else 'asc'
+    query['sort'] += [{order_name: {"order": order_type}}]
+    query['from'] = str((int(page) - 1) * int(size))
+    query['size'] = str(size)
+    if keyword:
+        query['query']['bool']['should'] += [{"wildcard":{"event_name": "*{}*".format(keyword)}},{"wildcard":{"keywords": "*{}*".format(keyword)}}]
+
+    hits = es.search(index='event_information', doc_type='text', body=query)['hits']
+
+    result = {'rows': [], 'total': hits['total']}
+    for item in hits['hits']:
+        try:
+            del item['_source']['userlist']
+        except:
+            pass
+        item['_source']['name'] = item['_source']['event_name']
+        result['rows'].append(item['_source'])
+    return result
+
+
 def get_time_hot(s, e):
     # if not s or not e:
     #     e = today()
@@ -82,8 +108,8 @@ def get_geo(s, e):
                 result[province]['cities'].update({city: 1})
             else:
                 result[province]['cities'][city] += 1
-    result = [{'provice': i[0], 'count':i[1]['count'], 'cities':i[1]['cities']}
-              for i in sorted(result.items(), key=lambda x:x[1]['count'], reverse=True)]
+    result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']}
+              for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
     return result
 
 
@@ -95,12 +121,16 @@ def get_browser_by_geo(geo, s, e):
     et = date2ts(e)
     if not geo:
         # query= {"query":{"bool":{"must":[{"wildcard":{"geo":"中国*"}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp":{"order":"desc"}}],"aggs":{}}
-        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],
-                                    "must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
+        query = {
+            "query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],
+                               "must_not": [], "should": []}}, "from": 0, "size": 5,
+            "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     else:
         # query= {"query":{"bool":{"must":[{"wildcard":{"geo":"*{}*".format(geo)}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp":{"order":"desc"}}],"aggs":{}}
-        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [
-        ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
+        query = {"query": {"bool": {
+            "must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],
+            "must_not": [
+            ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
