@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint ,request
+from flask import Blueprint ,request,jsonify
 import json
 from bigfive.politics.utils import *
 
