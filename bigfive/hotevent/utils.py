@@ -111,7 +111,7 @@ def get_geo(s, e):
     et = date2ts(e)
     query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
-                     doc_type='text', body=query)['hits']['hits']
+                     doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
     result = {}
