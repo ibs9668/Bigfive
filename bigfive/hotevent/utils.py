@@ -265,7 +265,9 @@ def get_in_group_ranking(event_id,mtype):
         "aggs": {}
     }
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
-
+    emotion_map = {
+    '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
+    }
     result = {}
     for k,v in r.items():
         if 'high' not in k and 'low' not in k:
@@ -276,7 +278,7 @@ def get_in_group_ranking(event_id,mtype):
         for i in v:
             # print(i)
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
-            result[k.split('_')[0]][k.split('_')[1]] = {i['key']:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            result[k.split('_')[0]][k.split('_')[1]] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
