@@ -282,3 +282,19 @@ def get_in_group_ranking(event_id,mtype):
                 hits = es.search(index='event_ceshishijiansan_1551942139',doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
     return result[mtype]
+
+
+def get_semantic(event_id):
+    result = {'keywords': {}}
+    keywords_list = es.get(index='event_wordcloud', id=event_id, doc_type='text')['_source']['keywords']
+    keywords_item = {}
+    for keyword in keywords_list:
+        keywords_item[keyword['keyword']] = keyword['count']
+    keywords_item_sorted = sorted(keywords_item.items(), key=lambda x:x[1], reverse=True)[0:50]
+    for i in keywords_item_sorted:
+        result['keywords'][i[0]] = i[1]
+    river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
+    cluster_count = json.loads(river_result['cluster_count'])
+    cluster_word = json.loads(river_result['cluster_word'])
+    print(cluster_word)
+    return result

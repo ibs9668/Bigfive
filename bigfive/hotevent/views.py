@@ -74,3 +74,11 @@ def ingroup_ranking():
     mtype = request.args.get('mtype')
     result = get_in_group_ranking(event_id,mtype)
     return jsonify(result)
+
+
+@mod.route('/semantic', methods=['GET'])
+def semantic():
+    event_id = request.args.get('event_id')
+    result = get_semantic(event_id)
+    return jsonify(result)
+
