@@ -278,7 +278,7 @@ def get_in_group_ranking(event_id,mtype):
         for i in v:
             # print(i)
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
-            result[k.split('_')[0]][k.split('_')[1]] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
