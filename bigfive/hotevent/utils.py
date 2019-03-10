@@ -130,10 +130,11 @@ def get_geo(s, e):
             result[province]['count'] += 1
         if len(geo_list) > 2:
             city = geo_list[2]
-            if city not in result[province]['cities']:
-                result[province]['cities'].update({city: 1})
-            else:
-                result[province]['cities'][city] += 1
+            if city:
+                if city not in result[province]['cities']:
+                    result[province]['cities'].update({city: 1})
+                else:
+                    result[province]['cities'][city] += 1
     # 通过省条数排名
     result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']} for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
     return result
