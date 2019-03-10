@@ -296,5 +296,6 @@ def get_semantic(event_id):
     river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
     cluster_count = json.loads(river_result['cluster_count'])
     cluster_word = json.loads(river_result['cluster_word'])
+    river_list = []
     print(cluster_word)
     return result
