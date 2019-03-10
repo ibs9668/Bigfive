@@ -24,6 +24,21 @@ def hot_event_list():
     return jsonify(result)
 
 
+@mod.route('/create_hot_event/', methods=['POST'])
+def create_hot_event():
+    parameters = request.form.to_dict()
+    event_name = parameters.get('event_name', '')
+    keywords = parameters.get('keywords', '')
+    location = parameters.get('location', '')
+    start_date = parameters.get('start_date', '')
+    end_date = parameters.get('end_date', '')
+    # try:
+    post_create_hot_event(event_name, keywords, location,  start_date, end_date)
+    return jsonify(1)
+    # except:
+    #     return jsonify(0)
+
+
 @mod.route('/time_hot')
 def time_hot():
     s = request.args.get('s','')
@@ -59,3 +74,11 @@ def ingroup_ranking():
     mtype = request.args.get('mtype')
     result = get_in_group_ranking(event_id,mtype)
     return jsonify(result)
+
+
+@mod.route('/semantic', methods=['GET'])
+def semantic():
+    event_id = request.args.get('event_id')
+    result = get_semantic(event_id)
+    return jsonify(result)
+
