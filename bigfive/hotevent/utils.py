@@ -213,6 +213,7 @@ def get_in_group_renge():
         "aggregations"]
     map_dic = {0: 'low', 2: 'high'}
     for k, v in aggregations.items():
+        result[k].update({'low':0,'high':0})
         for bucket in v['buckets']:
             # print(bucket)
             if bucket['key'] not in map_dic.keys():
