@@ -36,7 +36,7 @@ def get_hot_event_list(keyword, page, size, order_name, order_type):
     return result
 
 
-def post_create_hot_event(event_name, keywords, start_date, end_date):
+def post_create_hot_event(event_name, keywords, location, start_date, end_date):
     event_pinyin = Pinyin().get_pinyin(event_name, '')
     create_date = time.strftime('%Y-%m-%d', time.localtime(int(time.time())))
     create_time = int(time.mktime(time.strptime(create_date, '%Y-%m-%d')))
@@ -50,6 +50,7 @@ def post_create_hot_event(event_name, keywords, start_date, end_date):
         "keywords": keywords,
         "progress": progress,
         "event_id": event_id,
+        "location": location,
         "start_date": start_date,
         "end_date": end_date
     }

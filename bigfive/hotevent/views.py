@@ -29,10 +29,11 @@ def create_hot_event():
     parameters = request.form.to_dict()
     event_name = parameters.get('event_name', '')
     keywords = parameters.get('keywords', '')
+    location = parameters.get('location', '')
     start_date = parameters.get('start_date', '')
     end_date = parameters.get('end_date', '')
     try:
-        post_create_hot_event(event_name, keywords, start_date, end_date)
+        post_create_hot_event(event_name, keywords, location,  start_date, end_date)
         return jsonify(1)
     except:
         return jsonify(0)
