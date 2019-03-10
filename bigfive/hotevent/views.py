@@ -32,11 +32,11 @@ def create_hot_event():
     location = parameters.get('location', '')
     start_date = parameters.get('start_date', '')
     end_date = parameters.get('end_date', '')
-    try:
-        post_create_hot_event(event_name, keywords, location,  start_date, end_date)
-        return jsonify(1)
-    except:
-        return jsonify(0)
+    # try:
+    post_create_hot_event(event_name, keywords, location,  start_date, end_date)
+    return jsonify(1)
+    # except:
+    #     return jsonify(0)
 
 
 @mod.route('/time_hot')

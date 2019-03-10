@@ -11,7 +11,7 @@ from bigfive.time_utils import *
 
 
 def get_hot_event_list(keyword, page, size, order_name, order_type):
-    query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [], "should": []}}, "from": 0, "size": 10, "sort": [], "aggs": {}}
+    query = {"query": {"bool": {"must": [], "must_not": [], "should": []}}, "from": 0, "size": 10, "sort": [], "aggs": {}}
     page = page if page else '1'
     size = size if size else '10'
     order_name = 'event_name' if order_name == 'name' else order_name
@@ -21,8 +21,8 @@ def get_hot_event_list(keyword, page, size, order_name, order_type):
     query['from'] = str((int(page) - 1) * int(size))
     query['size'] = str(size)
     if keyword:
-        query['query']['bool']['should'] += [{"wildcard":{"event_name": "*{}*".format(keyword)}},{"wildcard":{"keywords": "*{}*".format(keyword)}}]
-
+        query['query']['bool']['should'] += [{"wildcard":{"event_name": "*{}*".format(keyword)}},{"match":{"keywords": "{}".format(keyword)}}]
+    print(query)
     hits = es.search(index='event_information', doc_type='text', body=query)['hits']
 
     result = {'rows': [], 'total': hits['total']}
