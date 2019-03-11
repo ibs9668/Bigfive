@@ -157,6 +157,50 @@ def get_geo(s, e,geo):
     return result
 
 
+def get_emotion_geo(event_id,emotion,geo):
+    query = {"query":{"bool":{"must":[{"term":{"emotion":emotion}},{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1000,"sort":[],"aggs":{}}
+    hits = es.search(index='event_emotion_geo',doc_type='text',body=query)['hits']['hits']
+    result= {'city':{},'rank':[]}
+    for hit in hits:
+        item = hit['_source']
+        geo_dict = item['geo_dict']
+        for geo_item in geo_dict:
+            count = geo_item['count']
+            geo_list = geo_item['geo'].split('&')
+            if len(geo_list) == 1:
+                continue
+            if len(geo_list) > 1 and geo == '中国':
+                # 中国&山西
+                city = geo_list[1]
+                # 过滤掉类似中国&中山 中山是市
+                if city not in MAP_CITIES_DICT.keys():
+                    continue
+            elif len(geo_list) > 2 and geo != '中国':
+                # 拿到省名 并过滤掉类似中国&中山 中山是市
+                # 过滤掉与查询的省名不符的
+                province = geo_list[1]
+                if province not in MAP_CITIES_DICT.keys() or province !=geo:
+                    continue
+                # 中国&山西&太原
+                city = geo_list[2]
+                if not city:
+                    continue
+                # 在对应省的城市列表中替换
+                for i in MAP_CITIES_DICT[province]:
+                    if city in i:
+                        city=i
+                        break
+            else:
+                continue
+            # 过滤名称为中国的
+            if city == '中国':
+                continue
+            if city not in result['city']:
+                result['city'].update({city: count})
+            else:
+                result['city'][city] += count
+    result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
+    return result
 def get_browser_by_geo(geo, s, e):
     # 时间段初始化
     if not s or not e:

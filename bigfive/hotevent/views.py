@@ -53,6 +53,14 @@ def geo():
     result = get_geo(s,e,geo)
     return jsonify(result)
 
+@mod.route('/emotion_geo')
+def emotion_geo():
+    event_id = request.args.get('eid','')
+    geo = request.args.get('geo','')
+    emotion = request.args.get('emotion','')
+    result = get_emotion_geo(event_id,emotion,geo)
+    return jsonify(result)
+
 @mod.route('/browser_date',methods=['GET'])
 def browser_date():
     date = request.args.get('date','')
