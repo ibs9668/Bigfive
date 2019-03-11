@@ -311,6 +311,22 @@ def get_in_group_ranking(event_id,mtype):
     return result[mtype]
 
 
+def get_emotion_trend(event_id):
+    query = {"query": {"bool": {"must": [{"term": {"event_id": event_id}}]}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}]}
+    emotion_result = es.search(index='event_emotion', doc_type='text', body=query)['hits']['hits']
+    result = {}
+    for i in emotion_result:
+        result.setdefault(i['_source']['date'], {})
+        result[i['_source']['date']]['nuetral'] = i['_source']['nuetral']
+        result[i['_source']['date']]['positive'] = i['_source']['positive']
+        result[i['_source']['date']]['angry'] = i['_source']['angry']
+        result[i['_source']['date']]['sad'] = i['_source']['sad']
+        result[i['_source']['date']]['hate'] = i['_source']['hate']
+        result[i['_source']['date']]['negtive'] = i['_source']['negtive']
+        result[i['_source']['date']]['anxiety'] = i['_source']['anxiety']
+    return result
+
+
 def get_semantic(event_id):
     result = {'keywords': {}}
     keywords_list = es.get(index='event_wordcloud', id=event_id, doc_type='text')['_source']['keywords']
