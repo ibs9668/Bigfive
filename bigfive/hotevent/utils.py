@@ -332,7 +332,11 @@ def get_semantic(event_id):
     print(cluster_count)
     for k1, v1 in cluster_count.items():
         for k2, v2 in v1.items():
-            river_list.append([k1, v2, cluster_word[str(k2)]])
+            title_str = ''
+            title_list = cluster_word[str(k2)]
+            for title in title_list[0:3]:
+                title_str += (title + '&')
+            river_list.append([k1, v2, title_str.rstrip('&')])
     # print(cluster_word)
     result['river_list'] = river_list
     return result
