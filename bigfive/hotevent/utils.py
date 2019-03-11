@@ -363,26 +363,80 @@ def get_in_group_ranking(event_id,mtype):
     return result[mtype]
 
 
+def get_network(event_id):
+    result = {'important_users_list': []}
+    important_users_list = es.get(index='event_information', doc_type='text', id=event_id)['_source']['userlist_important']
+    for uid in important_users_list[:5]:
+        user_item = es.get(index='user_information', doc_type='text', id=uid)['_source']
+        result['important_users_list'].append(user_item)
+
+    message_type = 3
+    key = 'target'
+
+    query_body = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "message_type": message_type
+                                }
+                            },
+                            {
+                                "terms": {
+                                    key: important_users_list
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 3000,
+    }
+    r = es.search(index="user_social_contact", doc_type="text",
+                  body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    for one in r:
+        item = one['_source']
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in node:
+            node.append(b)
+        if c not in link and c['source'] != c['target']:
+            link.append(c)
+    transmit_net = {'node': node, 'link': link}
+    result['transmit_net'] = transmit_net
+    return result
+
+
 def get_emotion_trend(event_id):
     query = {"query": {"bool": {"must": [{"term": {"event_id": event_id}}]}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}]}
     emotion_result = es.search(index='event_emotion', doc_type='text', body=query)['hits']['hits']
-    result = {
-        'nuetral': [],
-        'positive': [],
-        'angry': [],
-        'sad': [],
-        'hate': [],
-        'negtive': [],
-        'anxiety': [],
-        'time': []
-    }
-    for i in emotion_result:
-        for k, v in i['_source'].items():
-            print(k, v)
-            if k in result:
-                result[k].append(v)
-            if k == 'date':
-                result['time'].append(v)
+    if emotion_result:
+        result = {
+            'nuetral': [],
+            'positive': [],
+            'angry': [],
+            'sad': [],
+            'hate': [],
+            'negtive': [],
+            'anxiety': [],
+            'time': []
+        }
+        for i in emotion_result:
+            for k, v in i['_source'].items():
+                print(k, v)
+                if k in result:
+                    result[k].append(v)
+                if k == 'date':
+                    result['time'].append(v)
+    else:
+        result = {}
     return result
 
 

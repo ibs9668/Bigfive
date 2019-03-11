@@ -94,6 +94,13 @@ def ingroup_ranking():
     return jsonify(result)
 
 
+@mod.route('/network', methods=['GET'])
+def net():
+    event_id = request.args.get('event_id')
+    result = get_network(event_id)
+    return jsonify(result)
+
+
 @mod.route('/emotion_trend', methods=['GET'])
 def emotion_trend():
     event_id = request.args.get('event_id')
