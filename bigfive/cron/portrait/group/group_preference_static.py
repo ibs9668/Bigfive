@@ -58,17 +58,25 @@ def domain_topic_static(group_id,userlist,date):
             # print 1
             domain_dict[es_result[0]["_source"]["main_domain"]] += 1
 
+            if str(es_result[0]["_source"]["main_topic"]) not in ["topic_anti_corruption","topic_violence","topic_social_security"]:
+                    topic_dict[ str(es_result[0]["_source"]["main_topic"]).split("topic_")[1] ] += 1
+            elif str(es_result[0]["_source"]["main_topic"])=="topic_anti_corruption":
+                topic_dict["anti-corruption"] += 1
+            elif str(es_result[0]["_source"]["main_topic"])=="topic_violence":
+                topic_dict["fear-of-violence"] += 1
+            elif str(es_result[0]["_source"]["main_topic"])=="topic_social_security":
+                topic_dict["social-security"] += 1
 
-            for j in topic_dict:
-                if j not in ["anti-corruption","fear-of-violence","social-security"]:
-                    topic_dict[j] += es_result[0]["_source"]["topic_"+j]
-                elif j=="anti-corruption":
-                    topic_dict[j] += es_result[0]["_source"]["topic_anti_corruption"]
+            # for j in topic_dict:
+            #     if j not in ["anti-corruption","fear-of-violence","social-security"]:
+            #         topic_dict[j] += es_result[0]["_source"]["topic_"+j]
+            #     elif j=="anti-corruption":
+            #         topic_dict[j] += es_result[0]["_source"]["topic_anti_corruption"]
 
-                elif j== "fear-of-violence":
-                    topic_dict[j] += es_result[0]["_source"]["topic_violence"]
-                elif j=="social-security":
-                    topic_dict[j] += es_result[0]["_source"]["topic_social_security"]
+            #     elif j== "fear-of-violence":
+            #         topic_dict[j] += es_result[0]["_source"]["topic_violence"]
+            #     elif j=="social-security":
+            #         topic_dict[j] += es_result[0]["_source"]["topic_social_security"]
         else:
                 domain_dict["other"] += 1
                 topic_dict["life"] += 1
@@ -77,7 +85,7 @@ def domain_topic_static(group_id,userlist,date):
     for domain in domain_dict:
         domain_list.append({"domain":domain,"count":domain_dict[domain]})
     for topic in topic_dict:
-        topic_list.append({"topic":topic,"count":topic_dict[topic]/len(userlist)})
+        topic_list.append({"topic":topic,"count":topic_dict[topic]})
     
     es.index(index=GROUP_DOMAIN_TOPIC ,doc_type="text" ,id=str(group_id)+"_"+str(timestamp) ,body= {
         "date":ts2date(float(timestamp)),
