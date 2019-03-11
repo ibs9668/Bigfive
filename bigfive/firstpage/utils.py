@@ -218,7 +218,7 @@ def dark_group():
                 {
                     "range": {
                         "influence_index": {
-                        "gt": "50"
+                        "gt": 20
                         }
                     }
                 }
@@ -364,7 +364,7 @@ def bigfive_group():
                 {
                     "range": {
                         "influence_index": {
-                        "gt": "50"
+                        "gt": 20
                         }
                     }
                 }
