@@ -201,6 +201,39 @@ def get_emotion_geo(event_id,emotion,geo):
                 result['city'][city] += count
     result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
     return result
+
+def get_browser_by_emotion_geo(event_id,geo):
+    query = {"query":{"bool":{"must":[{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
+    hits = es.search(index='event_information',doc_type='text',body=query)['hits']['hits']
+    if not hits:
+        return []
+    uids = hits[0]['_source']['userlist_important']
+    query = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {"term": {"geo": "{}".format(geo)}},
+                            {
+                                "terms": {
+                                    'uid': uids
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 5,
+        "sort": [{"timestamp": {"order": "desc"}}]
+    }
+    hits = es.search(index='event_'+event_id,doc_type='text', body=query)['hits']['hits']
+    if not hits:
+        return []
+    result = []
+    for hit in hits:
+        item = hit['_source']
+        result.append(item)
+    return result
 def get_browser_by_geo(event_id,geo, s, e):
     # 时间段初始化
     if not s or not e:
