@@ -124,15 +124,19 @@ def get_geo(s, e,geo):
             # 中国&山西
             city = geo_list[1]
             # 过滤掉类似中国&中山 中山是市
-            if city not in ["北京","天津","上海","重庆","河北","山西","辽宁","吉林","黑龙江","江苏","浙江","安徽","福建","江西","山东","河南","湖北","湖南","广东","海南","四川","贵州","云南","陕西","甘肃","青海","台湾","内蒙古","广西","西藏","宁夏","新疆","香港","澳门"]:
+            if city not in MAP_CITIES_DICT.keys():
                 continue
         elif len(geo_list) > 2 and geo != '中国':
+            # 拿到省名 并过滤掉类似中国&中山 中山是市
+            province = geo_list[1]
+            if province not in MAP_CITIES_DICT.keys():
+                continue
             # 中国&山西&太原
             city = geo_list[2]
             if not city:
                 continue
-            # 特殊地区
-            for i in MAP_CITIES_LIST:
+            # 在对应省的城市列表中替换
+            for i in MAP_CITIES_DICT[province]:
                 if city in i:
                     city=i
                     break
