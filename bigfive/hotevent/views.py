@@ -43,20 +43,31 @@ def create_hot_event():
 def time_hot():
     s = request.args.get('s','')
     e = request.args.get('e','')
-    result = get_time_hot(s,e)
+    event_id = request.args.get('eid','')
+    result = get_time_hot(event_id,s,e)
     return jsonify(result)
 @mod.route('/geo')
 def geo():
     s = request.args.get('s','')
     e = request.args.get('e','')
     geo = request.args.get('geo','')
-    result = get_geo(s,e,geo)
+    event_id = request.args.get('eid','')
+    result = get_geo(event_id,geo,s, e)
+    return jsonify(result)
+
+@mod.route('/emotion_geo')
+def emotion_geo():
+    event_id = request.args.get('eid','')
+    geo = request.args.get('geo','')
+    emotion = request.args.get('emotion','')
+    result = get_emotion_geo(event_id,emotion,geo)
     return jsonify(result)
 
 @mod.route('/browser_date',methods=['GET'])
 def browser_date():
     date = request.args.get('date','')
-    result = get_browser_by_date(date)
+    event_id = request.args.get('eid','')
+    result = get_browser_by_date(event_id,date)
     return jsonify(result)
 
 @mod.route('/browser_geo',methods=['GET'])
@@ -64,18 +75,49 @@ def browser_geo():
     s = request.args.get('s','')
     e = request.args.get('e','')
     geo = request.args.get('geo','')
-    result = get_browser_by_geo(geo,s,e)
+    event_id = request.args.get('eid','')
+    result = get_browser_by_geo(event_id,geo, s, e)
+    return jsonify(result)
+
+@mod.route('/browser_user',methods=['GET'])
+def browser_user():
+    uid = request.args.get('uid','')
+    event_id = request.args.get('eid','')
+    result = get_browser_by_user(event_id,uid)
+    return jsonify(result)
+
+@mod.route('/browser_emotion',methods=['GET'])
+def browser_emotion():
+    geo = request.args.get('geo','')
+    event_id = request.args.get('eid','')
+    emotion = request.args.get('emotion','')
+    result = get_browser_by_emotion_geo(event_id,geo,emotion)
     return jsonify(result)
 
 @mod.route('/ingroup_renge',methods=['GET'])
 def ingroup_renge():
-    result = get_in_group_renge()
+    event_id = request.args.get('eid')
+    result = get_in_group_renge(event_id)
     return jsonify(result)
 @mod.route('/ingroup_ranking',methods=['GET'])
 def ingroup_ranking():
     event_id = request.args.get('eid')
     mtype = request.args.get('mtype')
     result = get_in_group_ranking(event_id,mtype)
+    return jsonify(result)
+
+
+@mod.route('/network', methods=['GET'])
+def net():
+    event_id = request.args.get('event_id')
+    result = get_network(event_id)
+    return jsonify(result)
+
+
+@mod.route('/emotion_trend', methods=['GET'])
+def emotion_trend():
+    event_id = request.args.get('event_id')
+    result = get_emotion_trend(event_id)
     return jsonify(result)
 
 

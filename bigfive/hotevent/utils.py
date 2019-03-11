@@ -57,11 +57,11 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
     es.index(index='event_information', doc_type='text', body=hot_event, id=event_id)
 
 
-def get_time_hot(s, e):
+def get_time_hot(event_id,s, e):
     if not s or not e:
         e = today()
         s = get_before_date(30)
-    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}}], "must_not": [
+    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":'event_'+event_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}], "aggs": {}}
     hits = es.search(index='event_message_type',
                      doc_type='text', body=query)['hits']['hits']
@@ -79,19 +79,19 @@ def get_time_hot(s, e):
     return result
 
 
-def get_browser_by_date(date):
+def get_browser_by_date(event_id,date):
     # 按日期查询微博浏览区的微博
     if date:
         # 按具体日期查询,选最新的5条
         st = date2ts(date)
         et = date2ts(get_before_date(-1, date))
-        query = {"query": {"bool": {"must": [{"range": {"timestamp": {"gte": st, "lt": et}}}], "must_not": [
+        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}},{"range": {"timestamp": {"gte": st, "lt": et}}}], "must_not": [
         ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     else:
         # 全部查询,选最新的5条
-        query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [], "should": [
+        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}], "must_not": [], "should": [
         ]}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return []
@@ -102,7 +102,7 @@ def get_browser_by_date(date):
     return result
 
 # @cache.memoize(300)
-def get_geo(s, e,geo):
+def get_geo(event_id,geo,s, e):
     # 时间段初始化,为空时查询近30天内的数据
     if not s or not e:
         e = today()
@@ -110,7 +110,7 @@ def get_geo(s, e,geo):
     st = date2ts(s)
     et = date2ts(e)
     query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
@@ -124,27 +124,22 @@ def get_geo(s, e,geo):
             # 中国&山西
             city = geo_list[1]
             # 过滤掉类似中国&中山 中山是市
-            if city not in ["北京","天津","上海","重庆","河北","山西","辽宁","吉林","黑龙江","江苏","浙江","安徽","福建","江西","山东","河南","湖北","湖南","广东","海南","四川","贵州","云南","陕西","甘肃","青海","台湾","内蒙古","广西","西藏","宁夏","新疆","香港","澳门"]:
+            if city not in MAP_CITIES_DICT.keys():
                 continue
         elif len(geo_list) > 2 and geo != '中国':
+            # 拿到省名 并过滤掉类似中国&中山 中山是市
+            province = geo_list[1]
+            if province not in MAP_CITIES_DICT.keys():
+                continue
             # 中国&山西&太原
             city = geo_list[2]
             if not city:
                 continue
-            # 自治州
-            if city in ["延边朝鲜族","恩施土家族苗族","湘西土家族苗族","阿坝藏族羌族","甘孜藏族","凉山彝族","黔东南苗族侗族","楚雄彝族","红河哈尼族彝族","文山壮族苗族","西双版纳傣族","大理白族","大理白族","德宏傣族景颇族","怒江傈僳族","迪庆藏族","临夏回族","甘南藏族","海北藏族","黄南藏族","海南藏族","果洛藏族","玉树藏族","海西蒙古族藏族","昌吉回族","博尔塔拉蒙古","巴音郭楞蒙古","伊犁哈萨克",]:
-                city += '自治州'
-            elif city in ['伊犁']:
-                city+= '哈萨克自治州'
-            elif city in ['巴音郭楞']:
-                city+= '蒙古自治州'
-            # 地区
-            elif city in ["大兴安岭","铜仁","毕节","昌都","山南","日喀则","那曲","林芝","海东","吐鲁番","哈密","阿克苏","喀什","和田","塔城","阿勒泰"]:
-                city += '地区'
-            elif city in ["兴安","锡林郭勒","阿拉善"]:
-                city += '盟'
-            else:
-                city += '市'
+            # 在对应省的城市列表中替换
+            for i in MAP_CITIES_DICT[province]:
+                if city in i:
+                    city=i
+                    break
         else:
             continue
         # 过滤名称为中国的
@@ -162,23 +157,113 @@ def get_geo(s, e,geo):
     return result
 
 
-def get_browser_by_geo(geo, s, e):
+def get_emotion_geo(event_id,emotion,geo):
+    query = {"query":{"bool":{"must":[{"term":{"emotion":emotion}},{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1000,"sort":[],"aggs":{}}
+    hits = es.search(index='event_emotion_geo',doc_type='text',body=query)['hits']['hits']
+    result= {'city':{},'rank':[]}
+    for hit in hits:
+        item = hit['_source']
+        geo_dict = item['geo_dict']
+        for geo_item in geo_dict:
+            count = geo_item['count']
+            geo_list = geo_item['geo'].split('&')
+            if len(geo_list) == 1:
+                continue
+            if len(geo_list) > 1 and geo == '中国':
+                # 中国&山西
+                city = geo_list[1]
+                # 过滤掉类似中国&中山 中山是市
+                if city not in MAP_CITIES_DICT.keys():
+                    continue
+            elif len(geo_list) > 2 and geo != '中国':
+                # 拿到省名 并过滤掉类似中国&中山 中山是市
+                # 过滤掉与查询的省名不符的
+                province = geo_list[1]
+                if province not in MAP_CITIES_DICT.keys() or province !=geo:
+                    continue
+                # 中国&山西&太原
+                city = geo_list[2]
+                if not city:
+                    continue
+                # 在对应省的城市列表中替换
+                for i in MAP_CITIES_DICT[province]:
+                    if city in i:
+                        city=i
+                        break
+            else:
+                continue
+            # 过滤名称为中国的
+            if city == '中国':
+                continue
+            if city not in result['city']:
+                result['city'].update({city: count})
+            else:
+                result['city'][city] += count
+    result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
+    return result
+
+def get_browser_by_emotion_geo(event_id,geo,emotion):
+    query = {"query":{"bool":{"must":[{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
+    hits = es.search(index='event_information',doc_type='text',body=query)['hits']['hits']
+    if not hits:
+        return []
+    uids = hits[0]['_source']['userlist_important']
+    # query = {
+    #     "query": {
+    #         "filtered": {
+    #             "filter": {
+    #                 "bool": {
+    #                     "must": [
+    #                         {"term": {EMOTION_MAP_NUM_EN[emotion]: emotion}},
+    #                         {
+    #                             "terms": {
+    #                                 'uid': uids
+    #                             }
+    #                         }
+    #                     ]}
+    #             }}
+    #     },
+    #     "size": 5,
+    #     "sort": [{"timestamp": {"order": "desc"}}]
+    # }
+
+
+    query = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {"term": {"geo": "{}".format(geo)}},
+                            {
+                                "terms": {
+                                    'uid': uids
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 5,
+        "sort": [{"timestamp": {"order": "desc"}}]
+    }
+    hits = es.search(index='event_'+event_id,doc_type='text', body=query)['hits']['hits']
+    if not hits:
+        return []
+    result = []
+    for hit in hits:
+        item = hit['_source']
+        result.append(item)
+    return result
+def get_browser_by_geo(event_id,geo, s, e):
     # 时间段初始化
     if not s or not e:
         e = today()
         s = get_before_date(30)
     st = date2ts(s)
     et = date2ts(e)
-    if not geo:
-        # 全查询
-        query = {
-            "query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5,
-            "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    else:
-        # 通过省字段查询
-        query = {"query": {"bool": {
-            "must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    # 通过省字段查询
+    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return {}
@@ -188,8 +273,21 @@ def get_browser_by_geo(geo, s, e):
         result.append(item)
     return result
 
+def get_browser_by_user(event_id,uid):
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp": {"order": "desc"}}],"aggs":{}}
+    if uid:
+        query['query']['bool']['must'].append({"term":{"uid":uid}})
+    hits = es.search(index='event_' + event_id,
+                     doc_type='text', body=query)['hits']['hits']
+    if not hits:
+        return []
+    result = []
+    for hit in hits:
+        item = hit['_source']
+        result.append(item)
+    return result
 
-def get_in_group_renge():
+def get_in_group_renge(event_id):
     # 获取表内所有uid
     query = {
         "size": 0,
@@ -197,12 +295,12 @@ def get_in_group_renge():
             "uids": {
                 "terms": {
                     "field": "uid",
-                    "size": 1000
+                    "size": 10000
                 }
             }
         }
     }
-    buckets = es.search(index='event_ceshishijiansan_1551942139',
+    buckets = es.search(index='event_'+event_id,
                         doc_type='text', body=query)["aggregations"]["uids"]['buckets']
     if not buckets:
         return {}
@@ -277,7 +375,7 @@ def get_in_group_ranking(event_id,mtype):
                 "must": [
                     {
                         "term": {
-                            "event_id": event_id
+                            "event_id": 'event_'+event_id
                         }
                     }
                 ],
@@ -291,11 +389,10 @@ def get_in_group_ranking(event_id,mtype):
         "aggs": {}
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
-    r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
-    # 情绪映射
-    emotion_map = {
-    '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
-    }
+    r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits']
+    if not r:
+        return {}
+    r = r[0]['_source']
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -310,28 +407,115 @@ def get_in_group_ranking(event_id,mtype):
             # 得到总的值
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
             # 情绪饼图
-            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
-            # 获取微博,暂时没有限制字段
+            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {EMOTION_MAP_NUM_CH[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            # 获取微博,暂时没有限制返回的字段
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
-                hits = es.search(index='event_ceshishijiansan_1551942139',doc_type='text',body=query)['hits']['hits']
+                hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
     return result[mtype]
+
+
+def get_network(event_id):
+    result = {'important_users_list': []}
+    important_users_list = es.get(index='event_information', doc_type='text', id=event_id)['_source']['userlist_important']
+    for uid in important_users_list[:5]:
+        user_item = es.get(index='user_information', doc_type='text', id=uid)['_source']
+        result['important_users_list'].append(user_item)
+
+    message_type = 3
+    key = 'target'
+
+    query_body = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "message_type": message_type
+                                }
+                            },
+                            {
+                                "terms": {
+                                    key: important_users_list
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 500,
+    }
+    r = es.search(index="user_social_contact", doc_type="text",
+                  body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    for one in r:
+        item = one['_source']
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in node:
+            node.append(b)
+        if c not in link and c['source'] != c['target']:
+            link.append(c)
+    transmit_net = {'node': node, 'link': link}
+    result['transmit_net'] = transmit_net
+    return result
+
+
+def get_emotion_trend(event_id):
+    query = {"query": {"bool": {"must": [{"term": {"event_id": event_id}}]}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}]}
+    emotion_result = es.search(index='event_emotion', doc_type='text', body=query)['hits']['hits']
+    if emotion_result:
+        result = {
+            'nuetral': [],
+            'positive': [],
+            'angry': [],
+            'sad': [],
+            'hate': [],
+            'negtive': [],
+            'anxiety': [],
+            'time': []
+        }
+        for i in emotion_result:
+            for k, v in i['_source'].items():
+                print(k, v)
+                if k in result:
+                    result[k].append(v)
+                if k == 'date':
+                    result['time'].append(v)
+    else:
+        result = {}
+    return result
 
 
 def get_semantic(event_id):
     result = {'keywords': {}}
     keywords_list = es.get(index='event_wordcloud', id=event_id, doc_type='text')['_source']['keywords']
     keywords_item = {}
+    print(len(keywords_list))
     for keyword in keywords_list:
         keywords_item[keyword['keyword']] = keyword['count']
-    keywords_item_sorted = sorted(keywords_item.items(), key=lambda x:x[1], reverse=True)[0:50]
+    keywords_item_sorted = sorted(keywords_item.items(), key=lambda x:x[1], reverse=True)[0:200]
     for i in keywords_item_sorted:
         result['keywords'][i[0]] = i[1]
     river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
     cluster_count = json.loads(river_result['cluster_count'])
     cluster_word = json.loads(river_result['cluster_word'])
     river_list = []
-    print(cluster_word)
+    print(cluster_count)
+    for k1, v1 in cluster_count.items():
+        for k2, v2 in v1.items():
+            title_str = ''
+            title_list = cluster_word[str(k2)]
+            for title in title_list[0:3]:
+                title_str += (title + '&')
+            river_list.append([k1, v2, title_str.rstrip('&')])
+    # print(cluster_word)
+    result['river_list'] = river_list
     return result
