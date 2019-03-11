@@ -6,6 +6,7 @@ sys.path.append('../../')
 from elasticsearch.helpers import bulk
 
 from text_analyze import word_cloud
+from retreet_comment import weibo_retweet_comment
 
 from get_keywords import text_rank_keywords
 from event_river.river_main import river_main
@@ -37,6 +38,7 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
         weibo_index = 'flow_text_%s' % date
         weibo_generator = get_weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
         package = []
+        midlist = []
         weibo_num = 0
         for res in weibo_generator:
             for hit in res:
@@ -66,14 +68,33 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
                     '_id':dic['mid'],
                     '_source': dic
                 })
+                midlist.append(source['mid'])
 
                 if weibo_num % 1000 == 0:
+                    #会根据这段时间内的微博计算一跳转发和评论数
+                    retweet_dic = weibo_retweet_comment(midlist, start_date, end_date)
+                    for p in package:
+                        try:
+                            p['_source'].update(retweet_dic[p['_source']['mid']])
+                        except KeyError:
+                            p['_source'].update({'comment':0,'retweeted':0})
                     bulk(es, package)  #存入数据库
                     package = []
+                    midlist = []
+                    
                 weibo_num += 1
                 uid_list_keyword.append(source['uid'])
+
+        retweet_dic = weibo_retweet_comment(midlist, start_date, end_date)
+        for p in package:
+            try:
+                p['_source'].update(retweet_dic[p['_source']['mid']])
+            except KeyError:
+                p['_source'].update({'comment':0,'retweeted':0})
         bulk(es, package)
+
     uid_list_keyword = list(set(uid_list_keyword))
+    print('Uid_list_keyword num:%d' % len(uid_list_keyword))
 
     return uid_list_keyword
 
@@ -93,7 +114,7 @@ def get_text_analyze(event_id, event_mapping_name):
 
     for res in weibo_generator:
         keywords_list = [hit['_source']['keywords_string'] for hit in res]
-        dic = word_cloud(keywords_list)
+        dic = word_cloud(keywords_list)   #词云
         for keyword in dic:
             try:
                 keywords_dic[keyword] += dic[keyword]
@@ -107,7 +128,7 @@ def get_text_analyze(event_id, event_mapping_name):
     }
     es.index(index=EVENT_WORDCLOUD,doc_type='text',body=cloud_dic,id=event_id)
 
-    cluster_count,cluster_word = river_main(event_mapping_name)
+    cluster_count,cluster_word = river_main(event_mapping_name)   #事件河
     cluster_dic = {
         'event_id':event_id,
         'cluster_count':json.dumps(cluster_count),

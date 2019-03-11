@@ -140,6 +140,7 @@ def topic_classfiy(uid_list,uid_weibo):#话题分类主函数
         result_data = dict()
         uid_topic = dict()
         return result_data,uid_topic
+    # elif
     else:
         pass        
         
@@ -187,8 +188,7 @@ def wordCount(segment_list):
                 else:
                     word_dict[item2] += 1
 
-    word_dict_sorted = dict(sorted(word_dict.items(), \
-    key = lambda item:item[1], reverse=True))#按照词频从大到小排序
+    word_dict_sorted = dict(sorted(word_dict.items(), key = lambda item:item[1], reverse=True))#按照词频从大到小排序
 
     return word_dict_sorted
 
@@ -199,24 +199,6 @@ def get_uidlist():
     for es_item in es_result:
         uid_list.append(es_item["_id"])
     return uid_list
-
-# def get_weibo_index(RUN_TYPE,start_date,last_time): #start_date:开始日期前一天
-
-#     weibo_index_pre = "flow_text_"
-#     if RUN_TYPE == 1:       
-#         now_date = ts2datetime(time.time())
-#         now_date_ts = date2ts(now_date)+DAY#今天零点时间戳
-#     elif RUN_TYPE == 2:
-#         start_date_ts = date2ts(start_date) #开始时间戳
-
-#         weibo_index_list = []
-#         for i in range(last_time):
-#             start_date_ts = int(start_date_ts+ DAY)
-#             start_date = ts2datetime(start_date_ts)
-#             if es_weibo.indices.exists(index=str(weibo_index_pre)+str(start_date)) :
-#                 weibo_index_list.append(str(weibo_index_pre)+str(start_date))
-
-#     return weibo_index_list
 
 def save_topic(uid_list,timestamp,index_name):
     count = 0
@@ -230,7 +212,6 @@ def save_topic(uid_list,timestamp,index_name):
         search_result = es_weibo.search(index=index_name, doc_type="text",body=query_body,timeout=50)["hits"]["hits"]
 
         if search_result != []:
-            time_n = time.time()
             for i in search_result:
                 uid_text = uid_text + i["_source"]["text"]
 
@@ -278,9 +259,11 @@ def save_topic(uid_list,timestamp,index_name):
                     "topic_law":result_data[m]["law"],
                     "topic_peace":result_data[m]["peace"],
                     "topic_religion":result_data[m]["religion"],
-                    "topic_social_security":result_data[m]["social-security"]
+                    "topic_social_security":result_data[m]["social-security"],
+                    "has_new_information":1
                  
                         }},timeout=50)
+                    count+=1
                 else:
 
                     es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
@@ -305,10 +288,15 @@ def save_topic(uid_list,timestamp,index_name):
                     "topic_law":result_data[m]["law"],
                     "topic_peace":result_data[m]["peace"],
                     "topic_religion":result_data[m]["religion"],
-                    "topic_social_security":result_data[m]["social-security"]
+                    "topic_social_security":result_data[m]["social-security"],
+                    "has_new_information":1,
+                    "domain_followers":"other",
+                    "domain_weibo":"other",
+                    "domain_verified":"other",
+                    "main_domain" : "other"
                  
                             },timeout=50)
-
+                    count+=1
 
         else:
             id_body = {
@@ -346,9 +334,11 @@ def save_topic(uid_list,timestamp,index_name):
                     "topic_law":0,
                     "topic_peace":0,
                     "topic_religion":0,
-                    "topic_social_security":0
+                    "topic_social_security":0,
+                    "has_new_information":0
                  
                             }},timeout=50)
+                count+=1
             else:
 
                 es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
@@ -373,11 +363,16 @@ def save_topic(uid_list,timestamp,index_name):
                     "topic_law":0,
                     "topic_peace":0,
                     "topic_religion":0,
-                    "topic_social_security":0
+                    "topic_social_security":0,
+                    "has_new_information":0,
+                    "domain_followers":"other",
+                    "domain_weibo":"other",
+                    "domain_verified":"other",
+                    "main_domain" : "other"
                  
                             },timeout=50)
-        count += 1
-        print (count)
+                count+=1
+        # print (count)
 
 def user_topic_run(flow_text_list):#####运行函数
     uid_list = get_uidlist()
@@ -386,23 +381,17 @@ def user_topic_run(flow_text_list):#####运行函数
     for i in range(len(flow_text_list)):
         index_list = flow_text_list[i:i+7:1]
         timestamp = date2ts(index_list[0].split("_")[-1])
-        # print (index_list[0].split("_")[-1])
         save_topic(uid_list,timestamp,index_list)
    
-    return 0
+    return 0    
+
+def get_user_topic(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    save_topic([uid],date2ts(date),index_list)
 
 
 if __name__ == '__main__':
 
     user_topic_run(ES_INDEX_LIST)
-
-    # ES_INDEX_LIST= ['flow_text_2016-11-27', 'flow_text_2016-11-26', 'flow_text_2016-11-25', 'flow_text_2016-11-24', 'flow_text_2016-11-23', 'flow_text_2016-11-22', 'flow_text_2016-11-21']
-    # uid_list = get_uidlist()
-    # ES_INDEX_LIST.reverse()
-    
-    # for i in range(len(ES_INDEX_LIST)):
-    #     index_list = ES_INDEX_LIST[i:i+7:1]
-    #     # if len(index_list) == 7:
-    #     timestamp = date2ts(index_list[0].split("_")[-1])
-    #     print (index_list[0].split("_")[-1])
-    #     save_topic(uid_list,timestamp,index_list)

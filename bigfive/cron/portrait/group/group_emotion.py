@@ -44,8 +44,8 @@ def group_emotion(group_id,uid_list,date):
     id_es = str(group_id) + "_" + str(date_ts)
     es.index(index = "group_emotion",doc_type = "text",id = id_es,body = {"timestamp":date_ts,"nuetral":emotion_dict["nuetral"],"positive":emotion_dict["positive"],"negtive":emotion_dict["negtive"],"date":ts2date(date_ts),"group_id":group_id})
 
-def group_emotion_long(group_id,uid_list,date,days):
-    for day in get_datelist_v2(ts2date(date2ts(date)-24*3600*days),date):
+def group_emotion_long(group_id, uid_list, start_date, end_date):
+    for day in get_datelist_v2(start_date, end_date):
         try:
             group_emotion(group_id,uid_list,day)
         except:

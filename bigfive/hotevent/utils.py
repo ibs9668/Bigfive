@@ -58,15 +58,17 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
 
 
 def get_time_hot(s, e):
-    # if not s or not e:
-    #     e = today()
-    #     s = get_before_date(30)
+    if not s or not e:
+        e = today()
+        s = get_before_date(30)
     query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}], "aggs": {}}
     hits = es.search(index='event_message_type',
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return {}
+    # 1 原创 2评论 3转发 time 时间列表
+    # 正常来说每个列表长度相等
     result = {'1': [], '2': [], '3': [], 'time': []}
 
     for hit in hits:
@@ -78,12 +80,15 @@ def get_time_hot(s, e):
 
 
 def get_browser_by_date(date):
+    # 按日期查询微博浏览区的微博
     if date:
+        # 按具体日期查询,选最新的5条
         st = date2ts(date)
         et = date2ts(get_before_date(-1, date))
         query = {"query": {"bool": {"must": [{"range": {"timestamp": {"gte": st, "lt": et}}}], "must_not": [
         ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     else:
+        # 全部查询,选最新的5条
         query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [], "should": [
         ]}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
@@ -96,63 +101,76 @@ def get_browser_by_date(date):
         result.append(item)
     return result
 
-
-def get_geo(s, e):
+# @cache.memoize(300)
+def get_geo(s, e,geo):
+    # 时间段初始化,为空时查询近30天内的数据
     if not s or not e:
         e = today()
         s = get_before_date(30)
     st = date2ts(s)
     et = date2ts(e)
-    # query= {"query":{"bool":{"must":[{"wildcard":{"geo":"中国*"}}],"must_not":[],"should":[]}},"from":0,"size":5000,"sort":[],"aggs":{}}
-    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {
-        "gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 5000, "sort": [], "aggs": {}}
+    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
-                     doc_type='text', body=query)['hits']['hits']
+                     doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
-    result = {}
+    geo_dic = {}
     for hit in hits:
         item = hit['_source']
         geo_list = item['geo'].split('&')
         if len(geo_list) == 1:
             continue
-        if len(geo_list) > 1:
-            province = geo_list[1]
-        if province == '中国':
-            continue
-        if province not in result:
-            result.update({province: {'count': 1, 'cities': {}}})
-        else:
-            result[province]['count'] += 1
-        if len(geo_list) > 2:
+        if len(geo_list) > 1 and geo == '中国':
+            # 中国&山西
+            city = geo_list[1]
+            # 过滤掉类似中国&中山 中山是市
+            if city not in ["北京","天津","上海","重庆","河北","山西","辽宁","吉林","黑龙江","江苏","浙江","安徽","福建","江西","山东","河南","湖北","湖南","广东","海南","四川","贵州","云南","陕西","甘肃","青海","台湾","内蒙古","广西","西藏","宁夏","新疆","香港","澳门"]:
+                continue
+        elif len(geo_list) > 2 and geo != '中国':
+            # 中国&山西&太原
             city = geo_list[2]
-            if city not in result[province]['cities']:
-                result[province]['cities'].update({city: 1})
+            if not city:
+                continue
+            # 特殊地区
+            for i in ["延边朝鲜族自治州","恩施土家族苗族自治州","湘西土家族苗族自治州","阿坝藏族羌族自治州","甘孜藏族自治州","凉山彝族自治州","黔东南苗族侗族自治州","楚雄彝族自治州","红河哈尼族彝族自治州","文山壮族苗族自治州","西双版纳傣族自治州","大理白族","德宏傣族景颇族自治州","怒江傈僳族自治州","迪庆藏族自治州","临夏回族自治州","甘南藏族自治州","海北藏族自治州","黄南藏族自治州","海南藏族自治州","果洛藏族自治州","玉树藏族自治州","海西蒙古族藏族自治州","昌吉回族自治州","博尔塔拉蒙古自治州","巴音郭楞蒙古自治州","伊犁哈萨克自治州","大兴安岭地区","铜仁地区","毕节地区","昌都地区","山南地区","日喀则地区","那曲地区","林芝地区","海东地区","吐鲁番地区","哈密地区","阿克苏地区","喀什地区","和田地区","塔城地区","阿勒泰地区","兴安盟","锡林郭勒盟","阿拉善盟"]:
+                if city in i:
+                    city=i
+                    break
             else:
-                result[province]['cities'][city] += 1
-    result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']}
-              for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
+                city += '市'
+        else:
+            continue
+        # 过滤名称为中国的
+        if city == '中国':
+            continue
+        if city not in geo_dic:
+            geo_dic.update({city: 1})
+        else:
+            geo_dic[city] += 1
+    # 通过省条数排名
+
+    result= {'city':geo_dic,'rank':[]}
+    result['rank'] = [{i[0]:i[1]} for i in sorted(geo_dic.items(), key=lambda x: x[1], reverse=True)[:15]]
+
     return result
 
 
 def get_browser_by_geo(geo, s, e):
+    # 时间段初始化
     if not s or not e:
         e = today()
         s = get_before_date(30)
     st = date2ts(s)
     et = date2ts(e)
     if not geo:
-        # query= {"query":{"bool":{"must":[{"wildcard":{"geo":"中国*"}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp":{"order":"desc"}}],"aggs":{}}
+        # 全查询
         query = {
-            "query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],
-                               "must_not": [], "should": []}}, "from": 0, "size": 5,
+            "query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5,
             "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     else:
-        # query= {"query":{"bool":{"must":[{"wildcard":{"geo":"*{}*".format(geo)}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp":{"order":"desc"}}],"aggs":{}}
+        # 通过省字段查询
         query = {"query": {"bool": {
-            "must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],
-            "must_not": [
-            ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
+            "must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
@@ -165,6 +183,7 @@ def get_browser_by_geo(geo, s, e):
 
 
 def get_in_group_renge():
+    # 获取表内所有uid
     query = {
         "size": 0,
         "aggs": {
@@ -199,14 +218,13 @@ def get_in_group_renge():
         "aggs": {
         }
     }
-    personality_index_list = ["machiavellianism_index", "narcissism_index", "psychopathy_index",
-                              "extroversion_index", "nervousness_index", "openn_index", "agreeableness_index", "conscientiousness_index"]
-    personality_label_list = ["machiavellianism_label", "narcissism_label", "psychopathy_label",
-                              "extroversion_label", "nervousness_label", "openn_label", "agreeableness_label", "conscientiousness_label"]
+    personality_index_list = ["machiavellianism_index", "narcissism_index", "psychopathy_index","extroversion_index", "nervousness_index", "openn_index", "agreeableness_index", "conscientiousness_index"]
+    personality_label_list = ["machiavellianism_label", "narcissism_label", "psychopathy_label","extroversion_label", "nervousness_label", "openn_label", "agreeableness_label", "conscientiousness_label"]
 
-    result = {}
+    # 拼接聚合查询语句 平均值
     for i in personality_index_list:
         query["aggs"].update({i.split("_")[0]: {'avg': {'field': i}}})
+    # 各index字段的平均值
     result = es.search(index="user_ranking", doc_type="text",
                        body=query)["aggregations"]
 
@@ -228,13 +246,15 @@ def get_in_group_renge():
         "aggs": {
         }
     }
-
+    # 拼接聚合语句 条数
     for i in personality_label_list:
         query["aggs"].update({i.split("_")[0]: {'terms': {'field': i}}})
     aggregations = es.search(index="user_ranking", doc_type="text", body=query)[
         "aggregations"]
     map_dic = {0: 'low', 2: 'high'}
     for k, v in aggregations.items():
+        # 初始值为0
+        result[k].update({'low':0,'high':0})
         for bucket in v['buckets']:
             # print(bucket)
             if bucket['key'] not in map_dic.keys():
@@ -263,19 +283,28 @@ def get_in_group_ranking(event_id,mtype):
         "sort": [],
         "aggs": {}
     }
+    # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
-
+    # 情绪映射
+    emotion_map = {
+    '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
+    }
     result = {}
     for k,v in r.items():
+        # 跳过date,timestamp等字段
         if 'high' not in k and 'low' not in k:
             result[k] = v
             continue
+        # 初始化result
         if k.split('_')[0] not in result.keys():
             result[k.split('_')[0]] = {'high':{},'low':{}}
         for i in v:
             # print(i)
+            # 得到总的值
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
-            result[k.split('_')[0]][k.split('_')[1]] = {i['key']:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            # 情绪饼图
+            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            # 获取微博,暂时没有限制字段
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
