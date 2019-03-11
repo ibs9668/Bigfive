@@ -98,6 +98,7 @@ def get_browser_by_date(event_id,date):
     result = []
     for hit in hits:
         item = hit['_source']
+        item = get_user_name(item)
         result.append(item)
     return result
 
@@ -252,6 +253,7 @@ def get_browser_by_emotion_geo(event_id,geo,emotion):
     result = []
     for hit in hits:
         item = hit['_source']
+        item = get_user_name(item)
         result.append(item)
     return result
 def get_browser_by_geo(event_id,geo, s, e):
@@ -270,6 +272,7 @@ def get_browser_by_geo(event_id,geo, s, e):
     result = []
     for hit in hits:
         item = hit['_source']
+        item = get_user_name(item)
         result.append(item)
     return result
 
@@ -284,9 +287,14 @@ def get_browser_by_user(event_id,uid):
     result = []
     for hit in hits:
         item = hit['_source']
+        item = get_user_name(item)
         result.append(item)
     return result
 
+def get_user_name(item):
+    r = es.get(index='user_information',doc_type='text',id=item['uid'],_source_include=['username'])
+    item.update(r['_source'])
+    return item
 def get_in_group_renge(event_id):
     # 获取表内所有uid
     query = {
