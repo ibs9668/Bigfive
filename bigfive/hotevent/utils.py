@@ -315,14 +315,20 @@ def get_semantic(event_id):
     result = {'keywords': {}}
     keywords_list = es.get(index='event_wordcloud', id=event_id, doc_type='text')['_source']['keywords']
     keywords_item = {}
+    print(len(keywords_list))
     for keyword in keywords_list:
         keywords_item[keyword['keyword']] = keyword['count']
-    keywords_item_sorted = sorted(keywords_item.items(), key=lambda x:x[1], reverse=True)[0:50]
+    keywords_item_sorted = sorted(keywords_item.items(), key=lambda x:x[1], reverse=True)[0:200]
     for i in keywords_item_sorted:
         result['keywords'][i[0]] = i[1]
     river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
     cluster_count = json.loads(river_result['cluster_count'])
     cluster_word = json.loads(river_result['cluster_word'])
     river_list = []
-    print(cluster_word)
+    print(cluster_count)
+    for k1, v1 in cluster_count.items():
+        for k2, v2 in v1.items():
+            river_list.append([k1, v2, cluster_word[str(k2)]])
+    # print(cluster_word)
+    result['river_list'] = river_list
     return result
