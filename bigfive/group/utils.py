@@ -424,10 +424,13 @@ def group_preference(group_id):
     if not hits or not sta_hits:
         return {}
 
+
     item = hits[0]['_source']
-    domain_static = {labels_dict[one['domain']]: one['count']
+    domain_static = {labels_dict[one['domain']]: one['count']/len(es.search(index='group_information', doc_type='text', body={"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}}})[
+        'hits']['hits'][0]['_source']['userlist'])
                      for one in sorted(item['domain_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
-    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']
+    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']/len(es.search(index='group_information', doc_type='text', body={"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}}})[
+        'hits']['hits'][0]['_source']['userlist'])
                     for one in sorted(item['topic_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
 
     sta_item = sta_hits[0]['_source']
