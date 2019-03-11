@@ -705,7 +705,12 @@ def user_social_contact(uid, map_type):
                     },
                     {
                         "term": {
-                            key: uid
+                            'source': uid
+                        }
+                    },
+                    {
+                        "term": {
+                            'target': uid
                         }
                     }
                 ]

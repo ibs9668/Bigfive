@@ -572,10 +572,6 @@ def group_social_contact(group_id, map_type):
         message_type = 3
     else:
         message_type = 2
-    if map_type in ['1', '3']:
-        key = 'target'
-    else:
-        key = 'source'
     query_body = {
         "query": {
             "filtered": {
@@ -589,7 +585,12 @@ def group_social_contact(group_id, map_type):
                             },
                             {
                                 "terms": {
-                                    key: user_list
+                                    'target': user_list
+                                }
+                            },
+                            {
+                                "terms": {
+                                    'source': user_list
                                 }
                             }
                         ]}
