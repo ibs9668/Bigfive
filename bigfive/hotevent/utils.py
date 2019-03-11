@@ -292,8 +292,11 @@ def get_browser_by_user(event_id,uid):
     return result
 
 def get_user_name(item):
-    r = es.get(index='user_information',doc_type='text',id=item['uid'],_source_include=['username'])
-    item.update(r['_source'])
+    try:
+        r = es.get(index='user_information',doc_type='text',id=item['uid'],_source_include=['username'])
+        item.update(r['_source'])
+    except:
+        pass
     return item
 def get_in_group_renge(event_id):
     # 获取表内所有uid
