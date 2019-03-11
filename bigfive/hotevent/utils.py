@@ -122,8 +122,14 @@ def get_geo(s, e,geo):
             continue
         if len(geo_list) > 1 and geo == '中国':
             city = geo_list[1]
-        if len(geo_list) > 2 and geo != '中国':
-            city = geo_list[2]+'市'
+        elif len(geo_list) > 2 and geo != '中国':
+            city = geo_list[2]
+            if city in ["延边朝鲜族","恩施土家族苗族","湘西土家族苗族","阿坝藏族羌族","甘孜藏族","凉山彝族","黔东南苗族侗族","楚雄彝族","红河哈尼族彝族","文山壮族苗族","西双版纳傣族","大理白族","大理白族","德宏傣族景颇族","怒江傈僳族","迪庆藏族","临夏回族","甘南藏族","海北藏族","黄南藏族","海南藏族","果洛藏族","玉树藏族","海西蒙古族藏族","昌吉回族","博尔塔拉蒙古","巴音郭楞蒙古","伊犁哈萨克",]:
+                city += '自治州'
+            else:
+                city += '市'
+        else:
+            continue
         if city in ['中国','中山']:
             continue
         if city not in geo_dic:
