@@ -2,6 +2,8 @@ import time
 import sys
 import json
 sys.path.append('../')
+sys.path.append('portrait/user')
+sys.path.append('portrait/group')
 sys.path.append('event')
 sys.path.append('event/event_river')
 from xpinyin import Pinyin
@@ -9,7 +11,7 @@ from xpinyin import Pinyin
 from config import *
 from time_utils import *
 from portrait.cron_portrait import user_ranking, cal_user_personality, group_create, group_ranking, cal_group_personality
-from portrait.group.cron_user import user_portrait
+from portrait.user.cron_user import user_portrait
 from portrait.group.cron_group import group_portrait
 from cron_event import event_create, get_text_analyze
 from event_mapping import create_event_mapping
@@ -60,26 +62,50 @@ if __name__ == '__main__':
     # user_main()
     # group_main(1,2,3,4,5)
 
-    event_name = "测试事件三"
-    event_pinyin = Pinyin().get_pinyin(event_name, '')
-    create_time = 1551942139 #int(time.time())
-    create_date = ts2date(create_time)
-    start_date = '2016-11-13'
-    end_date = '2016-11-27'
-    keywords = "崛起"
-    progress = 2
-    event_id = event_pinyin + "_" + str(create_time)
-    dic = {
-        'event_name':event_name,
-        'event_pinyin':event_pinyin,
-        'create_time':create_time,
-        'create_date':create_date,
-        'keywords':keywords,
-        'progress':progress,
-        'event_id':event_id,
-        'start_date':start_date,
-        'end_date':end_date
-    }
-    es.index(index=EVENT_INFORMATION,doc_type='text',body=dic,id=event_id)
-    time.sleep(1)
-    event_main(keywords, event_id, start_date, end_date)
+    # event_name = "测试事件三"
+    # event_pinyin = Pinyin().get_pinyin(event_name, '')
+    # create_time = 1551942139 #int(time.time())
+    # create_date = ts2date(create_time)
+    # start_date = '2016-11-13'
+    # end_date = '2016-11-27'
+    # keywords = "崛起"
+    # progress = 2
+    # event_id = event_pinyin + "_" + str(create_time)
+    # dic = {
+    #     'event_name':event_name,
+    #     'event_pinyin':event_pinyin,
+    #     'create_time':create_time,
+    #     'create_date':create_date,
+    #     'keywords':keywords,
+    #     'progress':progress,
+    #     'event_id':event_id,
+    #     'start_date':start_date,
+    #     'end_date':end_date
+    # }
+    # es.index(index=EVENT_INFORMATION,doc_type='text',body=dic,id=event_id)
+    # time.sleep(1)
+    # event_main(keywords, event_id, start_date, end_date)
+
+    # dic = {
+    #     "remark": "第二次群体测试",
+    #     "keyword": "",
+    #     "create_condition": { 
+    #         "machiavellianism_index": 0,
+    #         "narcissism_index": 0,
+    #         "psychopathy_index": 0,
+    #         "extroversion_index": 0,
+    #         "nervousness_index": 1,
+    #         "openn_index": 5,
+    #         "agreeableness_index": 0,
+    #         "conscientiousness_index": 0
+    #     },
+    #     "group_name": "测试二",
+    #     "group_pinyin": "ceshier",
+    #     "create_time": 1480176000,
+    #     "create_date": "2016-11-27",
+    #     "progress": 0
+    # }
+    # es.index(index='group_task',doc_type='text',id='ceshier_1480176000',body=dic)
+
+
+    es.update(index='group_task',doc_type='text',id='ceshiyi_1480176000',body={'doc':{'progress':0}})

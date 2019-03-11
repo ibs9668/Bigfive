@@ -14,6 +14,7 @@ sys.path.append('../../../')
 from config import *
 from time_utils import *
 
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # list_index =["flow_text_2016-11-13","flow_text_2016-11-14","flow_text_2016-11-15","flow_text_2016-11-16","flow_text_2016-11-17","flow_text_2016-11-18","flow_text_2016-11-19","flow_text_2016-11-20","flow_text_2016-11-21","flow_text_2016-11-22","flow_text_2016-11-23","flow_text_2016-11-24","flow_text_2016-11-25","flow_text_2016-11-26","flow_text_2016-11-27"]
 
@@ -26,7 +27,7 @@ def load_train():
     domain_dict = dict()
     domain_count = dict()
     for i in txt_labels:
-        reader = csv.reader(open('domain_dict/%s.csv'% i, 'r'))
+        reader = csv.reader(open(os.path.join(ABS_PATH, 'domain_dict/%s.csv'% i), 'r'))
         word_dict = dict()
         count = 0
         for f,w_text in reader:
@@ -224,7 +225,7 @@ def user_domain_classifier_v2(user):
 
 ###################用户&&粉丝结构#####################
 def readProtoUser():
-    f = open("protou_combine/protou.txt", "r")
+    f = open(os.path.join(ABS_PATH, "protou_combine/protou.txt"), "r")
     protou = dict()
     for line in f:
         area=line.split(":")[0]
@@ -243,7 +244,7 @@ def readTrainUser():
                 'homeadmin','homemedia','lawyer','mediaworker','politician','university']
     data = dict()
     for i in range(0,len(txt_list)):
-        f = open("domain_combine/%s.txt" % txt_list[i],"r")
+        f = open(os.path.join(ABS_PATH, "domain_combine/%s.txt" % txt_list[i]),"r")
         item = []
         for line in f:
             line = line.strip('\r\n')

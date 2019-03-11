@@ -11,7 +11,6 @@ from config import *
 from time_utils import *
 from global_utils import *
 from model.personality_predict import predict_personality
-from cron_group import group_activity, group_attribute
 
 #-----------------------------------------------------------
 #用户计算
@@ -181,7 +180,7 @@ def group_create(args_dict, keywords, remark, group_name, create_time, start_dat
     uid_list_index = []
     #当选择的人格选项不全为0时候开始搜索符合条件的用户
     if num:
-        user_generator = user_generator(USER_RANKING, user_query_body, USER_ITER_COUNT)
+        user_generator = get_user_generator(USER_RANKING, user_query_body, USER_ITER_COUNT)
         for res in user_generator:
             for hit in res:
                 uid_list_index.append(hit['_source']['uid'])
@@ -189,7 +188,7 @@ def group_create(args_dict, keywords, remark, group_name, create_time, start_dat
     uid_list_index = set(uid_list_index)
 
 
-    if keyword != '' and num != 0:
+    if keywords != '' and num != 0:
         uid_list = list(uid_list_index & uid_list_keyword)
     #当不对用户人格进行选定时，保证搜出来的用户是在用户库中的
     if num == 0:
@@ -201,7 +200,7 @@ def group_create(args_dict, keywords, remark, group_name, create_time, start_dat
             iter_user_dict_list = es.mget(index=USER_INFORMATION, doc_type='text', body={'ids':iter_uid_list_keyword})['docs']
             uid_list.extend([i['_id'] for i in iter_user_dict_list if i['found']])
             iter_num += 1
-    if keyword == '':
+    if keywords == '':
         uid_list = list(uid_list_index)
 
     print(len(uid_list))
@@ -214,7 +213,7 @@ def group_create(args_dict, keywords, remark, group_name, create_time, start_dat
         'create_date':ts2date(create_time),
         'start_date':start_date,
         'end_date':end_date,
-        'keyword':keyword,
+        'keyword':keywords,
         'group_pinyin':group_pinyin,
         'group_id':group_pinyin + '_' + str(create_time),
         'userlist':uid_list

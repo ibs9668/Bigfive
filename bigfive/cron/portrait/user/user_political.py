@@ -16,13 +16,14 @@ from config import *
 from time_utils import *
 from cron.scws_utils import *
 
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def load_word():#加载词典
 
     domain_dict = dict()
     for name in POLITICAL_LABELS:
         word_dict = dict()
-        reader = csv.reader(open('political_bias_word_dict/%s.csv' % name, 'r'))
+        reader = csv.reader(open(os.path.join(ABS_PATH, 'political_bias_word_dict/%s.csv' % name), 'r'))
         for count,word in reader:
             word = word.strip('\r\t\n')
             count = count.strip('\r\t\n')

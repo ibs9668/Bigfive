@@ -13,12 +13,14 @@ sys.path.append('../../../')
 from config import *
 from time_utils import *
 
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
+
 def load_train():#读取生成之后的tfidf文档，对新的用户进行话题分类
 
     domain_dict = dict()
     domain_count = dict()
     for i in TOPIC_LIST:
-        reader = csv.reader(open('topic_dict/%s_tfidf.csv' % i, 'r'))
+        reader = csv.reader(open(os.path.join(ABS_PATH, 'topic_dict/%s_tfidf.csv' % i), 'r'))
         word_dict = dict()
         count = 0
         for f,w_text in reader:

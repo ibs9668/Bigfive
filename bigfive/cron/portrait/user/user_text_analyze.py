@@ -4,7 +4,7 @@ from config import *
 from time_utils import *
 from global_utils import *
 
-from keyword_topic import text_rank, micro_words, cal_sensitive
+from keyword_topic import text_rank_keywords, micro_words, cal_sensitive
 
 from elasticsearch.helpers import bulk
 
@@ -41,7 +41,7 @@ def word_analysis_daily(date):
 	        for hit in res:
 	            uid = hit['_source']['uid']
 	            text = hit['_source']['text']
-	            keywords = text_rank(text,5)
+	            keywords = text_rank_keywords(text)
 	            hastags = micro_words(text)
 	            score, sensitive_words = cal_sensitive(text)
 	            sensitive_words_dict = sensitive_words['sensitive_words_dict']

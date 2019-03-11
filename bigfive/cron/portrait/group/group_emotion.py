@@ -46,6 +46,7 @@ def group_emotion(group_id,uid_list,date):
 
 def group_emotion_long(group_id, uid_list, start_date, end_date):
     for day in get_datelist_v2(start_date, end_date):
+        print(day)
         try:
             group_emotion(group_id,uid_list,day)
         except:

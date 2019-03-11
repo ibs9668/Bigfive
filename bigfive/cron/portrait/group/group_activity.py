@@ -8,8 +8,8 @@ from time_utils import *
 #输入：群组id，日期，向前延伸天数
 #输出，将群组该日期的位置情况存入数据库
 def group_activity(group_id, uid_list, start_date, end_date):
-    date_end_ts = date2ts(start_date)
-    date_start_ts = date2ts(end_date)
+    date_end_ts = date2ts(end_date)
+    date_start_ts = date2ts(start_date)
     activity_direction = {}
     main_start_geo = {}
     main_end_geo = {}
@@ -101,6 +101,6 @@ def group_activity(group_id, uid_list, start_date, end_date):
         'activity_direction':activity_direction_dic,
         'main_start_geo':main_start_geo_dic,
         'main_end_geo':main_end_geo_dic,
-        'date':date
+        'date':end_date
     }
     es.index(index=GROUP_ACTIVITY, doc_type='text', id=str(group_id)+'_'+str(date_end_ts), body=dic)
