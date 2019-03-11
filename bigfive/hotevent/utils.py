@@ -102,51 +102,40 @@ def get_browser_by_date(date):
     return result
 
 # @cache.memoize(300)
-def get_geo(s, e,type):
+def get_geo(s, e,geo):
     # 时间段初始化,为空时查询近30天内的数据
     if not s or not e:
         e = today()
         s = get_before_date(30)
     st = date2ts(s)
     et = date2ts(e)
-    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
+    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
                      doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
-    province_dic = {}
-    city_dic = {}
+    geo_dic = {}
     for hit in hits:
         item = hit['_source']
         geo_list = item['geo'].split('&')
         if len(geo_list) == 1:
             continue
-        if len(geo_list) > 1:
-            province = geo_list[1]
-        if province == '中国':
+        if len(geo_list) > 1 and geo == '中国':
+            city = geo_list[1]
+        if len(geo_list) > 2 and geo != '中国':
+            city = geo_list[2]+'市'
+        if city in ['中国','中山']:
             continue
-        if province not in province_dic:
-            province_dic.update({province: 1})
+        if city not in geo_dic:
+            geo_dic.update({city: 1})
         else:
-            province_dic[province] += 1
-        if province not in city_dic:
-            city_dic.update({province:{}})
-        if len(geo_list) > 2:
-            city = geo_list[2]
-            if city:
-                city+='市'
-                if city not in city_dic[province]:
-                    city_dic[province].update({city: 1})
-                else:
-                    city_dic[province][city] += 1
+            geo_dic[city] += 1
     # 通过省条数排名
-    # result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']} for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
-    if type =='province':
-        result= {'province':province_dic,'rank':[]}
-        for i in sorted(province_dic.items(), key=lambda x: x[1], reverse=True)[:15]:
-            result['rank'].append({i[0]:i[1]})
-    else:
-        result= {'city':city_dic}
+
+    result= {'city':geo_dic,'rank':[]}
+    for i in sorted(geo_dic.items(), key=lambda x: x[1], reverse=True)[:15]:
+        result['rank'].append({i[0]:i[1]})
+
     return result
 
 

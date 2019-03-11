@@ -49,8 +49,8 @@ def time_hot():
 def geo():
     s = request.args.get('s','')
     e = request.args.get('e','')
-    type = request.args.get('type','')
-    result = get_geo(s,e,type)
+    geo = request.args.get('geo','')
+    result = get_geo(s,e,geo)
     return jsonify(result)
 
 @mod.route('/browser_date',methods=['GET'])
