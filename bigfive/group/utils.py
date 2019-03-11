@@ -466,22 +466,22 @@ def group_influence(group_id, interval):
                 },
                 "aggs": {
                     "sensitivity": {
-                        "stats": {
+                        "sum": {
                             "field": "sensitivity"
                         }
                     },
                     "influence": {
-                        "stats": {
+                        "sum": {
                             "field": "influence"
                         }
                     },
                     "activity": {
-                        "stats": {
+                        "sum": {
                             "field": "activity"
                         }
                     },
                     "importance": {
-                        "stats": {
+                        "sum": {
                             "field": "importance"
                         }
                     }
@@ -494,10 +494,10 @@ def group_influence(group_id, interval):
     result_list = []
     for data in es_result:
         item = {}
-        item['sensitivity'] = data['sensitivity']['sum']
-        item['influence'] = data['influence']['sum']
-        item['activity'] = data['activity']['sum']
-        item['importance'] = data['importance']['sum']
+        item['sensitivity'] = data['sensitivity']['value']
+        item['influence'] = data['influence']['value']
+        item['activity'] = data['activity']['value']
+        item['importance'] = data['importance']['value']
         item['timestamp'] = data['key'] // 1000
         item['date'] = data['key_as_string']
         result_list.append(item)
@@ -529,17 +529,17 @@ def group_emotion(group_id, interval):
                 },
                 "aggs": {
                     "nuetral": {
-                        "stats": {
+                        "sum": {
                             "field": "nuetral"
                         }
                     },
                     "negtive": {
-                        "stats": {
+                        "sum": {
                             "field": "negtive"
                         }
                     },
                     "positive": {
-                        "stats": {
+                        "sum": {
                             "field": "positive"
                         }
                     }
@@ -558,9 +558,9 @@ def group_emotion(group_id, interval):
     }
     for bucket in buckets:
         result['time'].append(bucket['key_as_string'], )
-        result["positive_line"].append(bucket['positive']['sum'], )
-        result["negtive_line"].append(bucket['negtive']['sum'], )
-        result["nuetral_line"].append(bucket['nuetral']['sum'])
+        result["positive_line"].append(bucket['positive']['value'], )
+        result["negtive_line"].append(bucket['negtive']['value'], )
+        result["nuetral_line"].append(bucket['nuetral']['value'])
     return result
 
 
