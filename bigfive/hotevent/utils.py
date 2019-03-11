@@ -440,13 +440,18 @@ def get_network(event_id):
                             },
                             {
                                 "terms": {
-                                    key: important_users_list
+                                    'target': important_users_list
+                                }
+                            },
+                            {
+                                "terms": {
+                                    'source': important_users_list
                                 }
                             }
                         ]}
                 }}
         },
-        "size": 500,
+        "size": 3000,
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
