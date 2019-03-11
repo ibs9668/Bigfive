@@ -85,11 +85,11 @@ def get_browser_by_date(date):
         # 按具体日期查询,选最新的5条
         st = date2ts(date)
         et = date2ts(get_before_date(-1, date))
-        query = {"query": {"bool": {"must": [{"range": {"timestamp": {"gte": st, "lt": et}}}], "must_not": [
+        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}},{"range": {"timestamp": {"gte": st, "lt": et}}}], "must_not": [
         ], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     else:
         # 全部查询,选最新的5条
-        query = {"query": {"bool": {"must": [{"match_all": {}}], "must_not": [], "should": [
+        query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}], "must_not": [], "should": [
         ]}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
                      doc_type='text', body=query)['hits']['hits']
@@ -164,15 +164,8 @@ def get_browser_by_geo(geo, s, e):
         s = get_before_date(30)
     st = date2ts(s)
     et = date2ts(e)
-    if not geo:
-        # 全查询
-        query = {
-            "query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5,
-            "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    else:
-        # 通过省字段查询
-        query = {"query": {"bool": {
-            "must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
+    # 通过省字段查询
+    query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
     hits = es.search(index='event_ceshishijiansan_1551942139',
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
@@ -183,6 +176,17 @@ def get_browser_by_geo(geo, s, e):
         result.append(item)
     return result
 
+def get_browser_by_user(uid):
+    query = {"query":{"bool":{"must":[{"term":{"uid":uid}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp": {"order": "desc"}}],"aggs":{}}
+    hits = es.search(index='event_ceshishijiansan_1551942139',
+                     doc_type='text', body=query)['hits']['hits']
+    if not hits:
+        return {}
+    result = []
+    for hit in hits:
+        item = hit['_source']
+        result.append(item)
+    return result
 
 def get_in_group_renge():
     # 获取表内所有uid
