@@ -193,7 +193,14 @@ def political_classify(uid_list,uid_weibo):
     #         domain_dict[uid] = 'mid'
 
     return domain_dict
- 
+
+def get_user_political(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    uid_word_dict = get_uid_weibo(uid,index_list)
+    politic_result = political_classify(uid,uid_word_dict)
+    es.update(index='user_information', doc_type='text', id=str(uid), body = {"doc":{"political_bias":politic_result.values()[0]}})
 
 ####################################
  

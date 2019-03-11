@@ -569,6 +569,13 @@ def user_domain_run(flow_text_list):
             # count += 1
             # print (count)
 
+def get_user_domain(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    uid_weibo = get_uid_weibo(uid,index_list)
+    domain,r_domain = domain_classfiy(uid,uid_weibo,timestamp)
+
 
 if __name__ == '__main__':
     user_domain_run(ES_INDEX_LIST)

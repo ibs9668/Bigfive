@@ -70,6 +70,12 @@ def create_event_mapping(index_name):
                     "timestamp": {
                         "type": "long"
                     },
+                    "comment": {
+                        "type": "long"
+                    },
+                    "retweeted": {
+                        "type": "long"
+                    },
                 }
             }
         }

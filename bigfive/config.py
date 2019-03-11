@@ -55,10 +55,6 @@ USER_OPENN_THRESHOLD = [20,80]
 USER_AGREEABLENESS_THRESHOLD = [20,80]
 USER_CONSCIENTIOUSNESS_THRESHOLD = [20,80]
 
-USER_NORMALIZATION_IMPORTANCE = [25,172]
-USER_NORMALIZATION_SENSITIVITY = [0,100]
-USER_NORMALIZATION_INFLUENCE = [0,1000]
-USER_NORMALIZATION_ACTIVITY = [0,4.33472983]
 
 # cron_group parameter
 GROUP_ITER_COUNT = 100
@@ -79,14 +75,6 @@ PERSONALITY_DIC = {
     'openn_index':{'name':'开放性','threshold':USER_OPENN_THRESHOLD},
     'agreeableness_index':{'name':'开放性','threshold':USER_AGREEABLENESS_THRESHOLD},
     'conscientiousness_index':{'name':'尽责性','threshold':USER_CONSCIENTIOUSNESS_THRESHOLD}
-}
-
-#画像字典
-ATTRIBUTE_DIC = {
-    'importance':{'name':'重要度',"threshold":USER_NORMALIZATION_IMPORTANCE},
-    'sensitivity':{'name':'敏感度',"threshold":USER_NORMALIZATION_SENSITIVITY},
-    'influence':{'name':'影响力',"threshold":USER_NORMALIZATION_INFLUENCE},
-    'activity':{'name':'活跃度',"threshold":USER_NORMALIZATION_ACTIVITY}
 }
 
 # 情感分类 0中性 1积极

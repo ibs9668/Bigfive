@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../')
-sys.path.append('portrait/user')
-sys.path.append('portrait/group')
+sys.path.append('user')
+sys.path.append('group')
 import random
 from elasticsearch import Elasticsearch,helpers
 from elasticsearch.helpers import bulk
@@ -13,7 +13,10 @@ from global_utils import *
 from model.personality_predict import predict_personality
 from cron_group import group_activity, group_attribute
 
+#-----------------------------------------------------------
+#用户计算
 
+#从每日的人格计算表和画像计算表中读取对应数值，这些数据均为归一化在0-100之内的，并通过阈值给出画像的星级和人格的标签
 def user_ranking(uid_list,username_list,date):
     query_id_list = [uid + '_' + str(date2ts(date)) for uid in uid_list]
     res = es.mget(index=USER_PERSONALITY, doc_type='text', body={'ids':query_id_list})['docs']
@@ -35,11 +38,11 @@ def user_ranking(uid_list,username_list,date):
         agreeableness_index = personality_dic[uid]['agreeableness_index']
         conscientiousness_index = personality_dic[uid]['conscientiousness_index']
 
-        #画像计算
-        liveness_index = get_attribute_normalization(attribute_dic[uid]['activity'],'activity')
-        importance_index = get_attribute_normalization(attribute_dic[uid]['importance'],'importance')
-        sensitive_index = get_attribute_normalization(attribute_dic[uid]['sensitivity'],'sensitivity')
-        influence_index = get_attribute_normalization(attribute_dic[uid]['influence'],'influence')
+        #画像计算值
+        liveness_index = attribute_dic[uid]['activity_normalization']
+        importance_index = attribute_dic[uid]['importance_normalization']
+        sensitive_index = attribute_dic[uid]['sensitivity_normalization']
+        influence_index = attribute_dic[uid]['influence_normalization']
 
         dic = {
             'machiavellianism_index':machiavellianism_index,
@@ -75,11 +78,9 @@ def user_ranking(uid_list,username_list,date):
         }
         es.index(index=USER_RANKING,doc_type='text',body=dic,id=uid)
 
-def cal_user_personality(uid_list, date, days):
-    # personality_dic = {}
-    end_date = date
-    start_date = ts2date(date2ts(date) - days*24*3600)
-    per_predict = predict_personality(uid_list,start_date,end_date)
+#通过调用模型中的预测函数获取当天的模型预测情况并存入数据库，可指定时间窗口
+def cal_user_personality(uid_list, start_date, end_date):
+    per_predict = predict_personality(uid_list,start_date,end_date)   #从model调用预测函数
     timestamp = date2ts(date)
     for idx in range(len(uid_list)):
         uid = per_predict[0][idx]
@@ -105,11 +106,10 @@ def cal_user_personality(uid_list, date, days):
             'timestamp':timestamp,
             'date':date
         }
-        # personality_dic[uid] = dic
+
         es.index(index=USER_PERSONALITY,doc_type='text',body=dic,id=uid + '_' + str(timestamp))
 
-    # return personality_dic
-
+#利用阈值字典给出人格的标签
 def get_user_personality_label(personality_index, personality_name):
     threshold = PERSONALITY_DIC[personality_name]['threshold']
     if personality_index < threshold[0]:
@@ -121,59 +121,40 @@ def get_user_personality_label(personality_index, personality_name):
 
     return personality_label
 
-def get_attribute_normalization(attribute_index, attribute_name):
-    threshold = ATTRIBUTE_DIC[attribute_name]['threshold']
-    if attribute_index < threshold[0]:
-        attribute_normalization = 0
-    elif attribute_index > threshold[1]:
-        attribute_normalization = 100
-    else:
-        attribute_normalization = int(((attribute_index - threshold[0]) / (threshold[1] - threshold[0])) * 100)
-
-    return attribute_normalization
-
+#利用阈值给出星级（实际上直接平均分为5级）
 def get_attribute_star(attribute_index):
     return int(attribute_index / 20) + 1
 
-def user_insert():
-    user_query_body = {
-        'query':{
-            'match_all':{}
-        }
-    }
-    user_generator = user_generator(USER_INFORMATION, user_query_body, USER_ITER_COUNT)
-    for res in user_generator:
-        iter_user_list = [hit['_source']['uid'] for hit in res]
-        iter_username_list = [hit['_source']['username'] for hit in res]
-        cal_user_personality(iter_user_list,'2016-11-27',14)
-        time.sleep(1)
-        user_ranking(iter_user_list,iter_username_list,'2016-11-27')
-
-
-
+#----------------------------------------------------------------
+#群体计算
 
 #群体的创建，扫描未计算的任务，获得任务的基本参数开始计算，主要为了圈定符合条件的用户群体，利用关键词检索和人格计算得分进行筛选
 #输入：从group_task表中获得所需参数列表
 #输出：存储获得的userlist至数据库
-def group_create(args_dict,keyword,remark,group_name,create_time):
+def group_create(args_dict, keywords, remark, group_name, create_time, start_date, end_date):
     uid_list_keyword = []
-    # USER_WEIBO_ITER_COUNT = 1000
-    if keyword != '':
+    #如果关键词的不为空的话，则搜索指定日期内包含这些关键词的微博并获取其用户列表
+    if keywords != '':
+        keyword_list = keywords.split('&')
+        keyword_query_list = [{"wildcard":{"text":"*%s*" % keyword}} for keyword in keyword_list]
         weibo_query_body = {
-            "_source":["uid"],
             "query":{
-                'match_phrase':{
-                    'keywords_string':keyword
+                'bool':{
+                    'should':keyword_query_list,
+                    'minimum_should_match':2
                 }
             }
         }
-        for weibo_index in ES_INDEX_LIST:
-            weibo_generator = weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
+        date_list = get_datelist_v2(start_date, end_date)
+        for date in date_list:
+            print(date)
+            weibo_index = 'flow_text_%s' % date
+            weibo_generator = get_weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
             for res in weibo_generator:
                 uid_list_keyword.extend([hit['_source']['uid'] for hit in res])
     uid_list_keyword = set(uid_list_keyword)
 
-
+    #搜索符合人格条件的用户列表
     user_query_body = {
         'query':{
             "filtered":{
@@ -198,9 +179,7 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
         num += 1
 
     uid_list_index = []
-    # user_query_body['size'] = 5000
-    # es_result = es.search(index=USER_RANKING,doc_type='text',body=user_query_body)['hits']['hits']
-    # uid_list_index = [hit['_source']['uid'] for hit in es_result]
+    #当选择的人格选项不全为0时候开始搜索符合条件的用户
     if num:
         user_generator = user_generator(USER_RANKING, user_query_body, USER_ITER_COUNT)
         for res in user_generator:
@@ -212,6 +191,7 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
 
     if keyword != '' and num != 0:
         uid_list = list(uid_list_index & uid_list_keyword)
+    #当不对用户人格进行选定时，保证搜出来的用户是在用户库中的
     if num == 0:
         uid_list_keyword = list(uid_list_keyword)
         iter_num = 0
@@ -232,6 +212,8 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
         'group_name':group_name,
         'create_time':create_time,
         'create_date':ts2date(create_time),
+        'start_date':start_date,
+        'end_date':end_date,
         'keyword':keyword,
         'group_pinyin':group_pinyin,
         'group_id':group_pinyin + '_' + str(create_time),
@@ -242,13 +224,8 @@ def group_create(args_dict,keyword,remark,group_name,create_time):
 
     return dic
 
-
-def group_ranking(group_dic):
-    uid_list = group_dic['userlist']
-    date = ts2date(group_dic['create_time'])
-    group_id = group_dic['group_id']
-    group_name = group_dic['group_name']
-
+#从每日的人格计算表和画像计算表中读取对应数值，因为群体的得分是通过排名计算的，故必然在0-100之间，但紧密度除外，但也已经通过阈值进行归一化了，并通过阈值给出画像的星级和人格的标签
+def group_ranking(group_id, group_name, uid_list, date):
     query_id = group_id + '_' + str(date2ts(date))
     personality_dic = es.get(index=GROUP_PERSONALITY, doc_type='text', id=query_id)['_source']
     attribute_dic = es.get(index=GROUP_INFLUENCE, doc_type='text', id=query_id)['_source']
@@ -288,27 +265,28 @@ def group_ranking(group_dic):
         'sensitive_index':sensitivity,
         'influence_index':influence,
         'compactness_index':density,
+        
         'liveness_star':activeness_star,
         'importance_star':importance_star,
         'sensitive_star':sensitivity_star,
         'influence_star':influence_star,
         'compactness_star':density_star,
 
-        'machiavellianism_label':get_user_personality_label(machiavellianism_index,'machiavellianism_index'),
-        'narcissism_label':get_user_personality_label(narcissism_index,'narcissism_index'),
-        'psychopathy_label':get_user_personality_label(psychopathy_index,'psychopathy_index'),
-        'extroversion_label':get_user_personality_label(extroversion_index,'extroversion_index'),
-        'nervousness_label':get_user_personality_label(nervousness_index,'nervousness_index'),
-        'openn_label':get_user_personality_label(openn_index,'openn_index'),
-        'agreeableness_label':get_user_personality_label(agreeableness_index,'agreeableness_index'),
-        'conscientiousness_label':get_user_personality_label(conscientiousness_index,'conscientiousness_index'),
+        'machiavellianism_label':get_group_personality_label(machiavellianism_index,'machiavellianism_index'),
+        'narcissism_label':get_group_personality_label(narcissism_index,'narcissism_index'),
+        'psychopathy_label':get_group_personality_label(psychopathy_index,'psychopathy_index'),
+        'extroversion_label':get_group_personality_label(extroversion_index,'extroversion_index'),
+        'nervousness_label':get_group_personality_label(nervousness_index,'nervousness_index'),
+        'openn_label':get_group_personality_label(openn_index,'openn_index'),
+        'agreeableness_label':get_group_personality_label(agreeableness_index,'agreeableness_index'),
+        'conscientiousness_label':get_group_personality_label(conscientiousness_index,'conscientiousness_index'),
 
         'group_id':group_id,
         'group_name':group_name
     }
     es.index(index=GROUP_RANKING,doc_type='text',body=dic,id=group_id)
 
-
+#同群体的画像指标计算，利用人格指标在整个库中排名的平均值占比作为该指标得分
 def cal_group_personality(group_id, uid_list, date):
     date_ts = date2ts(date)
     iter_count = 0
@@ -444,6 +422,7 @@ def get_index_rank(personality_value, personality_name, timestamp):
         result = 0
     return result
 
+#利用阈值字典给出人格的标签，目前先使用个人的阈值，后续模型出来后可能会改变
 def get_group_personality_label(personality_index, personality_name):
     threshold = PERSONALITY_DIC[personality_name]['threshold']
     if personality_index < threshold[0]:
@@ -459,15 +438,15 @@ if __name__ == '__main__':
     # user_insert()
     # es.delete(index='group_task',doc_type='text',id='ceshisi_1551706107')
     create_time = date2ts('2016-11-27')
-    group_name = "测试四"
+    group_name = "测试五荣誉"
     dic = {
-        "remark": "第四次群体测试",
-        "keyword": "",
+        "remark": "第五次群体测试",
+        "keyword": "荣誉",
         "create_condition": {
-            'machiavellianism_index':1,
-            'narcissism_index':5,
+            'machiavellianism_index':0,
+            'narcissism_index':0,
             'psychopathy_index':0,
-            'extroversion_index':0,
+            'extroversion_index':1,
             'nervousness_index':0,
             'openn_index':0,
             'agreeableness_index':0,

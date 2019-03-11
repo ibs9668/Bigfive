@@ -5,12 +5,15 @@ from time_utils import *
 def get_user_generator(user_index, query_body, iter_num_per):
     iter_num = 0
     iter_get_user = iter_num_per
+    total = -1
     while (iter_get_user == iter_num_per):
-        print("user_iter_num: %d" % (iter_num*iter_num_per))
+        print("user_iter_num: %d, total: %d" % (iter_num*iter_num_per, total))
         query_body['sort'] = {'uid':{'order':'asc'}}
         query_body['size'] = iter_num_per
         query_body['from'] = iter_num * iter_num_per
-        es_result = es.search(index=user_index,doc_type='text',body=query_body)['hits']['hits']
+        es_result = es.search(index=user_index,doc_type='text',body=query_body)
+        total = es_result['hits']['total']
+        es_result = es_result['hits']['hits']
         iter_get_user = len(es_result)
         if iter_get_user == 0:
             break
@@ -21,12 +24,15 @@ def get_user_generator(user_index, query_body, iter_num_per):
 def get_weibo_generator(weibo_index, query_body, iter_num_per):
     iter_num = 0
     iter_get_weibo = iter_num_per
+    total = -1
     while (iter_get_weibo == iter_num_per):
-        print("weibo_iter_num: %d" % (iter_num*iter_num_per))
+        print("weibo_iter_num: %d, total: %d" % (iter_num*iter_num_per, total))
         query_body['sort'] = {'_id':{'order':'asc'}}
         query_body['size'] = iter_num_per
         query_body['from'] = iter_num * iter_num_per
-        es_result = es_weibo.search(index=weibo_index,doc_type='text',body=query_body)['hits']['hits']
+        es_result = es_weibo.search(index=weibo_index,doc_type='text',body=query_body)
+        total = es_result['hits']['total']
+        es_result = es_result['hits']['hits']
         iter_get_weibo = len(es_result)
         if iter_get_weibo == 0:
             break
@@ -37,12 +43,15 @@ def get_weibo_generator(weibo_index, query_body, iter_num_per):
 def get_event_weibo_generator(weibo_index, query_body, iter_num_per):
     iter_num = 0
     iter_get_weibo = iter_num_per
+    total = -1
     while (iter_get_weibo == iter_num_per):
-        print("weibo_iter_num: %d" % (iter_num*iter_num_per))
+        print("weibo_iter_num: %d, total: %d" % (iter_num*iter_num_per, total))
         query_body['sort'] = {'_id':{'order':'asc'}}
         query_body['size'] = iter_num_per
         query_body['from'] = iter_num * iter_num_per
-        es_result = es.search(index=weibo_index,doc_type='text',body=query_body)['hits']['hits']
+        es_result = es.search(index=weibo_index,doc_type='text',body=query_body)
+        total = es_result['hits']['total']
+        es_result = es_result['hits']['hits']
         iter_get_weibo = len(es_result)
         if iter_get_weibo == 0:
             break
