@@ -132,6 +132,11 @@ outlist = [u'海外', u'香港', u'台湾', u'澳门']
 lawyerw = [u'律师', u'法律', u'法务', u'辩护']
 STATUS_THRE = 4000
 FOLLOWER_THRE = 1000
+#政治倾向
+POLITICAL_LABELS = ['left','right','mid']
+LEFT_STA = 6000
+RIGHT_STA = 3000
+
 
 # 测试用的逻辑"今天"及"一周前"
 today = '2016-11-27'

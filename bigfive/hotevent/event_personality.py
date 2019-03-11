@@ -6,7 +6,9 @@ sys.path.append('../')
 from config import *
 from time_utils import *
 from global_utils import * 
+import operator
 
+#######事件名
 EVENT_INFORMATION_2 = "event_ceshishijiansan_1551942139"
 
 def get_user_list(event_name):
@@ -102,6 +104,14 @@ def get_event_personality(user_list,event_id,start_date,end_date):
         }
 
         event_result_high = es.search(index=EVENT_INFORMATION_2,doc_type="text",body=event_query_body_high)["aggregations"]["sentiment_aggs"]["buckets"]
+        es_result = es.search(index=EVENT_INFORMATION_2,doc_type="text",body=event_query_body_high)["hits"]["hits"]
+
+        if es_result != []:
+            event_content = [i["_source"] for i in es_result]
+            mid_list = [i["mid"] for i in sorted(event_content,key = operator.itemgetter("timestamp"),reverse = True)[:5]]
+        event_result_high.append({"mid_list":mid_list})
+
+
 
         event_query_body_low = {
                     "query":{
@@ -122,6 +132,12 @@ def get_event_personality(user_list,event_id,start_date,end_date):
         }
 
         event_result_low = es.search(index=EVENT_INFORMATION_2,doc_type="text",body=event_query_body_low)["aggregations"]["sentiment_aggs"]["buckets"]
+        es_result_1 = es.search(index=EVENT_INFORMATION_2,doc_type="text",body=event_query_body_high)["hits"]["hits"]
+
+        if es_result_1 != []:
+            event_content = [i["_source"] for i in es_result_1]
+            mid_list_1 = [i["mid"] for i in sorted(event_content,key = operator.itemgetter("timestamp"),reverse = True)[:5]]
+        event_result_low.append({"mid_list": mid_list_1})
 
         id_body = {
                                 "query":{
