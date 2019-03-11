@@ -443,7 +443,7 @@ def get_network(event_id):
                         ]}
                 }}
         },
-        "size": 3000,
+        "size": 500,
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
