@@ -389,7 +389,10 @@ def get_in_group_ranking(event_id,mtype):
         "aggs": {}
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
-    r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
+    r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits']
+    if not r:
+        return {}
+    r = r[0]['_source']
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
