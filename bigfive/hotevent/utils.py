@@ -57,11 +57,11 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
     es.index(index='event_information', doc_type='text', body=hot_event, id=event_id)
 
 
-def get_time_hot(s, e):
+def get_time_hot(event_id,s, e):
     if not s or not e:
         e = today()
         s = get_before_date(30)
-    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}}], "must_not": [
+    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":'event_'+event_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}], "aggs": {}}
     hits = es.search(index='event_message_type',
                      doc_type='text', body=query)['hits']['hits']
@@ -79,7 +79,7 @@ def get_time_hot(s, e):
     return result
 
 
-def get_browser_by_date(date):
+def get_browser_by_date(event_id,date):
     # 按日期查询微博浏览区的微博
     if date:
         # 按具体日期查询,选最新的5条
@@ -91,7 +91,7 @@ def get_browser_by_date(date):
         # 全部查询,选最新的5条
         query = {"query": {"bool": {"must": [{"wildcard": {"geo": "中国*"}}], "must_not": [], "should": [
         ]}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return []
@@ -102,7 +102,7 @@ def get_browser_by_date(date):
     return result
 
 # @cache.memoize(300)
-def get_geo(s, e,geo):
+def get_geo(event_id,geo,s, e):
     # 时间段初始化,为空时查询近30天内的数据
     if not s or not e:
         e = today()
@@ -110,7 +110,7 @@ def get_geo(s, e,geo):
     st = date2ts(s)
     et = date2ts(e)
     query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}], "must_not": [], "should": []}}, "from": 0, "size": 100000, "sort": [], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
@@ -201,7 +201,7 @@ def get_emotion_geo(event_id,emotion,geo):
                 result['city'][city] += count
     result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
     return result
-def get_browser_by_geo(geo, s, e):
+def get_browser_by_geo(event_id,geo, s, e):
     # 时间段初始化
     if not s or not e:
         e = today()
@@ -210,7 +210,7 @@ def get_browser_by_geo(geo, s, e):
     et = date2ts(e)
     # 通过省字段查询
     query = {"query": {"bool": {"must": [{"wildcard": {"geo": "*{}*".format(geo)}}, {"range": {"timestamp": {"gte": st, "lte": et}}}],"must_not": [], "should": []}}, "from": 0, "size": 5, "sort": [{"timestamp": {"order": "desc"}}], "aggs": {}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_'+event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return {}
@@ -220,9 +220,9 @@ def get_browser_by_geo(geo, s, e):
         result.append(item)
     return result
 
-def get_browser_by_user(uid):
+def get_browser_by_user(event_id,uid):
     query = {"query":{"bool":{"must":[{"term":{"uid":uid}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp": {"order": "desc"}}],"aggs":{}}
-    hits = es.search(index='event_ceshishijiansan_1551942139',
+    hits = es.search(index='event_' + event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
         return {}
@@ -232,7 +232,7 @@ def get_browser_by_user(uid):
         result.append(item)
     return result
 
-def get_in_group_renge():
+def get_in_group_renge(event_id):
     # 获取表内所有uid
     query = {
         "size": 0,
@@ -240,12 +240,12 @@ def get_in_group_renge():
             "uids": {
                 "terms": {
                     "field": "uid",
-                    "size": 1000
+                    "size": 10000
                 }
             }
         }
     }
-    buckets = es.search(index='event_ceshishijiansan_1551942139',
+    buckets = es.search(index='event_'+event_id,
                         doc_type='text', body=query)["aggregations"]["uids"]['buckets']
     if not buckets:
         return {}
@@ -335,10 +335,6 @@ def get_in_group_ranking(event_id,mtype):
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
-    # 情绪映射
-    emotion_map = {
-    '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
-    }
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -353,12 +349,12 @@ def get_in_group_ranking(event_id,mtype):
             # 得到总的值
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
             # 情绪饼图
-            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
-            # 获取微博,暂时没有限制字段
+            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {EMOTION_MAP_NUM_CH[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            # 获取微博,暂时没有限制返回的字段
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
-                hits = es.search(index='event_ceshishijiansan_1551942139',doc_type='text',body=query)['hits']['hits']
+                hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
     return result[mtype]
 
