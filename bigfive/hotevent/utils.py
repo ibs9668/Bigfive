@@ -335,10 +335,6 @@ def get_in_group_ranking(event_id,mtype):
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits'][0]['_source']
-    # 情绪映射
-    emotion_map = {
-    '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
-    }
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -353,8 +349,8 @@ def get_in_group_ranking(event_id,mtype):
             # 得到总的值
             sum_i = sum([i['doc_count'] for i in v if 'key' in i.keys()])
             # 情绪饼图
-            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {emotion_map[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
-            # 获取微博,暂时没有限制字段
+            result[k.split('_')[0]][k.split('_')[1]]['emotion'] = {EMOTION_MAP_NUM_CH[i['key']]:i['doc_count']/sum_i for i in v if 'key' in i.keys()}
+            # 获取微博,暂时没有限制返回的字段
             if 'mid_list' in i.keys():
                 mids = i['mid_list']
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}

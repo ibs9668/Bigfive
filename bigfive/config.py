@@ -137,7 +137,7 @@ MAP_CITIES_DICT = {'安徽': ['合肥市', '芜湖市', '蚌埠市', '淮南市'
 EMOTION_MAP_NUM_CH = {
     '0':'中性', '1':'积极', '2':'生气', '3':'焦虑', '4':'悲伤', '5':'厌恶', '6':'消极其他'
     }
-EMOTION_MAP_CH_EN = {
+EMOTION_MAP_EN_CH = {
     'nuetral':'中性', 'positive':'积极', 'angry':'生气', 'anxiety':'焦虑', 'sad':'悲伤', 'hate':'厌恶', 'negtive':'消极其他'
 }
 EMOTION_MAP_NUM_EN = {
