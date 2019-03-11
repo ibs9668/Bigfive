@@ -466,22 +466,22 @@ def group_influence(group_id, interval):
                 },
                 "aggs": {
                     "sensitivity": {
-                        "stats": {
+                        "sum": {
                             "field": "sensitivity"
                         }
                     },
                     "influence": {
-                        "stats": {
+                        "sum": {
                             "field": "influence"
                         }
                     },
                     "activity": {
-                        "stats": {
+                        "sum": {
                             "field": "activity"
                         }
                     },
                     "importance": {
-                        "stats": {
+                        "sum": {
                             "field": "importance"
                         }
                     }
@@ -494,10 +494,10 @@ def group_influence(group_id, interval):
     result_list = []
     for data in es_result:
         item = {}
-        item['sensitivity'] = data['sensitivity']['sum']
-        item['influence'] = data['influence']['sum']
-        item['activity'] = data['activity']['sum']
-        item['importance'] = data['importance']['sum']
+        item['sensitivity'] = data['sensitivity']['value']
+        item['influence'] = data['influence']['value']
+        item['activity'] = data['activity']['value']
+        item['importance'] = data['importance']['value']
         item['timestamp'] = data['key'] // 1000
         item['date'] = data['key_as_string']
         result_list.append(item)
@@ -529,17 +529,17 @@ def group_emotion(group_id, interval):
                 },
                 "aggs": {
                     "nuetral": {
-                        "stats": {
+                        "sum": {
                             "field": "nuetral"
                         }
                     },
                     "negtive": {
-                        "stats": {
+                        "sum": {
                             "field": "negtive"
                         }
                     },
                     "positive": {
-                        "stats": {
+                        "sum": {
                             "field": "positive"
                         }
                     }
@@ -558,73 +558,73 @@ def group_emotion(group_id, interval):
     }
     for bucket in buckets:
         result['time'].append(bucket['key_as_string'], )
-        result["positive_line"].append(bucket['positive']['sum'], )
-        result["negtive_line"].append(bucket['negtive']['sum'], )
-        result["nuetral_line"].append(bucket['nuetral']['sum'])
+        result["positive_line"].append(bucket['positive']['value'], )
+        result["negtive_line"].append(bucket['negtive']['value'], )
+        result["nuetral_line"].append(bucket['nuetral']['value'])
     return result
 
 
-# @cache.memoize(60)
-# def group_social_contact(group_id, map_type):
-#     user_list = es.get(index='group_information', doc_type='text', id=group_id)[
-#         '_source']['userlist']
-#     if map_type in ['1', '2']:
-#         message_type = 3
-#     else:
-#         message_type = 2
-#     if map_type in ['1', '3']:
-#         key = 'target'
-#     else:
-#         key = 'source'
-#     query_body = {
-#         "query": {
-#             "filtered": {
-#                 "filter": {
-#                     "bool": {
-#                         "must": [
-#                             {
-#                                 "term": {
-#                                     "message_type": message_type
-#                                 }
-#                             },
-#                             {
-#                                 "terms": {
-#                                     key: user_list
-#                                 }
-#                             }
-#                         ]}
-#                 }}
-#         },
-#         "size": 3000,
-#     }
-#     r = es.search(index="user_social_contact", doc_type="text",
-#                   body=query_body)["hits"]["hits"]
-#     node = []
-#     link = []
-#     for one in r:
-#         item = one['_source']
-#         a = {'id': item['target'], 'name': item['target_name']}
-#         b = {'id': item['source'], 'name': item['source_name']}
-#         c = {'source': item['source_name'], 'target': item['target_name']}
-#         if a not in node:
-#             node.append(a)
-#         if b not in node:
-#             node.append(b)
-#         if c not in link and c['source'] != c['target']:
-#             link.append(c)
-#     social_contact = {'node': node, 'link': link}
-#     if node:
-#         return social_contact
-#     return {}
-
+@cache.memoize(60)
 def group_social_contact(group_id, map_type):
-    query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
-    hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
-    if not hits:
-        return {}
-    hit = hits[0]['_source']
-    node = [{'name':i} for i in hit['node']]
-    return {'node':node,'link':hit['link']}
+    user_list = es.get(index='group_information', doc_type='text', id=group_id)[
+        '_source']['userlist']
+    if map_type in ['1', '2']:
+        message_type = 3
+    else:
+        message_type = 2
+    if map_type in ['1', '3']:
+        key = 'target'
+    else:
+        key = 'source'
+    query_body = {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "message_type": message_type
+                                }
+                            },
+                            {
+                                "terms": {
+                                    key: user_list
+                                }
+                            }
+                        ]}
+                }}
+        },
+        "size": 3000,
+    }
+    r = es.search(index="user_social_contact", doc_type="text",
+                  body=query_body)["hits"]["hits"]
+    node = []
+    link = []
+    for one in r:
+        item = one['_source']
+        a = {'id': item['target'], 'name': item['target_name']}
+        b = {'id': item['source'], 'name': item['source_name']}
+        c = {'source': item['source_name'], 'target': item['target_name']}
+        if a not in node:
+            node.append(a)
+        if b not in node:
+            node.append(b)
+        if c not in link and c['source'] != c['target']:
+            link.append(c)
+    social_contact = {'node': node, 'link': link}
+    if node:
+        return social_contact
+    return {}
+
+# def group_social_contact(group_id, map_type):
+#     query = {"query":{"bool":{"must":[{"term":{"group_id":group_id}},{"term":{"map_type":map_type}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
+#     hits = es.search(index='group_social_contact',doc_type='text',body=query)['hits']['hits']
+#     if not hits:
+#         return {}
+#     hit = hits[0]['_source']
+#     node = [{'name':i} for i in hit['node']]
+#     return {'node':node,'link':hit['link']}
 def get_group_activity(group_id):
     query = {"query": {"bool": {"must": [{"term": {"group_id": group_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1, "sort": [], "aggs": {}}

@@ -114,41 +114,33 @@ def get_statistics_user_info(timestamp):
     user_total_count = es.count(index = "user_information",doc_type = "text")["count"]
     timestamp = int(timestamp)
     # print (user_total_count)
-    query_body = {"query": {"bool": {"must":[{"range": {"insert_time": {"gte":timestamp,"lt":timestamp + 24*3600}}}]}},"size" : 10000}
-    today_insert_user_num = len(es.search(index = "user_information",doc_type = "text",body = query_body)["hits"]["hits"])
+    query_body = {"query": {"bool": {"must":[{"range": {"insert_time": {"gte":timestamp,"lt":timestamp + 24*3600}}}]}},"size" : 0}
+    today_insert_user_num = es.search(index = "user_information",doc_type = "text",body = query_body)["hits"]["total"]
     # print (today_insert_user_num)
     personality_index_list = ["machiavellianism_index","narcissism_index","psychopathy_index","extroversion_index","nervousness_index","openn_index","agreeableness_index","conscientiousness_index"]
     personality_label_list = ["machiavellianism_label","narcissism_label","psychopathy_label","extroversion_label","nervousness_label","openn_label","agreeableness_label","conscientiousness_label"]
-    aggs_avg_dict = {}
     aggs_avg_dict = {"aggs": {"aggs_index": {"avg":{}}}}
-
-
-
 
     result =  {}
     result["user_total_count"] = user_total_count
     result["today_insert_user_num"] = today_insert_user_num
 
+    query = {"size" : 0,"aggs":{}}
     for i in personality_index_list:
-        aggs_avg_dict["aggs"]["aggs_index"]["avg"]["field"] = i
-        result[i.split("_")[0]] = {}
-        result[i.split("_")[0]]["value"] = es.search(index="user_ranking", doc_type="text", body = aggs_avg_dict)["aggregations"]["aggs_index"]["value"]
+        query["aggs"].update({i.split("_")[0]:{'avg':{'field':i}}})
+    result.update(es.search(index="user_ranking", doc_type="text", body = query)["aggregations"])
 
-    query_body = {"query": {"bool": {"must":{"term": {}}}},"size" : 10000}
-    index_list = [0,2]#0低2高
-
-    for j in personality_label_list:
-        for n in index_list:
-            query_body["query"]["bool"]["must"]["term"][j] = n
-            #print (query_body)
-            if int(n) ==0:
-                result[j.split("_")[0]]["low"] = len(es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["hits"])
-            else:
-                result[j.split("_")[0]]["high"] = len(es.search(index = "user_ranking",doc_type = "text",body = query_body)["hits"]["hits"])
-            query_body = {"query": {"bool": {"must":{"term": {}}}},"size" : 10000}
-    # print (result)
-
-
+    query_body = {"size" : 0,"aggs":{}}
+    for i in personality_label_list:
+        query["aggs"].update({i.split("_")[0]:{'terms':{'field':i}}})
+    aggregations = es.search(index="user_ranking", doc_type="text", body = query)["aggregations"]
+    map_dic = {0:'low',2:'high'}
+    for k,v in aggregations.items():
+        for bucket in v['buckets']:
+            # print(bucket)
+            if bucket['key'] not in map_dic.keys():
+                continue
+            result[k][map_dic[bucket['key']]] = bucket['doc_count']
     return result
 
 def dark_personality():
