@@ -67,6 +67,13 @@ def browser_geo():
     result = get_browser_by_geo(geo,s,e)
     return jsonify(result)
 
+@mod.route('/browser_user',methods=['GET'])
+def browser_user():
+    uid = request.args.get('uid','')
+    result = get_browser_by_user(uid)
+    return jsonify(result)
+
+
 @mod.route('/ingroup_renge',methods=['GET'])
 def ingroup_renge():
     result = get_in_group_renge()
