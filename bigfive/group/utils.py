@@ -599,7 +599,7 @@ def group_social_contact(group_id, map_type):
                         ]}
                 }}
         },
-        "size": 3000,
+        "size": 10000,
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
