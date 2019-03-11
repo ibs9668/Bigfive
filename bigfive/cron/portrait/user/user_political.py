@@ -124,7 +124,7 @@ def political_classify(uid,uid_weibo):
         r_domain[k] = r_dict#存储各个政治倾向的权值
 
     return domain_dict
- 
+
 def get_user_political_bias(date):
     uid_list = get_uidlist()
     list_index = ["flow_text_"+str(ts2date(date2ts(date)-i*DAY)) for i in range(7)]
@@ -140,8 +140,16 @@ def get_user_political_bias(date):
                 } })
 
         count+=1
-        # print (count)
-####################################
+
+
+def get_user_political(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    uid_word_dict = get_uid_weibo(uid,index_list)
+    politic_result = political_classify(uid,uid_word_dict)
+    es.update(index='user_information', doc_type='text', id=str(uid), body = {"doc":{"political_bias":politic_result.values()[0]}})
+
  
 if __name__ == '__main__':
     get_user_political_bias("2016-11-20")

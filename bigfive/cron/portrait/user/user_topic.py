@@ -385,6 +385,12 @@ def user_topic_run(flow_text_list):#####运行函数
    
     return 0    
 
+def get_user_topic(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    save_topic([uid],date2ts(date),index_list)
+
 
 if __name__ == '__main__':
 

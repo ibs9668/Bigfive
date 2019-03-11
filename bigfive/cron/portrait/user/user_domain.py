@@ -568,59 +568,12 @@ def user_domain_run(flow_text_list):
                             } )
                     count+=1
 
-            else:
-                id_body = {
-                            "query":{
-                                "ids":{
-                                    "type":"text",
-                                    "values":[
-                                        str(uid)+"_"+str(timestamp)
-                                    ]
-                                }
-                            }
-                        }
-                if es.search(index='user_domain_topic', doc_type='text', body= id_body)["hits"]["hits"] != []:
-                    es.update(index='user_domain_topic', doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
-                    "doc":{
-                    "domain_followers":"other",
-                    "domain_weibo":"other",
-                    "domain_verified":"other",
-                    "main_domain" : "other",
-                    "has_new_information":0
-                            } })
-                    count+=1
-                else:
-                    es.index(index='user_domain_topic', doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
-                    "timestamp":timestamp,
-                    "uid":uid,
-                    "domain_followers":"other",
-                    "domain_weibo":"other",
-                    "domain_verified":"other",
-                    "main_domain" : "other",
-                    "has_new_information":0,
-                    "topic_art":0,
-                    "topic_computer":0,
-                    "topic_economic":0,
-                    "topic_education":0,
-                    "topic_environment":0,
-                    "topic_medicine":0,
-                    "topic_military":0,
-                    "topic_politics":0,
-                    "topic_sports":0,
-                    "topic_traffic":0,
-                    "topic_life":0,
-                    "topic_anti_corruption":0,
-                    "topic_employment":0,
-                    "topic_violence":0,
-                    "topic_house":0,
-                    "topic_law":0,
-                    "topic_peace":0,
-                    "topic_religion":0,
-                    "topic_social_security":0
-                            } )
-                    count+=1
-
-            # print (count)
+def get_user_domain(uid,date,days):
+    index_list = []
+    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
+        index_list.append('flow_text_%s' % day)
+    uid_weibo = get_uid_weibo(uid,index_list)
+    domain,r_domain = domain_classfiy(uid,uid_weibo,timestamp)
 
 
 if __name__ == '__main__':

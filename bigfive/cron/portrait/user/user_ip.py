@@ -147,7 +147,8 @@ def user_ip_run(flow_text_list):
         except:
             pass
   
-
+def get_user_activity(uid, date):
+    get_recent_ip(uid,'flow_text_%s' % date,date)
 
 
 if __name__ == '__main__':
