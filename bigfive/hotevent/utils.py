@@ -280,7 +280,7 @@ def get_browser_by_user(event_id,uid):
     hits = es.search(index='event_' + event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
-        return {}
+        return []
     result = []
     for hit in hits:
         item = hit['_source']
