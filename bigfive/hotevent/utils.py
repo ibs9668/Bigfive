@@ -101,8 +101,8 @@ def get_browser_by_date(date):
         result.append(item)
     return result
 
-@cache.memoize(300)
-def get_geo(s, e):
+# @cache.memoize(300)
+def get_geo(s, e,type):
     # 时间段初始化,为空时查询近30天内的数据
     if not s or not e:
         e = today()
@@ -114,7 +114,8 @@ def get_geo(s, e):
                      doc_type='text', body=query,_source_include=['geo'])['hits']['hits']
     if not hits:
         return {}
-    result = {}
+    province_dic = {}
+    city_dic = {}
     for hit in hits:
         item = hit['_source']
         geo_list = item['geo'].split('&')
@@ -124,19 +125,28 @@ def get_geo(s, e):
             province = geo_list[1]
         if province == '中国':
             continue
-        if province not in result:
-            result.update({province: {'count': 1, 'cities': {}}})
+        if province not in province_dic:
+            province_dic.update({province: 1})
         else:
-            result[province]['count'] += 1
+            province_dic[province] += 1
+        if province not in city_dic:
+            city_dic.update({province:{}})
         if len(geo_list) > 2:
             city = geo_list[2]
             if city:
-                if city not in result[province]['cities']:
-                    result[province]['cities'].update({city: 1})
+                city+='市'
+                if city not in city_dic[province]:
+                    city_dic[province].update({city: 1})
                 else:
-                    result[province]['cities'][city] += 1
+                    city_dic[province][city] += 1
     # 通过省条数排名
-    result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']} for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
+    # result = [{'provice': i[0], 'count': i[1]['count'], 'cities': i[1]['cities']} for i in sorted(result.items(), key=lambda x: x[1]['count'], reverse=True)]
+    if type =='province':
+        result= {'province':province_dic,'rank':[]}
+        for i in sorted(province_dic.items(), key=lambda x: x[1], reverse=True)[:15]:
+            result['rank'].append({i[0]:i[1]})
+    else:
+        result= {'city':city_dic}
     return result
 
 
