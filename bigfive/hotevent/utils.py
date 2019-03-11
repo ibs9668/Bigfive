@@ -202,12 +202,32 @@ def get_emotion_geo(event_id,emotion,geo):
     result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
     return result
 
-def get_browser_by_emotion_geo(event_id,geo):
+def get_browser_by_emotion_geo(event_id,geo,emotion):
     query = {"query":{"bool":{"must":[{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
     hits = es.search(index='event_information',doc_type='text',body=query)['hits']['hits']
     if not hits:
         return []
     uids = hits[0]['_source']['userlist_important']
+    # query = {
+    #     "query": {
+    #         "filtered": {
+    #             "filter": {
+    #                 "bool": {
+    #                     "must": [
+    #                         {"term": {EMOTION_MAP_NUM_EN[emotion]: emotion}},
+    #                         {
+    #                             "terms": {
+    #                                 'uid': uids
+    #                             }
+    #                         }
+    #                     ]}
+    #             }}
+    #     },
+    #     "size": 5,
+    #     "sort": [{"timestamp": {"order": "desc"}}]
+    # }
+
+
     query = {
         "query": {
             "filtered": {
@@ -254,7 +274,9 @@ def get_browser_by_geo(event_id,geo, s, e):
     return result
 
 def get_browser_by_user(event_id,uid):
-    query = {"query":{"bool":{"must":[{"term":{"uid":uid}}],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp": {"order": "desc"}}],"aggs":{}}
+    query = {"query":{"bool":{"must":[],"must_not":[],"should":[]}},"from":0,"size":5,"sort":[{"timestamp": {"order": "desc"}}],"aggs":{}}
+    if uid:
+        query['query']['bool']['must'].append({"term":{"uid":uid}})
     hits = es.search(index='event_' + event_id,
                      doc_type='text', body=query)['hits']['hits']
     if not hits:
