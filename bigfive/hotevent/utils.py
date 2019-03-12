@@ -493,15 +493,23 @@ def get_semantic(event_id):
     river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
     cluster_count = json.loads(river_result['cluster_count'])
     cluster_word = json.loads(river_result['cluster_word'])
-    river_list = []
-    print(cluster_count)
+    river_dict = {
+        'time': []
+    }
     for k1, v1 in cluster_count.items():
+        river_dict['time'].append(k1)
+        # print(k1, v1)
+    # print(cluster_count)
         for k2, v2 in v1.items():
+            # print(k2, v2)
             title_str = ''
             title_list = cluster_word[str(k2)]
             for title in title_list[0:3]:
                 title_str += (title + '&')
-            river_list.append([k1, v2, title_str.rstrip('&')])
+            # print(title_str, v2)
+            river_dict.setdefault(title_str.rstrip('&'), [])
+            river_dict[title_str.rstrip('&')].append(v2)
+    #         river_list.append([k1, v2, title_str.rstrip('&')])
     # print(cluster_word)
-    result['river_list'] = river_list
+    result['river_dict'] = river_dict
     return result
