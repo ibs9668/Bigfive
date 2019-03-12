@@ -531,7 +531,7 @@ def get_preference_identity(uid):
                 "must_not": []
             }
         },
-        "size": 1000,
+        "size": 1,
         "sort": [
             {
                 "timestamp": {
@@ -541,8 +541,10 @@ def get_preference_identity(uid):
         ]
     }
 
-    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0][
-        '_source']
+    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
+    if not analysis_result:
+        return {}
+    analysis_result = analysis_result[0]['_source']
     result['keywords'] = {}
     if analysis_result['keywords']:
         for i in analysis_result['keywords']:
