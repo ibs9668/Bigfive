@@ -755,12 +755,16 @@ def user_social_contact(uid, map_type):
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        if a not in node:
-            node.append(a)
-        if b not in node:
-            node.append(b)
+        # if a not in node:
+        #     node.append(a)
+        # if b not in node:
+        #     node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
+            if c['source'] not in node:
+                node.append(c['source'])
+            if c['target'] not in node:
+                node.append(c['target'])
     social_contact = {'node': node, 'link': link}
     if node:
         return social_contact
