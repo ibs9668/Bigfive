@@ -40,7 +40,7 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
     event_pinyin = Pinyin().get_pinyin(event_name, '')
     create_date = time.strftime('%Y-%m-%d', time.localtime(int(time.time())))
     create_time = int(time.mktime(time.strptime(create_date, '%Y-%m-%d')))
-    progress = 1
+    progress = 0
     event_id = '{}_{}'.format(event_pinyin, str(create_time))
     hot_event = {
         "event_name": event_name,
