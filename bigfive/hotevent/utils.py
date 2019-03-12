@@ -432,7 +432,7 @@ def get_network(event_id):
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
-    node = {}
+    node = []
     link = []
     for one in r:
         item = one['_source']
