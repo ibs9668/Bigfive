@@ -392,8 +392,9 @@ def get_in_group_ranking(event_id,mtype):
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
                 hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
-    return result[mtype]
-
+    if result:
+        return result[mtype]
+    return result
 
 def get_network(event_id):
     result = {'important_users_list': []}
