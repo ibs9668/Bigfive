@@ -88,10 +88,9 @@ def browser_user():
 
 @mod.route('/browser_emotion',methods=['GET'])
 def browser_emotion():
-    geo = request.args.get('geo','')
     event_id = request.args.get('eid','')
     emotion = request.args.get('emotion','')
-    result = get_browser_by_emotion_geo(event_id,geo,emotion)
+    result = get_browser_by_emotion(event_id,emotion)
     return jsonify(result)
 
 @mod.route('/ingroup_renge',methods=['GET'])

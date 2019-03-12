@@ -98,7 +98,6 @@ def get_browser_by_date(event_id,date):
     result = []
     for hit in hits:
         item = hit['_source']
-        item = get_user_name(item)
         result.append(item)
     return result
 
@@ -203,44 +202,14 @@ def get_emotion_geo(event_id,emotion,geo):
     result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
     return result
 
-def get_browser_by_emotion_geo(event_id,geo,emotion):
-    query = {"query":{"bool":{"must":[{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
-    hits = es.search(index='event_information',doc_type='text',body=query)['hits']['hits']
-    if not hits:
-        return []
-    uids = hits[0]['_source']['userlist_important']
-    # query = {
-    #     "query": {
-    #         "filtered": {
-    #             "filter": {
-    #                 "bool": {
-    #                     "must": [
-    #                         {"term": {EMOTION_MAP_NUM_EN[emotion]: emotion}},
-    #                         {
-    #                             "terms": {
-    #                                 'uid': uids
-    #                             }
-    #                         }
-    #                     ]}
-    #             }}
-    #     },
-    #     "size": 5,
-    #     "sort": [{"timestamp": {"order": "desc"}}]
-    # }
-
-
+def get_browser_by_emotion(event_id,emotion):
     query = {
         "query": {
             "filtered": {
                 "filter": {
                     "bool": {
                         "must": [
-                            {"term": {"geo": "{}".format(geo)}},
-                            {
-                                "terms": {
-                                    'uid': uids
-                                }
-                            }
+                            {"term": {"sentiment": emotion}},
                         ]}
                 }}
         },
@@ -253,7 +222,6 @@ def get_browser_by_emotion_geo(event_id,geo,emotion):
     result = []
     for hit in hits:
         item = hit['_source']
-        item = get_user_name(item)
         result.append(item)
     return result
 def get_browser_by_geo(event_id,geo, s, e):
@@ -272,7 +240,6 @@ def get_browser_by_geo(event_id,geo, s, e):
     result = []
     for hit in hits:
         item = hit['_source']
-        item = get_user_name(item)
         result.append(item)
     return result
 
@@ -287,7 +254,6 @@ def get_browser_by_user(event_id,uid):
     result = []
     for hit in hits:
         item = hit['_source']
-        item = get_user_name(item)
         result.append(item)
     return result
 
@@ -466,20 +432,22 @@ def get_network(event_id):
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
-    node = []
+    node = {}
     link = []
     for one in r:
         item = one['_source']
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        if a not in node:
-            node.append(a)
-        if b not in node:
-            node.append(b)
+        # if a not in node:
+        #     node.append(a)
+        # if b not in node:
+        #     node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
-    transmit_net = {'node': node, 'link': link}
+            node.add({'name':c['source']})
+            node.add({'name':c['target']})
+    transmit_net = {'node': list(node), 'link': link}
     result['transmit_net'] = transmit_net
     return result
 
