@@ -55,7 +55,8 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
         "end_date": end_date
     }
     es.index(index='event_information', doc_type='text', body=hot_event, id=event_id)
-
+def post_delete_hot_event(event_id):
+    es.delete(index='event_information', doc_type='text', id=event_id)
 
 def get_time_hot(event_id,s, e):
     if not s or not e:

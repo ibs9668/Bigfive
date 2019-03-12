@@ -40,6 +40,15 @@ def create_hot_event():
     # except:
     #     return jsonify(0)
 
+@mod.route('/delete_hot_event/', methods=['POST'])
+def create_hot_event():
+    parameters = request.form.to_dict()
+    if not parameters:
+        parameters = request.json
+    event_id = parameters.get('event_id', '')
+    # try:
+    post_delete_hot_event(event_id)
+    return jsonify(1)
 
 @mod.route('/time_hot')
 def time_hot():
