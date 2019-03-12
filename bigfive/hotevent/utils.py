@@ -353,7 +353,7 @@ def get_in_group_ranking(event_id,mtype):
                 "must": [
                     {
                         "term": {
-                            "event_id": 'event_'+event_id
+                            "event_id": event_id
                         }
                     }
                 ],
