@@ -445,8 +445,10 @@ def get_network(event_id):
         #     node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
-            node.add({'name':c['source']})
-            node.add({'name':c['target']})
+            if c['source'] not in node:
+                node.append({'name':c['source']})
+            if c['target'] not in node:
+                node.append({'name':c['target']})
     transmit_net = {'node': list(node), 'link': link}
     result['transmit_net'] = transmit_net
     return result

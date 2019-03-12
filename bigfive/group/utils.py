@@ -617,9 +617,9 @@ def group_social_contact(group_id, map_type):
         if c not in link and c['source'] != c['target']:
             link.append(c)
             if c['source'] not in node:
-                node.append(c['source'])
+                node.append({'name':c['source']})
             if c['target'] not in node:
-                node.append(c['target'])
+                node.append({'name':c['target']})
     social_contact = {'node': node, 'link': link}
     if node:
         return social_contact
