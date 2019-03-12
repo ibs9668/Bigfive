@@ -368,9 +368,12 @@ def get_in_group_ranking(event_id,mtype):
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits']
+    print(r,'*****************')
     if not r:
         return {}
     r = r[0]['_source']
+    if not r:
+        return {}
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -392,9 +395,9 @@ def get_in_group_ranking(event_id,mtype):
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
                 hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
-    if result:
-        return result[mtype]
-    return result
+
+    return result[mtype]
+
 
 def get_network(event_id):
     result = {'important_users_list': []}
