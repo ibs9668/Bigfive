@@ -531,7 +531,7 @@ def get_preference_identity(uid):
                 "must_not": []
             }
         },
-        "size": 1000,
+        "size": 1,
         "sort": [
             {
                 "timestamp": {
@@ -541,8 +541,10 @@ def get_preference_identity(uid):
         ]
     }
 
-    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits'][0][
-        '_source']
+    analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
+    if not analysis_result:
+        return {'topic_result':{},'domain_dict':{}}
+    analysis_result = analysis_result[0]['_source']
     result['keywords'] = {}
     if analysis_result['keywords']:
         for i in analysis_result['keywords']:
@@ -563,19 +565,22 @@ def get_preference_identity(uid):
     query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "topic_computer"}}}})
     query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "main_domain"}}}})
     print(query)
-    preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    if not preference_and_topic_data:
+        return {'topic_result':{},'domain_dict':{}}
+    preference_and_topic_data = preference_and_topic_data[0]['_source']
     preference_item = {}
+    topic_result = {}
     for k, v in preference_and_topic_data.items():
         if k.startswith('topic_'):
             preference_item[k] = v
     l = sorted(preference_item.items(), key=lambda x:x[1], reverse=True)[0:5]
-    topic_result = {}
-    topic_result[topic_dict[l[0][0].replace('topic_', '')]] = int(l[0][1] * 100)
-    topic_result[topic_dict[l[1][0].replace('topic_', '')]] = int(l[1][1] * 100)
-    topic_result[topic_dict[l[2][0].replace('topic_', '')]] = int(l[2][1] * 100)
-    topic_result[topic_dict[l[3][0].replace('topic_', '')]] = int(l[3][1] * 100)
-    topic_result[topic_dict[l[4][0].replace('topic_', '')]] = int(l[4][1] * 100)
+    topic_result[topic_dict[l[0][0].replace('topic_', '')]] = l[0][1]
+    topic_result[topic_dict[l[1][0].replace('topic_', '')]] = l[1][1]
+    topic_result[topic_dict[l[2][0].replace('topic_', '')]] = l[2][1]
+    topic_result[topic_dict[l[3][0].replace('topic_', '')]] = l[3][1]
+    topic_result[topic_dict[l[4][0].replace('topic_', '')]] = l[4][1]
 
     node_main = {'name': labels_dict[preference_and_topic_data['main_domain']], 'id': preference_and_topic_data['uid']}
     node_followers = {'name': labels_dict[preference_and_topic_data['domain_followers']]}
@@ -755,16 +760,12 @@ def user_social_contact(uid, map_type):
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        # if a not in node:
-        #     node.append(a)
-        # if b not in node:
-        #     node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
-            if c['source'] not in node:
-                node.append({'name':c['source']})
-            if c['target'] not in node:
-                node.append({'name':c['target']})
+            if a not in node:
+                node.append(a)
+            if b not in node:
+                node.append(b)
     social_contact = {'node': node, 'link': link}
     if node:
         return social_contact

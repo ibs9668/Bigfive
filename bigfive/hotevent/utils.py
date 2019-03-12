@@ -62,7 +62,7 @@ def get_time_hot(event_id,s, e):
     if not s or not e:
         e = today()
         s = get_before_date(30)
-    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":'event_'+event_id}}], "must_not": [
+    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":event_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}], "aggs": {}}
     hits = es.search(index='event_message_type',
                      doc_type='text', body=query)['hits']['hits']
@@ -353,7 +353,7 @@ def get_in_group_ranking(event_id,mtype):
                 "must": [
                     {
                         "term": {
-                            "event_id": 'event_'+event_id
+                            "event_id": event_id
                         }
                     }
                 ],
@@ -368,9 +368,12 @@ def get_in_group_ranking(event_id,mtype):
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits']
+    print(r,'*****************')
     if not r:
         return {}
     r = r[0]['_source']
+    if not r:
+        return {}
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -392,6 +395,7 @@ def get_in_group_ranking(event_id,mtype):
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
                 hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
+
     return result[mtype]
 
 
@@ -440,16 +444,12 @@ def get_network(event_id):
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        # if a not in node:
-        #     node.append(a)
-        # if b not in node:
-        #     node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
-            if c['source'] not in node:
-                node.append({'name':c['source']})
-            if c['target'] not in node:
-                node.append({'name':c['target']})
+            if a not in node:
+                node.append(a)
+            if b not in node:
+                node.append(b)
     transmit_net = {'node': list(node), 'link': link}
     result['transmit_net'] = transmit_net
     return result
