@@ -543,7 +543,7 @@ def get_preference_identity(uid):
 
     analysis_result = es.search(index='user_text_analysis_sta', doc_type='text', body=query)['hits']['hits']
     if not analysis_result:
-        return {}
+        return {'topic_result':{},'domain_dict':{}}
     analysis_result = analysis_result[0]['_source']
     result['keywords'] = {}
     if analysis_result['keywords']:
@@ -565,14 +565,17 @@ def get_preference_identity(uid):
     query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "topic_computer"}}}})
     query['query']['bool']['must_not'].append({"constant_score": {"filter": {"missing": {"field": "main_domain"}}}})
     print(query)
-    preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits']
     # preference_and_topic_data = es.search(index='user_domain_topic', doc_type='text', body=query)['hits']['hits'][0]['_source']
+    if not preference_and_topic_data:
+        return {'topic_result':{},'domain_dict':{}}
+    preference_and_topic_data = preference_and_topic_data[0]['_source']
     preference_item = {}
+    topic_result = {}
     for k, v in preference_and_topic_data.items():
         if k.startswith('topic_'):
             preference_item[k] = v
     l = sorted(preference_item.items(), key=lambda x:x[1], reverse=True)[0:5]
-    topic_result = {}
     topic_result[topic_dict[l[0][0].replace('topic_', '')]] = int(l[0][1] * 100)
     topic_result[topic_dict[l[1][0].replace('topic_', '')]] = int(l[1][1] * 100)
     topic_result[topic_dict[l[2][0].replace('topic_', '')]] = int(l[2][1] * 100)
