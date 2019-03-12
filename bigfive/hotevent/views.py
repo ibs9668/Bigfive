@@ -27,6 +27,8 @@ def hot_event_list():
 @mod.route('/create_hot_event/', methods=['POST'])
 def create_hot_event():
     parameters = request.form.to_dict()
+    if not parameters:
+        parameters = request.json
     event_name = parameters.get('event_name', '')
     keywords = parameters.get('keywords', '')
     location = parameters.get('location', '')
