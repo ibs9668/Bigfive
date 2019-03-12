@@ -45,7 +45,7 @@ def delete_hot_event():
     parameters = request.form.to_dict()
     if not parameters:
         parameters = request.json
-    event_id = parameters.get('event_id', '')
+    event_id = parameters.get('eid', '')
     # try:
     post_delete_hot_event(event_id)
     return jsonify(1)
