@@ -56,6 +56,10 @@ def create_event_mapping(index_name):
                         "index": "not_analyzed",
                         "type": "string"
                     },
+                    "username": {
+                        "index": "not_analyzed",
+                        "type": "string"
+                    },
                     "root_mid": {
                         "index": "not_analyzed",
                         "type": "string"

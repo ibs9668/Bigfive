@@ -213,6 +213,7 @@ def word_net(weibo,k_cluster):#词频词网
             c.append(n)
         feature.append(c)
     features = np.array(feature)
+    print(len(features))
     result = kmeans(features,k_cluster,'summary')
 
     word_result_before = dict()

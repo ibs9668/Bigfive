@@ -4,9 +4,12 @@ import os
 import csv
 import time
 import sys
+import random
 from libsvm.python.svmutil import *
 sys.path.append('../../')
 from scws_utils import fenci
+sys.path.append('../../../')
+from time_utils import *
 from word_cut import word_net
 from text_classify import text_net
 
@@ -92,6 +95,29 @@ def rubbish_classifier(weibo_data):
 
     return new_list
 
+#因为cluto聚类的限制所以要对微博进行数量限制，每天随机取相对应限制比例的微博（如有需要可以改成其他取出条件）
+def weibo_num_limit(weibo_data, limit_num):
+    filter_ratio = limit_num / len(weibo_data)
+    weibo_data_dic = {}
+    if len(weibo_data) > limit_num:
+        for item in weibo_data:
+            date = ts2date(item['timestamp'])
+            if date in weibo_data_dic:
+                weibo_data_dic[date].append(item)
+            else:
+                weibo_data_dic[date] = [item]
+
+        weibo_data_limit = []
+        for date in weibo_data_dic:
+            date_data = weibo_data_dic[date]
+            index_list = range(len(date_data))
+            index_random = random.sample(index_list,int(filter_ratio * len(index_list)))
+            weibo_data_limit.extend([date_data[index] for index in index_random])
+        print('\t\tWeibo num is limited to %d ...' % len(weibo_data_limit))
+        return weibo_data_limit
+    else:
+        return weibo_data
+
 def opinion_main(weibo_data,k_cluster):
     '''
         观点挖掘主函数：
@@ -105,6 +131,8 @@ def opinion_main(weibo_data,k_cluster):
         text_list：子话题对应的文本，{topic1:[text1,text2,...],topic2:[text1,text2,..],..}
     '''
     print('\t\tGetting keywords...')
+    limit_num = 30000
+    weibo_data = weibo_num_limit(weibo_data, limit_num)
     word_result,word_weight,word_main = word_net(weibo_data,k_cluster)#提取关键词对
     print('\t\tGetting present text...')
     text_list,opinion_name = text_net(word_result,word_weight,weibo_data)#提取代表文本,会保证每个聚类里面的微博数量是相等的

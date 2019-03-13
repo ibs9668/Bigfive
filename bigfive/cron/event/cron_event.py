@@ -5,8 +5,12 @@ sys.path.append('../../')
 
 from elasticsearch.helpers import bulk
 
-from text_analyze import word_cloud
+from word_cloud import word_cloud
 from retreet_comment import weibo_retweet_comment
+from event_geo_message import get_event_static, get_event_geo
+from event_cal_network import get_event_userlist_important
+from event_cal_emotion import get_event_sentiment
+from event_personality import get_event_personality
 
 from get_keywords import text_rank_keywords
 from event_river.river_main import river_main
@@ -39,6 +43,7 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
         weibo_generator = get_weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
         package = []
         midlist = []
+        uid_list = []
         weibo_num = 0
         for res in weibo_generator:
             for hit in res:
@@ -69,11 +74,22 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
                     '_source': dic
                 })
                 midlist.append(source['mid'])
+                uid_list.append(source['uid'])
 
                 if weibo_num % 1000 == 0:
+                    #获取用户昵称
+                    username_results = es.mget(index='weibo_user', doc_type='type1', body={'ids':uid_list})['docs']
+                    username_dic = {}
+                    for item in username_results:
+                        if item['found']:
+                            username_dic[item['_id']] = item['_source']['name']
+                        else:
+                            username_dic[item['_id']] = item['_id']
                     #会根据这段时间内的微博计算一跳转发和评论数
                     retweet_dic = weibo_retweet_comment(midlist, start_date, end_date)
+                    #增添新数据
                     for p in package:
+                        p['_source'].update({'username':username_dic[p['_source']['uid']]})
                         try:
                             p['_source'].update(retweet_dic[p['_source']['mid']])
                         except KeyError:
@@ -81,12 +97,22 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
                     bulk(es, package)  #存入数据库
                     package = []
                     midlist = []
+                    uid_list = []
                     
                 weibo_num += 1
                 uid_list_keyword.append(source['uid'])
 
+        #存入剩下的数据
+        username_results = es.mget(index='weibo_user', doc_type='type1', body={'ids':uid_list})['docs']
+        username_dic = {}
+        for item in username_results:
+            if item['found']:
+                username_dic[item['_id']] = item['_source']['name']
+            else:
+                username_dic[item['_id']] = item['_id']
         retweet_dic = weibo_retweet_comment(midlist, start_date, end_date)
         for p in package:
+            p['_source'].update({'username':username_dic[p['_source']['uid']]})
             try:
                 p['_source'].update(retweet_dic[p['_source']['mid']])
             except KeyError:
@@ -94,9 +120,16 @@ def event_create(event_mapping_name, keywords, start_date, end_date):
         bulk(es, package)
 
     uid_list_keyword = list(set(uid_list_keyword))
-    print('Uid_list_keyword num:%d' % len(uid_list_keyword))
+    iter_num = 0
+    uid_list = []
+    while (iter_num*USER_WEIBO_ITER_COUNT <= len(uid_list_keyword)):
+        iter_uid_list_keyword = uid_list_keyword[iter_num*USER_WEIBO_ITER_COUNT : (iter_num + 1)*USER_WEIBO_ITER_COUNT]
+        iter_user_dict_list = es.mget(index='weibo_user', doc_type='type1', body={'ids':iter_uid_list_keyword})['docs']
+        uid_list.extend([i['_id'] for i in iter_user_dict_list if i['found']])
+        iter_num += 1
 
-    return uid_list_keyword
+    print('Uid_list_keyword num:%d' % len(uid_list))
+    return uid_list
 
 
 #计算对应事件的词云及事件河
@@ -135,6 +168,23 @@ def get_text_analyze(event_id, event_mapping_name):
         'cluster_word':json.dumps(cluster_word)
     }
     es.index(index=EVENT_RIVER,doc_type='text',body=cluster_dic,id=event_id)
+
+#调用时间、地域、网络、情绪、人格等五个简单维度的函数进行计算并存到数据库
+def event_portrait(event_id, event_mapping_name, user_list, start_date, end_date):
+    print('Start event static...')  #时间、地域
+    get_event_static(event_id, event_mapping_name, start_date, end_date)
+
+    print('Start geo update...')  #事件地点更新
+    get_event_geo(event_id)
+
+    print('Start event userlist important...')  #网络
+    get_event_userlist_important(event_id, user_list)
+
+    print('Start event sentiment...')  #情绪
+    get_event_sentiment(event_id, event_mapping_name, start_date, end_date)
+
+    print('Start event personality...')  #人格
+    get_event_personality(event_id, event_mapping_name, user_list, start_date, end_date)
 
 if __name__ == "__main__":
 	event_create()

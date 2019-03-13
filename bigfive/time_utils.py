@@ -68,5 +68,3 @@ def get_before_date(date_cha,date=None):
     oneday = datetime.timedelta(days=date_cha)
     newday = today - oneday
     return str(newday)[:10]
-
-DAY = 24*3600

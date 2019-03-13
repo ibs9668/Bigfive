@@ -41,6 +41,7 @@ GROUP_TEXT_ANALYSIS_STA = "group_text_analysis_sta"
 EVENT_INFORMATION = 'event_information'
 EVENT_WORDCLOUD = 'event_wordcloud'
 EVENT_RIVER = 'event_river'
+EVENT_GEO = 'event_geo'
 
 # cron_user parameter
 USER_ITER_COUNT = 100
@@ -143,3 +144,5 @@ EMOTION_MAP_EN_CH = {
 EMOTION_MAP_NUM_EN = {
     '0':'nuetral', '1':'positive', '2':'angry', '3':'anxiety', '4':'sad', '5':'hate', '6':'negtive'
     }
+
+DAY = 24*3600

@@ -7,32 +7,7 @@ from config import *
 from time_utils import *
 from global_utils import * 
 
-class ESIterator(object):
-    def __init__(self,step,sort_dict,iter_count,index_name,doc_type,query_body,es):
-        self.step=step
-        self.sort_dict = sort_dict
-        self.iter_count =iter_count
-        self.index_name = index_name
-        self.doc_type = doc_type
-        self.query_body = query_body
-        self.es = es
-    def __next__(self):#python3
-        self.query_body["sort"] = self.sort_dict
-        self.query_body["size"] = self.iter_count
-        self.query_body["from"] = self.step * self.iter_count
-        es_result = self.es.search(index=self.index_name,doc_type=self.doc_type,body=self.query_body)['hits']['hits']
-        iter_get_num = len(es_result)
-        if iter_get_num == 0:
-            raise StopIteration
-        self.step +=1
-        return es_result
-    
-    def __iter__(self):
-        return self
-
-
-
-def get_group_static(start_date,end_date,event_id):
+def get_event_static(event_id, event_mapping_name, start_date, end_date):
     start_ts = date2ts(start_date)
     end_ts = date2ts(end_date)+DAY
 
@@ -61,7 +36,7 @@ def get_group_static(start_date,end_date,event_id):
         }
 
         count = 0
-        ESIterator1 = ESIterator(0,sort_dict,1000,event_id,"text",query_body,es)
+        ESIterator1 = ESIterator(0,sort_dict,1000,event_mapping_name,"text",query_body,es)
 
         ###地理位置和微博类型统计
         while True:
@@ -100,19 +75,39 @@ def get_group_static(start_date,end_date,event_id):
 
         try:
             for message in message_type_dict:
-                es.index(index= "event_message_type",doc_type= "text",body= {
-                    "event_id":event_id,
-                    "message_type":message,
-                    "message_count":message_type_dict[message],
-                    "timestamp":timestamp,
-                    "date":date
-                    })
+                if message in [1,2,3]:
+                    es.index(index= "event_message_type",doc_type= "text",id=event_id + '_' + str(timestamp) + '_' + str(message),body= {
+                        "event_id":event_id,
+                        "message_type":message,
+                        "message_count":message_type_dict[message],
+                        "timestamp":timestamp,
+                        "date":date
+                        })
         except:
             pass
 
+def get_event_geo(event_id):
+    query_body = {
+        'query':{
+            'term':{
+                'event_id':event_id
+            }
+        },
+        'sort':{
+            'geo_count':{
+                'order':'desc'
+            }
+        }
+    }
+    res = es.search(index=EVENT_GEO,doc_type='text',body=query_body)['hits']['hits']
+    if len(res):
+        geo = res[0]['_source']['geo']
+    else:
+        geo = ""
+    es.update(index=EVENT_INFORMATION,doc_type='text',id=event_id,body={'doc':{'location':geo}})
 
 
 if __name__ == '__main__':
 
-    get_group_static("2016-11-13","2016-11-27","event_ceshishijiansan_1551942139")
+    get_event_static("2016-11-13","2016-11-27","event_ceshishijiansan_1551942139")
     

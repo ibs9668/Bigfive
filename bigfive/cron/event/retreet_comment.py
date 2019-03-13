@@ -8,6 +8,7 @@ from global_utils import *
 
 #批量计算一段时间内的一条微博的一跳转发量和评论量
 def weibo_retweet_comment(midlist, start_date, end_date):
+    print('Getting retweet and comment...')
     index_list = []
     for day in get_datelist_v2(start_date, end_date):
         index_list.append('flow_text_%s' % day)

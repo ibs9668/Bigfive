@@ -47,7 +47,7 @@ def get_weibo_generator(weibo_index, query_body, iter_num_per):
         
 #微博遍历迭代器，输入索引（限于flow_text_yyyy-mm-dd系列），查询条件，每次迭代的次数，则可以迭代输出查询结果
 def get_event_weibo_generator(weibo_index, query_body, iter_num_per):
-    if not es_weibo.indices.exists(index=weibo_index):
+    if not es.indices.exists(index=weibo_index):
         print('Index %s does not exist, return an empty list...' % weibo_index)
         return []
     iter_num = 0

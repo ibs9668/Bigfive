@@ -13,7 +13,7 @@ from time_utils import *
 from portrait.cron_portrait import user_ranking, cal_user_personality, group_create, group_ranking, cal_group_personality
 from portrait.user.cron_user import user_portrait
 from portrait.group.cron_group import group_portrait
-from cron_event import event_create, get_text_analyze
+from cron_event import event_create, get_text_analyze, event_portrait
 from event_mapping import create_event_mapping
 
 #对用户进行批量计算，流数据接入时会自动入库批量计算
@@ -28,6 +28,8 @@ def user_main(uid_list, username_list, start_date, end_date):
     
     print('Start calculating user ranking...')
     user_ranking(uid_list, username_list, end_date)
+
+    print('Successfully create user...')
 
 #检测任务表，有新任务会进行计算，默认取计算时间段的结束日期为创建日期，开始日期为结束日期前的n天
 def group_main(args_dict, keyword, remark, group_name, create_time):
@@ -46,30 +48,37 @@ def group_main(args_dict, keyword, remark, group_name, create_time):
     print('Start calculating group ranking...')
     group_ranking(group_dic['group_id'], group_dic['group_name'], group_dic['userlist'], end_date)
 
+    print('Successfully create group...')
+
 
 def event_main(keywords, event_id, start_date, end_date):
     print('Start creating event...')
     event_mapping_name = 'event_%s' % event_id
-    create_event_mapping(event_mapping_name)
-    userlist = event_create(event_mapping_name, keywords, start_date, end_date)
-    es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
+    # create_event_mapping(event_mapping_name)
+    # userlist = event_create(event_mapping_name, keywords, start_date, end_date)
+    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
 
     print('Start text analyze...')
-    # get_text_analyze(event_id, event_mapping_name)
+    get_text_analyze(event_id, event_mapping_name)
     
+    print('Start event portrait...')
+    # userlist = es.get(index='event_information',doc_type='text',id=event_id)['_source']['userlist']
+    # event_portrait(event_id, event_mapping_name, userlist, start_date, end_date)
+
+    print('Successfully create event...')
 
 if __name__ == '__main__':
     # user_main()
     # group_main(1,2,3,4,5)
 
-    # event_name = "测试事件三"
+    # event_name = "测试事件二"
     # event_pinyin = Pinyin().get_pinyin(event_name, '')
-    # create_time = 1551942139 #int(time.time())
+    # create_time = int(time.time())
     # create_date = ts2date(create_time)
     # start_date = '2016-11-13'
     # end_date = '2016-11-27'
-    # keywords = "崛起"
-    # progress = 2
+    # keywords = "台湾&独立"
+    # progress = 0
     # event_id = event_pinyin + "_" + str(create_time)
     # dic = {
     #     'event_name':event_name,
@@ -87,25 +96,27 @@ if __name__ == '__main__':
     # event_main(keywords, event_id, start_date, end_date)
 
     # dic = {
-    #     "remark": "第二次群体测试",
+    #     "remark": "第三次群体测试",
     #     "keyword": "",
     #     "create_condition": { 
-    #         "machiavellianism_index": 0,
+    #         "machiavellianism_index": 5,
     #         "narcissism_index": 0,
     #         "psychopathy_index": 0,
     #         "extroversion_index": 0,
-    #         "nervousness_index": 1,
-    #         "openn_index": 5,
+    #         "nervousness_index": 0,
+    #         "openn_index": 0,
     #         "agreeableness_index": 0,
-    #         "conscientiousness_index": 0
+    #         "conscientiousness_index": 1
     #     },
-    #     "group_name": "测试二",
-    #     "group_pinyin": "ceshier",
+    #     "group_name": "测试三",
+    #     "group_pinyin": "ceshisan",
     #     "create_time": 1480176000,
     #     "create_date": "2016-11-27",
     #     "progress": 0
     # }
-    # es.index(index='group_task',doc_type='text',id='ceshier_1480176000',body=dic)
+    # es.index(index='group_task',doc_type='text',id='ceshisan_1480176000',body=dic)
 
 
-    es.update(index='group_task',doc_type='text',id='ceshiyi_1480176000',body={'doc':{'progress':0}})
+    es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':0}})
+
+    # es.delete(index='event_message_type',doc_type='text',id='ceshishijiansi_1552377923_1479225600_5')
