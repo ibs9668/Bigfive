@@ -27,6 +27,8 @@ def hot_event_list():
 @mod.route('/create_hot_event/', methods=['POST'])
 def create_hot_event():
     parameters = request.form.to_dict()
+    if not parameters:
+        parameters = request.json
     event_name = parameters.get('event_name', '')
     keywords = parameters.get('keywords', '')
     location = parameters.get('location', '')
@@ -38,6 +40,15 @@ def create_hot_event():
     # except:
     #     return jsonify(0)
 
+@mod.route('/delete_hot_event/', methods=['POST'])
+def delete_hot_event():
+    parameters = request.form.to_dict()
+    if not parameters:
+        parameters = request.json
+    event_id = parameters.get('eid', '')
+    # try:
+    post_delete_hot_event(event_id)
+    return jsonify(1)
 
 @mod.route('/time_hot')
 def time_hot():
@@ -88,10 +99,9 @@ def browser_user():
 
 @mod.route('/browser_emotion',methods=['GET'])
 def browser_emotion():
-    geo = request.args.get('geo','')
     event_id = request.args.get('eid','')
     emotion = request.args.get('emotion','')
-    result = get_browser_by_emotion_geo(event_id,geo,emotion)
+    result = get_browser_by_emotion(event_id,emotion)
     return jsonify(result)
 
 @mod.route('/ingroup_renge',methods=['GET'])

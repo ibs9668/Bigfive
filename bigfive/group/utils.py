@@ -424,10 +424,13 @@ def group_preference(group_id):
     if not hits or not sta_hits:
         return {}
 
+
     item = hits[0]['_source']
-    domain_static = {labels_dict[one['domain']]: one['count']
+    domain_static = {labels_dict[one['domain']]: one['count']/len(es.search(index='group_information', doc_type='text', body={"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}}})[
+        'hits']['hits'][0]['_source']['userlist'])
                      for one in sorted(item['domain_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
-    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']
+    topic_static = {topic_dict[one['topic'].replace('-', '_')]: one['count']/len(es.search(index='group_information', doc_type='text', body={"query":{"bool":{"must":[{"term":{"group_id":group_id}}]}}})[
+        'hits']['hits'][0]['_source']['userlist'])
                     for one in sorted(item['topic_static'], key=lambda x: x['count'], reverse=True)[0:5] if one['count']}
 
     sta_item = sta_hits[0]['_source']
@@ -572,10 +575,6 @@ def group_social_contact(group_id, map_type):
         message_type = 3
     else:
         message_type = 2
-    if map_type in ['1', '3']:
-        key = 'target'
-    else:
-        key = 'source'
     query_body = {
         "query": {
             "filtered": {
@@ -589,13 +588,18 @@ def group_social_contact(group_id, map_type):
                             },
                             {
                                 "terms": {
-                                    key: user_list
+                                    'target': user_list
+                                }
+                            },
+                            {
+                                "terms": {
+                                    'source': user_list
                                 }
                             }
                         ]}
                 }}
         },
-        "size": 3000,
+        "size": 10000,
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
@@ -606,12 +610,12 @@ def group_social_contact(group_id, map_type):
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        if a not in node:
-            node.append(a)
-        if b not in node:
-            node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
+            if a not in node:
+                node.append(a)
+            if b not in node:
+                node.append(b)
     social_contact = {'node': node, 'link': link}
     if node:
         return social_contact

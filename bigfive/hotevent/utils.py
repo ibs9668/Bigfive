@@ -39,8 +39,8 @@ def get_hot_event_list(keyword, page, size, order_name, order_type):
 def post_create_hot_event(event_name, keywords, location, start_date, end_date):
     event_pinyin = Pinyin().get_pinyin(event_name, '')
     create_date = time.strftime('%Y-%m-%d', time.localtime(int(time.time())))
-    create_time = int(time.mktime(time.strptime(create_date, '%Y-%m-%d')))
-    progress = 1
+    create_time = int(time.time())
+    progress = 0
     event_id = '{}_{}'.format(event_pinyin, str(create_time))
     hot_event = {
         "event_name": event_name,
@@ -55,13 +55,14 @@ def post_create_hot_event(event_name, keywords, location, start_date, end_date):
         "end_date": end_date
     }
     es.index(index='event_information', doc_type='text', body=hot_event, id=event_id)
-
+def post_delete_hot_event(event_id):
+    es.delete(index='event_information', doc_type='text', id=event_id)
 
 def get_time_hot(event_id,s, e):
     if not s or not e:
         e = today()
         s = get_before_date(30)
-    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":'event_'+event_id}}], "must_not": [
+    query = {"query": {"bool": {"must": [{"range": {"date": {"gte": s, "lte": e}}},{"term":{"event_id":event_id}}], "must_not": [
     ], "should": []}}, "from": 0, "size": 1000, "sort": [{"date": {"order": "asc"}}], "aggs": {}}
     hits = es.search(index='event_message_type',
                      doc_type='text', body=query)['hits']['hits']
@@ -202,44 +203,14 @@ def get_emotion_geo(event_id,emotion,geo):
     result['rank'] = [{i[0]:i[1]} for i in sorted(result['city'].items(), key=lambda x: x[1], reverse=True)[:15]]
     return result
 
-def get_browser_by_emotion_geo(event_id,geo,emotion):
-    query = {"query":{"bool":{"must":[{"term":{"event_id":event_id}}],"must_not":[],"should":[]}},"from":0,"size":1,"sort":[],"aggs":{}}
-    hits = es.search(index='event_information',doc_type='text',body=query)['hits']['hits']
-    if not hits:
-        return []
-    uids = hits[0]['_source']['userlist_important']
-    # query = {
-    #     "query": {
-    #         "filtered": {
-    #             "filter": {
-    #                 "bool": {
-    #                     "must": [
-    #                         {"term": {EMOTION_MAP_NUM_EN[emotion]: emotion}},
-    #                         {
-    #                             "terms": {
-    #                                 'uid': uids
-    #                             }
-    #                         }
-    #                     ]}
-    #             }}
-    #     },
-    #     "size": 5,
-    #     "sort": [{"timestamp": {"order": "desc"}}]
-    # }
-
-
+def get_browser_by_emotion(event_id,emotion):
     query = {
         "query": {
             "filtered": {
                 "filter": {
                     "bool": {
                         "must": [
-                            {"term": {"geo": "{}".format(geo)}},
-                            {
-                                "terms": {
-                                    'uid': uids
-                                }
-                            }
+                            {"term": {"sentiment": emotion}},
                         ]}
                 }}
         },
@@ -287,6 +258,13 @@ def get_browser_by_user(event_id,uid):
         result.append(item)
     return result
 
+def get_user_name(item):
+    try:
+        r = es.get(index='user_information',doc_type='text',id=item['uid'],_source_include=['username'])
+        item.update(r['_source'])
+    except:
+        pass
+    return item
 def get_in_group_renge(event_id):
     # 获取表内所有uid
     query = {
@@ -375,7 +353,7 @@ def get_in_group_ranking(event_id,mtype):
                 "must": [
                     {
                         "term": {
-                            "event_id": 'event_'+event_id
+                            "event_id": event_id
                         }
                     }
                 ],
@@ -390,9 +368,12 @@ def get_in_group_ranking(event_id,mtype):
     }
     # 通过标签限制字段 不然全查出来 查询微博时比较耗时
     r = es.search(index='event_personality',doc_type='text',body=query,_source_include=['{mtype}_high,{mtype}_low'.format(mtype=mtype)])['hits']['hits']
+    print(r,'*****************')
     if not r:
         return {}
     r = r[0]['_source']
+    if not r:
+        return {}
     result = {}
     for k,v in r.items():
         # 跳过date,timestamp等字段
@@ -414,6 +395,7 @@ def get_in_group_ranking(event_id,mtype):
                 query = {"query":{"bool":{"must":[{"terms":{"mid":mids}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
                 hits = es.search(index='event_'+event_id,doc_type='text',body=query)['hits']['hits']
                 result[k.split('_')[0]][k.split('_')[1]]['mblogs'] = [hit['_source'] for hit in hits]
+
     return result[mtype]
 
 
@@ -440,13 +422,18 @@ def get_network(event_id):
                             },
                             {
                                 "terms": {
-                                    key: important_users_list
+                                    'target': important_users_list
+                                }
+                            },
+                            {
+                                "terms": {
+                                    'source': important_users_list
                                 }
                             }
                         ]}
                 }}
         },
-        "size": 500,
+        "size": 3000,
     }
     r = es.search(index="user_social_contact", doc_type="text",
                   body=query_body)["hits"]["hits"]
@@ -457,13 +444,13 @@ def get_network(event_id):
         a = {'id': item['target'], 'name': item['target_name']}
         b = {'id': item['source'], 'name': item['source_name']}
         c = {'source': item['source_name'], 'target': item['target_name']}
-        if a not in node:
-            node.append(a)
-        if b not in node:
-            node.append(b)
         if c not in link and c['source'] != c['target']:
             link.append(c)
-    transmit_net = {'node': node, 'link': link}
+            if a not in node:
+                node.append(a)
+            if b not in node:
+                node.append(b)
+    transmit_net = {'node': list(node), 'link': link}
     result['transmit_net'] = transmit_net
     return result
 
@@ -506,16 +493,29 @@ def get_semantic(event_id):
         result['keywords'][i[0]] = i[1]
     river_result = es.get(index='event_river', doc_type='text', id=event_id)['_source']
     cluster_count = json.loads(river_result['cluster_count'])
+    # print(sorted(cluster_count.items(), key=lambda x:x[0]))
+    cluster_count_sorted = {}
+    for i in sorted(cluster_count.items(), key=lambda x:x[0]):
+        cluster_count_sorted[i[0]] = i[1]
     cluster_word = json.loads(river_result['cluster_word'])
-    river_list = []
-    print(cluster_count)
-    for k1, v1 in cluster_count.items():
+    river_dict = {
+        'time': []
+    }
+    print(river_dict['time'])
+    for k1, v1 in cluster_count_sorted.items():
+        river_dict['time'].append(k1)
+        # print(k1, v1)
+    # print(cluster_count)
         for k2, v2 in v1.items():
+            # print(k2, v2)
             title_str = ''
             title_list = cluster_word[str(k2)]
             for title in title_list[0:3]:
                 title_str += (title + '&')
-            river_list.append([k1, v2, title_str.rstrip('&')])
+            # print(title_str, v2)
+            river_dict.setdefault(title_str.rstrip('&'), [])
+            river_dict[title_str.rstrip('&')].append(v2)
+    #         river_list.append([k1, v2, title_str.rstrip('&')])
     # print(cluster_word)
-    result['river_list'] = river_list
+    result['river_dict'] = river_dict
     return result
