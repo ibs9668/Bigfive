@@ -72,9 +72,9 @@ def process_for_cluto(kEigVec,name):
         fw.write('%s %s %s\n'%(row, column, nonzero_count))
         fw.writelines(lines)
     fw.close()
-    return file_name
+    return file_name, len(kEigVec)
 
-def cluto_kmeans_vcluster(k, input_file=None, vcluster=VCLUTO, \
+def cluto_kmeans_vcluster(k, feature_num, input_file=None, vcluster=VCLUTO, \
         cluto_input_folder=INPUT_FOLDER):
     '''
     cluto kmeans聚类
@@ -102,10 +102,12 @@ def cluto_kmeans_vcluster(k, input_file=None, vcluster=VCLUTO, \
         if os.path.exists(result_file):
             with open(result_file) as f:
                 results = [line.strip().split() for line in f]
-            break
+                if len(results) == feature_num:
+                    break
+                else:
+                    print('File open when writing, data not complete with only %d, trying open again...' % len(results))
         time.sleep(0.5)
 
-    time.sleep(0.5)
     if os.path.isfile(result_file):
         os.remove(result_file)
 
@@ -116,8 +118,8 @@ def cluto_kmeans_vcluster(k, input_file=None, vcluster=VCLUTO, \
 
 def kmeans(feature,k,name):
 
-    input_file = process_for_cluto(feature,name)
-    results = cluto_kmeans_vcluster(k, input_file)
+    input_file, feature_num = process_for_cluto(feature,name)
+    results = cluto_kmeans_vcluster(k, feature_num, input_file)
 
     return results
 
@@ -180,7 +182,7 @@ def word_net(weibo,k_cluster):#词频词网
                     else:
                         word_net[str(row[j]+'_'+row[j+1])] = 1
 
-    weight = TopkHeap(500)
+    weight = TopkHeap(500)   #这里选择的top数会和下面聚类的输入及输出一样
     for k,v in word_net.items():#计算权重
         k1,k2 = k.split('_')
         if k1 not in k_value:
@@ -213,7 +215,6 @@ def word_net(weibo,k_cluster):#词频词网
             c.append(n)
         feature.append(c)
     features = np.array(feature)
-    print(len(features))
     result = kmeans(features,k_cluster,'summary')
 
     word_result_before = dict()
