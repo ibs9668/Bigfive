@@ -17,7 +17,7 @@ from cron_event import event_create, get_text_analyze, event_portrait
 from event_mapping import create_event_mapping
 from portrait.user.user_text_analyze import cal_user_text_analyze
 #对用户进行批量计算，流数据接入时会自动入库批量计算
-def user_main(uid_list, start_date, end_date):#username_list, 
+def user_main(uid_list,username_list, start_date, end_date):
     print('Start calculating user personality...')
     cal_user_personality(uid_list, start_date, end_date)
 
