@@ -15,6 +15,7 @@ sys.path.append('../../../')
 from config import *
 from time_utils import *
 from cron.scws_utils import *
+from global_utils import ESIterator
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,30 +50,39 @@ def get_word_count_dict(uid_weibo):
 
     return uid_word_dict
 
-#######得到用户列表 、用户微博，并得词频字典
-def get_uidlist():
-    query_body = {"query": {"bool": {"must": [{"match_all": { }}]}},"size":15000}
-    es_result = es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"]
-    uid_list = []
-    for es_item in es_result:
-        uid_list.append(es_item["_id"])
-    return uid_list
 
-def get_uid_weibo(uid,list_index):
+def get_uid_weibo(uid,index_name):
 
     uid_word_dict = dict()
-
     uid_text = ""
 
-    query_body = {"query":{"bool":{"must":[{"term":{"uid":uid}}]}},"from":0,"size":10000}
-    search_result = es_weibo.search(index=list_index, doc_type="text",body=query_body)["hits"]["hits"]
+    for index_item in index_name:
 
-    if search_result != []:
-        for i in search_result:
-            uid_text = uid_text + i["_source"]["text"]
+        query_body ={"query": {"bool": {"must":[{"term": {"uid": uid}}]}}}
+        sort_dict = {'_id':{'order':'asc'}}
+        try:
+            ESIterator1 = ESIterator(0,sort_dict,1000,index_item,"text",query_body,es_weibo)
+            while True:
+                try:
+                    #一千条es数据
+                    es_result = next(ESIterator1)
+                    if len(es_result):
+                        for i in range(len(es_result)):
+                            uid_text += es_result[i]["_source"]["text"] 
+                    else:
+                        pass
+                       
+                except StopIteration:
+                    #遇到StopIteration就退出循环
+                    break
+        except:
+            continue
 
+    if uid_text != "":
         word_count_dict = get_word_count_dict(uid_text.encode("utf-8"))
         uid_word_dict[uid] = word_count_dict
+    else:
+        return uid_word_dict
 
     return uid_word_dict
 
@@ -126,30 +136,19 @@ def political_classify(uid,uid_weibo):
 
     return domain_dict
 
-def get_user_political_bias(date):
-    uid_list = get_uidlist()
-    list_index = ["flow_text_"+str(ts2date(date2ts(date)-i*DAY)) for i in range(7)]
-    count = 0
 
-    for uid in uid_list[:10]:
-        uid_word_dict = get_uid_weibo(uid,list_index)
+
+def get_user_political(uid,start_date,end_date):
+    for day in get_datelist_v2(start_date,end_date):
+        timestamp = date2ts(day)
+        index_list = []
+        for i in range(7):
+            date = ts2date(date2ts(day) - i*DAY)
+            index_list.append('flow_text_%s' % date)
+        uid_word_dict = get_uid_weibo(uid,index_list)
         politic_result = political_classify(uid,uid_word_dict)
-              
-        es.update(index='user_information', doc_type='text', id=str(uid), body = {
-        "doc":{
-        "political_bias":list(politic_result.values())[0]
-                } })
+        es.update(index='user_information', doc_type='text', id=str(uid), body = {"doc":{"political_bias":list(politic_result.values())[0]}})
 
-        count+=1
-
-
-def get_user_political(uid,date,days):
-    index_list = []
-    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
-        index_list.append('flow_text_%s' % day)
-    uid_word_dict = get_uid_weibo(uid,index_list)
-    politic_result = political_classify(uid,uid_word_dict)
-    es.update(index='user_information', doc_type='text', id=str(uid), body = {"doc":{"political_bias":politic_result.values()[0]}})
 
  
 if __name__ == '__main__':

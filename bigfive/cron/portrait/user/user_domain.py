@@ -13,10 +13,9 @@ import sys
 sys.path.append('../../../')
 from config import *
 from time_utils import *
+from global_utils import ESIterator
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
-
-# list_index =["flow_text_2016-11-13","flow_text_2016-11-14","flow_text_2016-11-15","flow_text_2016-11-16","flow_text_2016-11-17","flow_text_2016-11-18","flow_text_2016-11-19","flow_text_2016-11-20","flow_text_2016-11-21","flow_text_2016-11-22","flow_text_2016-11-23","flow_text_2016-11-24","flow_text_2016-11-25","flow_text_2016-11-26","flow_text_2016-11-27"]
 
 
 #############微博文本######################
@@ -364,32 +363,43 @@ def wordCount(segment_list):
 zh_text = ['nick_name','rel_name','description','sp_type','user_location']
 
 
-def get_uidlist():
-    query_body = {"query": {"bool": {"must": [{"match_all": { }}]}},"size":15000}
-    es_result = es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"]
-    uid_list = []
-    for es_item in es_result:
-        uid_list.append(es_item["_id"])
-    return uid_list
+# def get_uidlist():
+#     query_body = {"query": {"bool": {"must": [{"match_all": { }}]}},"size":15000}
+#     es_result = es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"]
+#     uid_list = []
+#     for es_item in es_result:
+#         uid_list.append(es_item["_id"])
+#     return uid_list
 
 
 def get_uid_weibo(uid,index_name):
 
     uid_word_dict = dict()
-
     uid_text = ""
 
-    query_body = {"query":{"bool":{"must":[{"term":{"uid":uid}}]}},"from":0,"size":10000}
-    print("query")
-    print(uid)
-    search_result = es_weibo.search(index=index_name, doc_type="text",body=query_body)["hits"]["hits"]
-    print("yes")
+    for index_item in index_name:
 
-    if search_result != []:
-        time_n = time.time()
-        for i in search_result:
-            uid_text = uid_text + i["_source"]["text"]
+        query_body ={"query": {"bool": {"must":[{"term": {"uid": uid}}]}}}
+        sort_dict = {'_id':{'order':'asc'}}
+        try:
+            ESIterator1 = ESIterator(0,sort_dict,1000,index_item,"text",query_body,es_weibo)
+            while True:
+                try:
+                    #一千条es数据
+                    es_result = next(ESIterator1)
+                    if len(es_result):
+                        for i in range(len(es_result)):
+                            uid_text += es_result[i]["_source"]["text"] 
+                    else:
+                        pass
+                       
+                except StopIteration:
+                    #遇到StopIteration就退出循环
+                    break
+        except:
+            continue
 
+    if uid_text != "":
         segment_list = segment(uid_text)
         word_count_dict = wordCount(segment_list)
         uid_word_dict[uid] = word_count_dict
@@ -401,8 +411,17 @@ def get_uid_weibo(uid,index_name):
 
 
 def get_user(uid):
+    user_dict = dict()
     query_body = {"query":{"bool":{"must":[{"term":{"uid":uid}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}
-    es_result = es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"][0]["_source"]
+    
+    if es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"] != []:
+        es_result = es.search(index="user_information", doc_type="text",body=query_body)["hits"]["hits"][0]["_source"]
+    else:
+        return {uid:{"verified_type":"other","fans_num":0,"username":"","description":"","verified_type":999,"statusnum":0,\
+                "user_location":""}}
+
+
+
     user_dict = dict()
     information_dict = dict()
 
@@ -478,6 +497,7 @@ def domain_classfiy(uid,uid_weibo,timestamp):#领域分类主函数
         result_label.append(field1)
         domain_dict["field1"] = field1
     
+
     r = list(users.values())[0]
     if r == 'other':
         field2 = 'other'
@@ -502,79 +522,115 @@ def domain_classfiy(uid,uid_weibo,timestamp):#领域分类主函数
 
     return domain_dict,domain_label
 
-def user_domain_run(flow_text_list):
-    uid_list = get_uidlist()
-    # print(1)
+def save_user_domain(uid,timestamp,domain,r_domain):
+    id_body = {
+            "query":{
+                "ids":{
+                    "type":"text",
+                    "values":[
+                        str(uid)+"_"+str(timestamp)
+                    ]
+                }
+            }
+        }
 
-    flow_text_list.reverse()
-    for i in range(len(flow_text_list)):
-        index_list = flow_text_list[i:i+7:1]
-        # print(index_list)
-        timestamp = date2ts(index_list[0].split("_")[-1])
-        count  = 0
-        for uid in uid_list:
-            uid_weibo = get_uid_weibo(uid,index_list)
+    if domain!={} and r_domain!="":
+
+        if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:
+            es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "doc":{
+            "domain_followers":domain["field1"],
+            "domain_weibo":domain["field3"],
+            "domain_verified":domain["field2"],
+            "main_domain" : r_domain,
+            "has_new_information":1
+                    } })
+           
+        else:
+            es.index(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "timestamp":timestamp,
+            "uid":uid,
+            "domain_followers":domain["field1"],
+            "domain_weibo":domain["field3"],
+            "domain_verified":domain["field2"],
+            "main_domain" : r_domain,
+            "has_new_information":1,
+            "topic_art":0,
+            "topic_computer":0,
+            "topic_economic":0,
+            "topic_education":0,
+            "topic_environment":0,
+            "topic_medicine":0,
+            "topic_military":0,
+            "topic_politics":0,
+            "topic_sports":0,
+            "topic_traffic":0,
+            "topic_life":0,
+            "topic_anti_corruption":0,
+            "topic_employment":0,
+            "topic_violence":0,
+            "topic_house":0,
+            "topic_law":0,
+            "topic_peace":0,
+            "topic_religion":0,
+            "topic_social_security":0
+                    } )
+           
+    else:
+        if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:
+            es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "doc":{
+            "domain_followers":"other",
+            "domain_weibo":"other",
+            "domain_verified":"other",
+            "main_domain" : "other",
+            "has_new_information":0
+                    } })
+          
+        else:
+            es.index(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "timestamp":timestamp,
+            "uid":uid,
+            "domain_followers":"other",
+            "domain_weibo":"other",
+            "domain_verified":"other",
+            "main_domain" : "other",
+            "has_new_information":0,
+            "topic_art":0,
+            "topic_computer":0,
+            "topic_economic":0,
+            "topic_education":0,
+            "topic_environment":0,
+            "topic_medicine":0,
+            "topic_military":0,
+            "topic_politics":0,
+            "topic_sports":0,
+            "topic_traffic":0,
+            "topic_life":0,
+            "topic_anti_corruption":0,
+            "topic_employment":0,
+            "topic_violence":0,
+            "topic_house":0,
+            "topic_law":0,
+            "topic_peace":0,
+            "topic_religion":0,
+            "topic_social_security":0
+                    } )
             
-            domain,r_domain = domain_classfiy(uid,uid_weibo,timestamp)
-            if domain!={} and r_domain!="":
-                # print("yes")
-                id_body = {
-                            "query":{
-                                "ids":{
-                                    "type":"text",
-                                    "values":[
-                                        str(uid)+"_"+str(timestamp)
-                                    ]
-                                }
-                            }
-                        }
-                if es.search(index='user_domain_topic', doc_type='text', body= id_body)["hits"]["hits"] != []:
-                    es.update(index='user_domain_topic', doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
-                    "doc":{
-                    "domain_followers":domain["field1"],
-                    "domain_weibo":domain["field3"],
-                    "domain_verified":domain["field2"],
-                    "main_domain" : r_domain,
-                    "has_new_information":1
-                            } })
-                    count+=1
-                else:
-                    es.index(index='user_domain_topic', doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
-                    "timestamp":timestamp,
-                    "uid":uid,
-                    "domain_followers":domain["field1"],
-                    "domain_weibo":domain["field3"],
-                    "domain_verified":domain["field2"],
-                    "main_domain" : r_domain,
-                    "has_new_information":1,
-                    "topic_art":0,
-                    "topic_computer":0,
-                    "topic_economic":0,
-                    "topic_education":0,
-                    "topic_environment":0,
-                    "topic_medicine":0,
-                    "topic_military":0,
-                    "topic_politics":0,
-                    "topic_sports":0,
-                    "topic_traffic":0,
-                    "topic_life":0,
-                    "topic_anti_corruption":0,
-                    "topic_employment":0,
-                    "topic_violence":0,
-                    "topic_house":0,
-                    "topic_law":0,
-                    "topic_peace":0,
-                    "topic_religion":0,
-                    "topic_social_security":0
-                            } )
-                    count+=1
 
-def get_user_domain(uid,date,days):
-    index_list = []
-    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
-        index_list.append('flow_text_%s' % day)
-    uid_weibo = get_uid_weibo(uid,index_list)
-    domain,r_domain = domain_classfiy(uid,uid_weibo,timestamp)
+def get_user_domain(uid,start_date,end_date):
+    
+    for day in get_datelist_v2(start_date,end_date):
+        timestamp = date2ts(day)
+        index_list = []
+        for i in range(7):
+            date = ts2date(date2ts(day) - i*DAY)
+            index_list.append('flow_text_%s' % date)
+
+        uid_weibo = get_uid_weibo(uid,index_list)
+        domain,r_domain = domain_classfiy(uid,uid_weibo,timestamp)
+
+        save_user_domain(uid,timestamp,domain,r_domain)
 
 
 if __name__ == '__main__':
