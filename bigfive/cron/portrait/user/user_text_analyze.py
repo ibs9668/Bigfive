@@ -10,7 +10,7 @@ from elasticsearch.helpers import bulk
 
 #计算对于库中的用户每天所发布微博的关键词、微话题和敏感词列表，便于统计
 #不保证一个用户一天一条，如果未发布微博则没有记录
-def word_analysis_daily(date):
+def word_analysis_daily(date,uid_list):
     keywords_dict = {}
     hastag_dict = {}
     sensitive_dict = {}
@@ -20,7 +20,9 @@ def word_analysis_daily(date):
     #遍历库中所有的用户
     user_query_body = {
         'query':{
-            'match_all':{}
+            'terms':{
+                    'uid':uid_list
+                }
         }
     }
     user_generator = get_user_generator(USER_INFORMATION, user_query_body, USER_ITER_COUNT)
@@ -36,65 +38,75 @@ def word_analysis_daily(date):
                 }
             }
         }
-        weibo_generator = get_weibo_generator(weibo_index, query_body, USER_WEIBO_ITER_COUNT)
+        weibo_generator = get_weibo_generator(weibo_index, weibo_query_body, USER_WEIBO_ITER_COUNT)
         for res in weibo_generator:
-	        for hit in res:
-	            uid = hit['_source']['uid']
-	            text = hit['_source']['text']
-	            keywords = text_rank_keywords(text)
-	            hastags = micro_words(text)
-	            score, sensitive_words = cal_sensitive(text)
-	            sensitive_words_dict = sensitive_words['sensitive_words_dict']
-	            #关键词
-	            if uid in keywords_dict:
-	                for keyword in keywords:
-	                    try:
-	                        keywords_dict[uid][keyword] += 1
-	                    except:
-	                        keywords_dict[uid][keyword] = 1
-	            else:
-	                keywords_dict[uid] = {keyword:1 for keyword in keywords}
-	            #微话题
-	            if uid in hastag_dict:
-	                for hastag in hastags:
-	                    try:
-	                        hastag_dict[uid][hastag] += 1
-	                    except:
-	                        hastag_dict[uid][hastag] = 1
-	            else:
-	                hastag_dict[uid] = {hastag:1 for hastag in hastags}
-	            #敏感词
-	            if uid in sensitive_dict:
-	                for sensitive_word in sensitive_words_dict:
-	                    try:
-	                        sensitive_dict[uid][sensitive_word] += sensitive_words_dict[sensitive_word]
-	                    except:
-	                        sensitive_dict[uid][sensitive_word] = sensitive_words_dict[sensitive_word]
+          for hit in res:
+              uid = hit['_source']['uid']
+              text = hit['_source']['text']
+              keywords = text_rank_keywords(text)
+              hastags = micro_words(text)
+              score, sensitive_words = cal_sensitive(text)
+              sensitive_words_dict = sensitive_words['sensitive_words_dict']
+              #关键词
+              if uid in keywords_dict:
+                  for keyword in keywords:
+                      try:
+                          keywords_dict[uid][keyword] += 1
+                      except:
+                          keywords_dict[uid][keyword] = 1
+              else:
+                  keywords_dict[uid] = {keyword:1 for keyword in keywords}
+              #微话题
+              if uid in hastag_dict:
+                  for hastag in hastags:
+                      try:
+                          hastag_dict[uid][hastag] += 1
+                      except:
+                          hastag_dict[uid][hastag] = 1
+              else:
+                  hastag_dict[uid] = {hastag:1 for hastag in hastags}
+              #敏感词
+              if uid in sensitive_dict:
+                  for sensitive_word in sensitive_words_dict:
+                      try:
+                          sensitive_dict[uid][sensitive_word] += sensitive_words_dict[sensitive_word]
+                      except:
+                          sensitive_dict[uid][sensitive_word] = sensitive_words_dict[sensitive_word]
 
-	            else:
-	                sensitive_dict[uid] = {sensitive_word:1 for sensitive_word in sensitive_words_dict}
-	        #遍历存入数据库
-	        for uid in keywords_dict:
-	            # print(keywords_dict[uid],hastag_dict[uid],sensitive_dict[uid])
-	            keywords = [{'keyword':k,'count':keywords_dict[uid][k]} for k in keywords_dict[uid]]
-	            hastags = [{'hastag':k,'count':hastag_dict[uid][k]} for k in hastag_dict[uid]]
-	            sensitive_words = [{'sensitive_word':k,'count':sensitive_dict[uid][k]} for k in sensitive_dict[uid]]
+              else:
+                  sensitive_dict[uid] = {sensitive_word:1 for sensitive_word in sensitive_words_dict}
 
-	            dic = {
-	                'keywords':keywords,
-	                'hastags':hastags,
-	                'sensitive_words':sensitive_words,
-	                'uid':uid,
-	                'timestamp':timestamp,
-	                'date':date
-	            }
 
-	            es.index(index=USER_TEXT_ANALYSIS,doc_type='text',body=dic,id=uid+'_'+str(timestamp))
+          print(hastag_dict)
+          #遍历存入数据库
+          for uid in keywords_dict:
+              # print(keywords_dict[uid],hastag_dict[uid],sensitive_dict[uid])
+              keywords = [{'keyword':k,'count':keywords_dict[uid][k]} for k in keywords_dict[uid]]
+              hastags = [{'hastag':k,'count':hastag_dict[uid][k]} for k in hastag_dict[uid]]
+              sensitive_words = [{'sensitive_word':k,'count':sensitive_dict[uid][k]} for k in sensitive_dict[uid]]
 
-	        iter_user_list = []
-	        keywords_dict = {}
-	        hastag_dict = {}
-	        sensitive_dict = {}
+              print("key_words:")
+              print(keyword)
+              print("hastags:")
+              print(hastags)
+              print("sensitive_words")
+              print(sensitive_words)
+
+              dic = {
+                  'keywords':keywords,
+                  'hastags':hastags,
+                  'sensitive_words':sensitive_words,
+                  'uid':uid,
+                  'timestamp':timestamp,
+                  'date':date
+              }
+
+              es.index(index=USER_TEXT_ANALYSIS,doc_type='text',body=dic,id=uid+'_'+str(timestamp))
+
+          iter_user_list = []
+          keywords_dict = {}
+          hastag_dict = {}
+          sensitive_dict = {}
 
 #对于单个uid进行每天的过去指定时间窗口的关键词、微话题和敏感词全量统计
 #保证一个用户一天一条
@@ -164,21 +176,23 @@ def word_analysis(uid, date, days):
 
     es.index(index=USER_TEXT_ANALYSIS_STA,doc_type='text',body=dic,id=uid+'_'+str(date_end_ts))
 
-#遍历用户进行全量计算
-def word_analysis_main(date):
-    user_query_body = {
-        'query':{
-            'match_all':{}
-        }
-    }
-    user_generator = get_user_generator(USER_INFORMATION, user_query_body, USER_ITER_COUNT)
-    for res in user_generator:
-        for hit in res:
-            word_analysis(hit['_source']['uid'],date,30)
+
+
+#对指定用户统计指定时间段内的关键词、敏感词、微话题；cron_user.py的调用函数
+def get_word_analysis(uid,start_date,end_date):
+    for day in get_datelist_v2(start_date,end_date):
+        word_analysis(uid, day, 30)
+
+#对一群用户计算过去指定时间段内每天的关键词、敏感词和微话题；cal_main.py 的调用函数
+def cal_user_text_analyze(uid_list, start_date, end_date):
+  for day in get_datelist_v2(start_date,end_date):
+      word_analysis_daily(day,uid_list)
+
+
 
 if __name__=='__main__':
     # user_attribute('1965808527')
     # word_analysis_daily('2016-11-13')
-    for date in get_datelist(2016,11,23,2016,11,27):
-        word_analysis_main(date)
+    # for date in get_datelist(2016,11,23,2016,11,27):
+    #     word_analysis_main(date)
     # word_analysis_main('2016-11-13')
