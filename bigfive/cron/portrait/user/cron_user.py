@@ -9,6 +9,9 @@ from user_topic import get_user_topic
 from user_domain import get_user_domain
 from user_political import get_user_political
 from user_text_analyze import get_word_analysis
+from user_emotion import cal_user_emotion
+from user_social import cal_user_social
+from user_influence import cal_user_influence
 
 #weibo_data_dict{"day1":[微博数据列表],"day2":[微博数据列表]}
 def get_weibo_data_dict(uid, start_date,end_date):
@@ -56,12 +59,15 @@ def user_portrait(uid, start_date,end_date):
     get_word_analysis(uid,start_date,end_date)
 
     print('Calculating word analysis...')
-    #cal_user_emotion(uid,weibo_data_dict)
+    cal_user_emotion(uid,weibo_data_dict)
+
+    
 
     print('Calculating word analysis...')
-
+    cal_user_social(uid,weibo_data_dict)
 
     print('Calculating word analysis...')
+    cal_user_influence(uid,weibo_data_dict)
     
 if __name__ == '__main__':
     user_portrait(2061250093,"2016-11-13","2016-11-27")
