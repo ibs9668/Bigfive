@@ -6,7 +6,7 @@ import csv
 import scws
 import re
 
-abs_path = './'
+abs_path = os.path.dirname(os.path.abspath(__file__))
 
 z_label = ['anger','anx','sad','awful']#综合分类器
 
@@ -47,7 +47,7 @@ def load_dict(emotion_list):
     for i in range(0,len(emotion_list)):
         w_set = []
         emotion_count[emotion_list[i]] = 0
-        reader = csv.reader(open(abs_path+'sentiment_train_data/%s.csv'% emotion_list[i], 'rt'))
+        reader = csv.reader(open(os.path.join(abs_path, 'train_data/%s.csv'% emotion_list[i]), 'rt'))
         for line in reader:
             word = line[0].strip('\r\n')
             w_set.append(word)

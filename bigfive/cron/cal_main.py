@@ -98,28 +98,28 @@ if __name__ == '__main__':
     # time.sleep(1)
     # event_main(keywords, event_id, start_date, end_date)
 
-    # dic = {
-    #     "remark": "第三次群体测试",
-    #     "keyword": "",
-    #     "create_condition": { 
-    #         "machiavellianism_index": 5,
-    #         "narcissism_index": 0,
-    #         "psychopathy_index": 0,
-    #         "extroversion_index": 0,
-    #         "nervousness_index": 0,
-    #         "openn_index": 0,
-    #         "agreeableness_index": 0,
-    #         "conscientiousness_index": 1
-    #     },
-    #     "group_name": "测试三",
-    #     "group_pinyin": "ceshisan",
-    #     "create_time": 1480176000,
-    #     "create_date": "2016-11-27",
-    #     "progress": 0
-    # }
-    # es.index(index='group_task',doc_type='text',id='ceshisan_1480176000',body=dic)
+    dic = {
+        "remark": "第八次群体测试",
+        "keyword": "",
+        "create_condition": { 
+            "machiavellianism_index": 0,
+            "narcissism_index": 0,
+            "psychopathy_index": 1,
+            "extroversion_index": 0,
+            "nervousness_index": 0,
+            "openn_index": 0,
+            "agreeableness_index": 5,
+            "conscientiousness_index": 0
+        },
+        "group_name": "测试八",
+        "group_pinyin": "ceshiba",
+        "create_time": 1480176000,
+        "create_date": "2016-11-27",
+        "progress": 0
+    }
+    es.index(index='group_task',doc_type='text',id='ceshisan_1480176000',body=dic)
 
 
-    # es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':0}})
+    # es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':2}})
 
     # es.delete(index='event_message_type',doc_type='text',id='ceshishijiansi_1552377923_1479225600_5')
