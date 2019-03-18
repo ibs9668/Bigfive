@@ -15,11 +15,14 @@ from portrait.user.cron_user import user_portrait
 from portrait.group.cron_group import group_portrait
 from cron_event import event_create, get_text_analyze, event_portrait
 from event_mapping import create_event_mapping
-
+from portrait.user.user_text_analyze import cal_user_text_analyze
 #对用户进行批量计算，流数据接入时会自动入库批量计算
-def user_main(uid_list, username_list, start_date, end_date):
+def user_main(uid_list,username_list, start_date, end_date):
     print('Start calculating user personality...')
     cal_user_personality(uid_list, start_date, end_date)
+
+    print('Start calculating user text...')
+    cal_user_text_analyze(uid_list, start_date, end_date)
 
     print('Start calculating user portrait...')
     for uid in uid_list:
@@ -68,7 +71,7 @@ def event_main(keywords, event_id, start_date, end_date):
     print('Successfully create event...')
 
 if __name__ == '__main__':
-    # user_main()
+    # user_main(['1663765234','3217540085'],'2016-11-13','2016-11-16')
     # group_main(1,2,3,4,5)
 
     # event_name = "测试事件二"
@@ -117,6 +120,6 @@ if __name__ == '__main__':
     # es.index(index='group_task',doc_type='text',id='ceshisan_1480176000',body=dic)
 
 
-    es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':0}})
+    # es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':0}})
 
     # es.delete(index='event_message_type',doc_type='text',id='ceshishijiansi_1552377923_1479225600_5')

@@ -1,9 +1,10 @@
 #-*- encoding:utf-8 -*-
+import os
 import json
 import re
 import sys
 sys.path.append('../../')
-
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 from get_keywords import text_rank_keywords
 
 # micro_words
@@ -23,7 +24,9 @@ def createWordTree():
     nodeTree = [wordTree, 0]
     awords = []
 
-    for b in open('sensitive_words.txt', 'r'):
+    # for b in open('sensitive_words.txt', 'r'):
+    for b in open(os.path.join(ABS_PATH, 'sensitive_words.txt'), 'r'):
+        
         awords.append(b.strip().split('\t')[0].encode('utf-8', 'ignore'))
 
     for word in awords:
@@ -88,7 +91,7 @@ def cal_sensitive(text):
 
     sensitive_score_dict = { "1": 1,"2": 5,"3": 10}
     sensitive_words_weight = dict()
-    for b in open('sensitive_words.txt', 'r'):
+    for b in open(os.path.join(ABS_PATH, 'sensitive_words.txt'), 'r'):
         word = b.strip().split('\t')[0]
         weight =  b.strip().split('\t')[1]
         sensitive_words_weight[word] =  weight
