@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 *.pyc
 *.log
-
+*.pid
 __pycache__
 .idea/
 test.*

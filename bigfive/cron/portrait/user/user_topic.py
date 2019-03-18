@@ -12,6 +12,7 @@ import sys
 sys.path.append('../../../')
 from config import *
 from time_utils import *
+from global_utils import ESIterator
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -194,114 +195,47 @@ def wordCount(segment_list):
 
     return word_dict_sorted
 
-def get_uidlist():
-    query_body = {"query": {"bool": {"must": [{"match_all": { }}]}},"size":15000}
-    es_result = es.search(index=USER_INFORMATION, doc_type="text",body=query_body,timeout=50)["hits"]["hits"]
-    uid_list = []
-    for es_item in es_result:
-        uid_list.append(es_item["_id"])
-    return uid_list
 
-def save_topic(uid_list,timestamp,index_name):
-    count = 0
-    for uid in uid_list:
-        uid_word_dict = dict()
-        uid_list2 = []
-        uid_list2.append(uid) ####转换成列表，传给topic_classify
-        uid_text = ""
+def get_uid_weibo(uid,index_name):
 
-        query_body = {"query":{"bool":{"must":[{"term":{"uid":uid}}]}},"from":0,"size":10000}
-        search_result = es_weibo.search(index=index_name, doc_type="text",body=query_body,timeout=50)["hits"]["hits"]
+    uid_word_dict = dict()
+    uid_text = ""
 
-        if search_result != []:
-            for i in search_result:
-                uid_text = uid_text + i["_source"]["text"]
+    for index_item in index_name:
 
-            segment_list = segment(uid_text)
+        query_body ={"query": {"bool": {"must":[{"term": {"uid": uid}}]}}}
+        sort_dict = {'_id':{'order':'asc'}}
+        try:
+            ESIterator1 = ESIterator(0,sort_dict,1000,index_item,"text",query_body,es_weibo)
+            while True:
+                try:
+                    #一千条es数据
+                    es_result = next(ESIterator1)
+                    if len(es_result):
+                        for i in range(len(es_result)):
+                            uid_text += es_result[i]["_source"]["text"] 
+                    else:
+                        pass
+                       
+                except StopIteration:
+                    #遇到StopIteration就退出循环
+                    break
+        except:
+            continue
 
-            word_count_dict = wordCount(segment_list)
+    if uid_text != "":
+        segment_list = segment(uid_text)
+        word_count_dict = wordCount(segment_list)
+        uid_word_dict[uid] = word_count_dict
+    else:
+        return uid_word_dict
 
-            uid_word_dict[uid] = word_count_dict
+    return uid_word_dict
 
-            result_data,uid_topic = topic_classfiy(uid_list2,uid_word_dict)
 
-            for m in result_data:
-                topic_list = []
-                id_body = {
-                                "query":{
-                                    "ids":{
-                                        "type":"text",
-                                        "values":[
-                                            str(m)+"_"+str(timestamp)
-                                        ]
-                                    }
-                                }
-                            }
-                if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:#1970833007_1479484800
-                    
-                    es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(m)+"_"+str(timestamp), body = {
-                    "doc":
-                    {"timestamp": timestamp,
-                    "uid":m,
-                    "topic_art":result_data[m]["art"],
-                    "topic_computer":result_data[m]["computer"],
-                    "topic_economic":result_data[m]["economic"],
-                    "topic_education":result_data[m]["education"],
-                    "topic_environment":result_data[m]["environment"],
-                    "topic_medicine":result_data[m]["medicine"],
-                    "topic_military":result_data[m]["military"],
-                    "topic_politics":result_data[m]["politics"],
-                    "topic_sports":result_data[m]["sports"],
-                    "topic_traffic":result_data[m]["traffic"],
-                    "topic_life":result_data[m]["life"],
-                    "topic_anti_corruption":result_data[m]["anti-corruption"],
-                    "topic_employment":result_data[m]["employment"],
-                    "topic_violence":result_data[m]["fear-of-violence"],
-                    "topic_house":result_data[m]["house"],
-                    "topic_law":result_data[m]["law"],
-                    "topic_peace":result_data[m]["peace"],
-                    "topic_religion":result_data[m]["religion"],
-                    "topic_social_security":result_data[m]["social-security"],
-                    "has_new_information":1
-                 
-                        }},timeout=50)
-                    count+=1
-                else:
-
-                    es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
-                    body={
-                    "timestamp": timestamp,
-                    "uid":m,
-                    "topic_art":result_data[m]["art"],
-                    "topic_computer":result_data[m]["computer"],
-                    "topic_economic":result_data[m]["economic"],
-                    "topic_education":result_data[m]["education"],
-                    "topic_environment":result_data[m]["environment"],
-                    "topic_medicine":result_data[m]["medicine"],
-                    "topic_military":result_data[m]["military"],
-                    "topic_politics":result_data[m]["politics"],
-                    "topic_sports":result_data[m]["sports"],
-                    "topic_traffic":result_data[m]["traffic"],
-                    "topic_life":result_data[m]["life"],
-                    "topic_anti_corruption":result_data[m]["anti-corruption"],
-                    "topic_employment":result_data[m]["employment"],
-                    "topic_violence":result_data[m]["fear-of-violence"],
-                    "topic_house":result_data[m]["house"],
-                    "topic_law":result_data[m]["law"],
-                    "topic_peace":result_data[m]["peace"],
-                    "topic_religion":result_data[m]["religion"],
-                    "topic_social_security":result_data[m]["social-security"],
-                    "has_new_information":1,
-                    "domain_followers":"other",
-                    "domain_weibo":"other",
-                    "domain_verified":"other",
-                    "main_domain" : "other"
-                 
-                            },timeout=50)
-                    count+=1
-
-        else:
-            id_body = {
+def save_user_topic(uid,timestamp,uid_topic_dict,is_none):
+    if is_none == False:
+        id_body = {
                                 "query":{
                                     "ids":{
                                         "type":"text",
@@ -311,87 +245,155 @@ def save_topic(uid_list,timestamp,index_name):
                                     }
                                 }
                             }
-            if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:#1970833007_1479484800
-                    
-                es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
-                "doc":
-                {
-                    "timestamp": timestamp,
-                    "uid":uid,
-                    "topic_art":0,
-                    "topic_computer":0,
-                    "topic_economic":0,
-                    "topic_education":0,
-                    "topic_environment":0,
-                    "topic_medicine":0,
-                    "topic_military":0,
-                    "topic_politics":0,
-                    "topic_sports":0,
-                    "topic_traffic":0,
-                    "topic_life":0,
-                    "topic_anti_corruption":0,
-                    "topic_employment":0,
-                    "topic_violence":0,
-                    "topic_house":0,
-                    "topic_law":0,
-                    "topic_peace":0,
-                    "topic_religion":0,
-                    "topic_social_security":0,
-                    "has_new_information":0
-                 
-                            }},timeout=50)
-                count+=1
-            else:
+        if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:#1970833007_1479484800
+            
+            es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "doc":
+            {"timestamp": timestamp,
+            "uid":uid,
+            "topic_art":uid_topic_dict[uid]["art"],
+            "topic_computer":uid_topic_dict[uid]["computer"],
+            "topic_economic":uid_topic_dict[uid]["economic"],
+            "topic_education":uid_topic_dict[uid]["education"],
+            "topic_environment":uid_topic_dict[uid]["environment"],
+            "topic_medicine":uid_topic_dict[uid]["medicine"],
+            "topic_military":uid_topic_dict[uid]["military"],
+            "topic_politics":uid_topic_dict[uid]["politics"],
+            "topic_sports":uid_topic_dict[uid]["sports"],
+            "topic_traffic":uid_topic_dict[uid]["traffic"],
+            "topic_life":uid_topic_dict[uid]["life"],
+            "topic_anti_corruption":uid_topic_dict[uid]["anti-corruption"],
+            "topic_employment":uid_topic_dict[uid]["employment"],
+            "topic_violence":uid_topic_dict[uid]["fear-of-violence"],
+            "topic_house":uid_topic_dict[uid]["house"],
+            "topic_law":uid_topic_dict[uid]["law"],
+            "topic_peace":uid_topic_dict[uid]["peace"],
+            "topic_religion":uid_topic_dict[uid]["religion"],
+            "topic_social_security":uid_topic_dict[uid]["social-security"],
+            "has_new_information":1
+         
+                }},timeout=50)
+        
+        else:
 
-                es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
-                body={
-                    "timestamp": timestamp,
-                    "uid":uid,
-                    "topic_art":0,
-                    "topic_computer":0,
-                    "topic_economic":0,
-                    "topic_education":0,
-                    "topic_environment":0,
-                    "topic_medicine":0,
-                    "topic_military":0,
-                    "topic_politics":0,
-                    "topic_sports":0,
-                    "topic_traffic":0,
-                    "topic_life":0,
-                    "topic_anti_corruption":0,
-                    "topic_employment":0,
-                    "topic_violence":0,
-                    "topic_house":0,
-                    "topic_law":0,
-                    "topic_peace":0,
-                    "topic_religion":0,
-                    "topic_social_security":0,
-                    "has_new_information":0,
-                    "domain_followers":"other",
-                    "domain_weibo":"other",
-                    "domain_verified":"other",
-                    "main_domain" : "other"
-                 
-                            },timeout=50)
-                count+=1
-        # print (count)
+            es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
+            body={
+            "timestamp": timestamp,
+            "uid":uid,
+            "topic_art":uid_topic_dict[uid]["art"],
+            "topic_computer":uid_topic_dict[uid]["computer"],
+            "topic_economic":uid_topic_dict[uid]["economic"],
+            "topic_education":uid_topic_dict[uid]["education"],
+            "topic_environment":uid_topic_dict[uid]["environment"],
+            "topic_medicine":uid_topic_dict[uid]["medicine"],
+            "topic_military":uid_topic_dict[uid]["military"],
+            "topic_politics":uid_topic_dict[uid]["politics"],
+            "topic_sports":uid_topic_dict[uid]["sports"],
+            "topic_traffic":uid_topic_dict[uid]["traffic"],
+            "topic_life":uid_topic_dict[uid]["life"],
+            "topic_anti_corruption":uid_topic_dict[uid]["anti-corruption"],
+            "topic_employment":uid_topic_dict[uid]["employment"],
+            "topic_violence":uid_topic_dict[uid]["fear-of-violence"],
+            "topic_house":uid_topic_dict[uid]["house"],
+            "topic_law":uid_topic_dict[uid]["law"],
+            "topic_peace":uid_topic_dict[uid]["peace"],
+            "topic_religion":uid_topic_dict[uid]["religion"],
+            "topic_social_security":uid_topic_dict[uid]["social-security"],
+            "has_new_information":1,
+            "domain_followers":"other",
+            "domain_weibo":"other",
+            "domain_verified":"other",
+            "main_domain" : "other"
+                    },timeout=50)
+    else:
+        id_body = {
+                    "query":{
+                        "ids":{
+                            "type":"text",
+                            "values":[
+                                str(uid)+"_"+str(timestamp)
+                            ]
+                        }
+                    }
+                }
+        if es.search(index=USER_DOMAIN_TOPIC, doc_type='text', body= id_body)["hits"]["hits"] != []:
+                
+            es.update(index=USER_DOMAIN_TOPIC, doc_type='text', id=str(uid)+"_"+str(timestamp), body = {
+            "doc":
+            {
+                "timestamp": timestamp,
+                "uid":uid,
+                "topic_art":0,
+                "topic_computer":0,
+                "topic_economic":0,
+                "topic_education":0,
+                "topic_environment":0,
+                "topic_medicine":0,
+                "topic_military":0,
+                "topic_politics":0,
+                "topic_sports":0,
+                "topic_traffic":0,
+                "topic_life":0,
+                "topic_anti_corruption":0,
+                "topic_employment":0,
+                "topic_violence":0,
+                "topic_house":0,
+                "topic_law":0,
+                "topic_peace":0,
+                "topic_religion":0,
+                "topic_social_security":0,
+                "has_new_information":0            
+                        }},timeout=50)
+          
+        else:
 
-def user_topic_run(flow_text_list):#####运行函数
-    uid_list = get_uidlist()
-    flow_text_list.reverse()
-    
-    for i in range(len(flow_text_list)):
-        index_list = flow_text_list[i:i+7:1]
-        timestamp = date2ts(index_list[0].split("_")[-1])
-        save_topic(uid_list,timestamp,index_list)
-   
-    return 0    
+            es.index(index=USER_DOMAIN_TOPIC,doc_type="text",id=str(uid)+"_"+str(timestamp),
+            body={
+                "timestamp": timestamp,
+                "uid":uid,
+                "topic_art":0,
+                "topic_computer":0,
+                "topic_economic":0,
+                "topic_education":0,
+                "topic_environment":0,
+                "topic_medicine":0,
+                "topic_military":0,
+                "topic_politics":0,
+                "topic_sports":0,
+                "topic_traffic":0,
+                "topic_life":0,
+                "topic_anti_corruption":0,
+                "topic_employment":0,
+                "topic_violence":0,
+                "topic_house":0,
+                "topic_law":0,
+                "topic_peace":0,
+                "topic_religion":0,
+                "topic_social_security":0,
+                "has_new_information":0,
+                "domain_followers":"other",
+                "domain_weibo":"other",
+                "domain_verified":"other",
+                "main_domain" : "other"           
+                        },timeout=50)
+        
 
-def get_user_topic(uid,date,days):
-    index_list = []
-    for day in get_datelist_v2(ts2date(date2ts(date) - (days-1)*24*3600), date):
-        index_list.append('flow_text_%s' % day)
-    save_topic([uid],date2ts(date),index_list)
+
+def get_user_topic(uid,start_date,end_date):
+
+    for day in get_datelist_v2(start_date,end_date):
+        timestamp = date2ts(day)
+        index_list = []
+        for i in range(7):
+            date = ts2date(date2ts(day) - i*DAY)
+            index_list.append('flow_text_%s' % date)
+
+        uid_word_dict = get_uid_weibo(uid,index_list)
+        if uid_word_dict == {}:
+            save_user_topic(uid,timestamp,{},is_none=True)
+        else:
+            uid_topic_dict,uid_topic = topic_classfiy([uid],uid_word_dict)
+            save_user_topic(uid,timestamp,uid_topic_dict,is_none = False)
 
 
 if __name__ == '__main__':
