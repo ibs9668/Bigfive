@@ -10,6 +10,7 @@ from xpinyin import Pinyin
 
 from config import *
 from time_utils import *
+from global_utils import *
 from portrait.cron_portrait import user_ranking, cal_user_personality, group_create, group_ranking, cal_group_personality
 from portrait.user.cron_user import user_portrait
 from portrait.group.cron_group import group_portrait
@@ -98,28 +99,41 @@ if __name__ == '__main__':
     # time.sleep(1)
     # event_main(keywords, event_id, start_date, end_date)
 
-    dic = {
-        "remark": "第八次群体测试",
-        "keyword": "",
-        "create_condition": { 
-            "machiavellianism_index": 0,
-            "narcissism_index": 0,
-            "psychopathy_index": 1,
-            "extroversion_index": 0,
-            "nervousness_index": 0,
-            "openn_index": 0,
-            "agreeableness_index": 5,
-            "conscientiousness_index": 0
-        },
-        "group_name": "测试八",
-        "group_pinyin": "ceshiba",
-        "create_time": 1480176000,
-        "create_date": "2016-11-27",
-        "progress": 0
-    }
-    es.index(index='group_task',doc_type='text',id='ceshisan_1480176000',body=dic)
+    # dic = {
+    #     "remark": "第九次群体测试",
+    #     "keyword": "",
+    #     "create_condition": { 
+    #         "machiavellianism_index": 0,
+    #         "narcissism_index": 5,
+    #         "psychopathy_index": 0,
+    #         "extroversion_index": 0,
+    #         "nervousness_index": 0,
+    #         "openn_index": 0,
+    #         "agreeableness_index": 1,
+    #         "conscientiousness_index": 0
+    #     },
+    #     "group_name": "测试九",
+    #     "group_pinyin": "ceshijiu",
+    #     "create_time": 1480176000,
+    #     "create_date": "2016-11-27",
+    #     "progress": 0
+    # }
+    # es.index(index='group_task',doc_type='text',id='ceshijiu_1480176000',body=dic)
 
+    # user_query_body = {
+    #     'query':{
+    #         'match_all':{}
+    #     }
+    # }
+    # user_generator = get_user_generator(USER_INFORMATION, user_query_body, USER_ITER_COUNT)
+    # for res in user_generator:
+    #     uid_list = []
+    #     username_list = []
+    #     for hit in res:
+    #         uid_list.append(hit['_source']['uid'])
+    #         username_list.append(hit['_source']['username'])
+    #     user_ranking(uid_list, username_list, '2016-11-27')
 
-    # es.update(index='event_information',doc_type='text',id='ceshishijianer_1552393611',body={'doc':{'progress':2}})
+    es.update(index='event_information',doc_type='text',id='ceshishijianliu_1552890693',body={'doc':{'progress':0}})
 
     # es.delete(index='event_message_type',doc_type='text',id='ceshishijiansi_1552377923_1479225600_5')
