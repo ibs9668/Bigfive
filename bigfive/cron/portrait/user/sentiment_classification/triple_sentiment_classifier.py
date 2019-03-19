@@ -13,8 +13,9 @@ from sentiment_classification.flow_psy import flow_psychology_classfiy
 
 AB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
-cut_str = fenci()
-cut_str.init_fenci()
+#只有单独运行时才在这里初始化分词工具
+# fc = fenci()
+# fc.init_fenci()
 
 emotions_words = load_emotion_words()
 emotions_words = [e for e in emotions_words]
@@ -107,7 +108,7 @@ def triple_classifier(tweet):
 
     emoticon_sentiment = emoticon(text)
     if emoticon_sentiment != MIDDLE:
-        entries = cut(cut_str, text)
+        entries = cut(fc, text)
         entry = [e for e in entries]
         keywords_list = entries
         if emoticon_sentiment == POSITIVE:
@@ -120,7 +121,7 @@ def triple_classifier(tweet):
             text = u''
     
     if text != u'':
-        entries = cut_str.get_text_fc(text)
+        entries = fc.get_text_fc(text)
         entry = [e for e in entries]
         keywords_list = entry
         

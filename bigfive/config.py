@@ -43,6 +43,9 @@ EVENT_WORDCLOUD = 'event_wordcloud'
 EVENT_RIVER = 'event_river'
 EVENT_GEO = 'event_geo'
 
+# politics index
+POLITICS_INFORMATION = 'politics_information'
+
 # cron_user parameter
 USER_ITER_COUNT = 100
 USER_WEIBO_ITER_COUNT = 10000

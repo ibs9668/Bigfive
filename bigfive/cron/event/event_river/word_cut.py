@@ -12,8 +12,9 @@ ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 INPUT_FOLDER = os.path.join(ABS_PATH, 'cluto')
 VCLUTO = os.path.join(ABS_PATH, 'cluto-2.1.2/Linux-i686/vcluster')
 
-fc = fenci()
-fc.init_fenci()
+# 只有单独运行时才在这里初始化分词工具
+# fc = fenci()
+# fc.init_fenci()
 
 class TopkHeap(object):
     def __init__(self, k):

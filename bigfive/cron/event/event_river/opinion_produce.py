@@ -15,8 +15,9 @@ from text_classify import text_net
 
 ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 
-fc = fenci()
-fc.init_fenci()
+# 只有单独运行时才在这里初始化分词工具
+# fc = fenci()
+# fc.init_fenci()
 
 def file(filepath):
     with open(filepath) as f:
