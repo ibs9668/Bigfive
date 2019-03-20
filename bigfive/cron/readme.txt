@@ -1,20 +1,20 @@
-������scws��libsvm
+依赖：scws，libsvm
 
-scws��
+scws：
 
-����python2��python3�ᱨ��
-8����װscws
-	�汾��SCWS-1.2.3
+基于python2，python3会报错
+8、安装scws
+	版本：SCWS-1.2.3
 
-(1). ȡ�� scws-1.2.3 �Ĵ���
+(1). 取得 scws-1.2.3 的代码
 wget http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2
-	
 
-(2). �⿪ѹ����
+
+(2). 解开压缩包
 tar xvjf scws-1.2.3.tar.bz2
-	
 
-(3). ����Ŀ¼ִ�����ýű��ͱ���
+
+(3). 进入目录执行配置脚本和编译
 cd scws-1.2.3
 ./configure --prefix=/usr/local/scws
 
@@ -23,10 +23,10 @@ make
 make install
 
 
-(4). �ֵ�����
+(4). 字典配置
 cd /usr/local/scws/etc
 
-��Ҫע������޸��ļ�Ȩ�ޣ�
+需要注意的是修改文件权限：
 wget?http://www.xunsearch.com/scws/down/scws-dict-chs-utf8.tar.bz2
 		wget?http://www.xunsearch.com/scws/down/scws-dict-cht-utf8.tar.bz2
 tar xvjf scws-dict-chs-utf8.tar.bz2
@@ -36,39 +36,40 @@ tar xvjf scws-dict-cht-utf8.tar.bz2
 sudo chmod 664 dict_cht.utf8.xdb
 
 sudo chmod 664 dict.utf8.xdb
-	
 
-(5). ��װpyscws��
+
+(5). 安装pyscws：
 git clone https://github.com/MOON-CLJ/pyscws.git
 cd pyscws
 
 python setup.py install
-·�����ã���֤import scws������������gedit /etc/ld.so.conf������һ��/usr/local/scws/lib/��Ȼ��sudo ldconfig
+路径设置（保证import scws不报错）：在gedit /etc/ld.so.conf中添加一行/usr/local/scws/lib/，然后sudo ldconfig
 
 
-python3�汾��
-����
+python3版本：
+参照
 https://github.com/xyanyue/python3_scws
 
-��Ȼ���Ȱ�װscws��c�汾
-Ȼ��ʹ��setup.pyֱ�Ӱ�װ��ע����Ҫ�Һ�python3��include�����ļ��в���scws.c��ͷ�ļ��иĺã�Ȼ���������������͵���
-����İ�װ������΢�е�Ī�������֮��������Ƚ���ѧ�����Զ����ԣ�������򵥵Ļ������setup.py��
+仍然是先安装scws的c版本
+
+然后使用setup.py直接安装，注意需要找好python3的include包的文件夹并在scws.c的头文件中改好，然后再运行命令编译和导入
+上面的安装部分稍微有点莫名奇妙，总之这个东西比较玄学，可以多试试，但是最简单的还是造好setup.py了
 
 
-libsvm��
-һ�����أ�
-��ַ��http://www.csie.ntu.edu.tw/~cjlin/libsvm/oldfiles/
-��ѡ��libsvm-3.22.tar.gz
+libsvm：
+一、下载：
+网址：http://www.csie.ntu.edu.tw/~cjlin/libsvm/oldfiles/
+，选择libsvm-3.22.tar.gz
 
-������ѹ��
+二、解压：
 tar -zxvf libsvm-3.22.tar.gz
 
-�������룺
-���նˣ�
-1. ����libsvm-3.22Ŀ¼�£�ִ��make��
+三、编译：
+打开终端，
+1. 进入libsvm-3.22目录下，执行make；
 
-2. ����libsvm-3.22/python
- ��Ŀ¼�£�ִ��make��
-�ġ�ʹ��
-��libsvm-3.22/python
-����svmutil����
+2. 进入libsvm-3.22/python
+ 子目录下，执行make。
+四、使用
+从libsvm-3.22/python
+调用svmutil即可

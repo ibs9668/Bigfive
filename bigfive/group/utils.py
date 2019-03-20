@@ -73,19 +73,20 @@ def search_group_task(group_name, remark, create_time, page, size, order_name, o
         index = 'group_information'
     else:
         raise ValueError("index is error!")
-    r = es.search(index=index, doc_type='text', body=query, _source_include=['group_name,create_time,remark,keyword,progress,create_condition'])['hits']['hits']
+    r = es.search(index=index, doc_type='text', body=query, _source_include=['group_name,create_time,remark,keyword,progress,create_condition'])
     # 结果为空
     if not r:
         return {}
+    total = r['hits']['total']
     # 正常返回
     result = []
-    for hit in r:
+    for hit in r['hits']['hits']:
         item = hit['_source']
         # 为前端返回es的_id字段
         item['id'] = hit['_id']
         item['create_time'] = ts2date(item['create_time'])
         result.append(item)
-    return {'rows': result, 'total': len(result)}
+    return {'rows': result, 'total': total}
 
 
 def delete_by_id(index, doc_type, id):
