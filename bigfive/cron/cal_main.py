@@ -47,6 +47,8 @@ def group_main(args_dict, keyword, remark, group_name, create_time):
     start_date = ts2date(create_time - days * 24 *3600)
     print('Start finding userlist...')
     group_dic = group_create(args_dict, keyword, remark, group_name, create_time, start_date, end_date)
+    if len(group_dic['userlist']) == 0:
+    	return 0
 
     print('Start calculating group personality...')
     cal_group_personality(group_dic['group_id'], group_dic['userlist'], end_date)
@@ -58,6 +60,7 @@ def group_main(args_dict, keyword, remark, group_name, create_time):
     group_ranking(group_dic['group_id'], group_dic['group_name'], group_dic['userlist'], end_date)
 
     print('Successfully create group...')
+    return 1
 
 
 def event_main(keywords, event_id, start_date, end_date):
@@ -176,7 +179,7 @@ if __name__ == '__main__':
     #         username_list.append(hit['_source']['username'])
     #     user_ranking(uid_list, username_list, '2016-11-27')
 
-    es.update(index='event_information',doc_type='text',id='ceshishijianqi_1553059605',body={'doc':{'progress':0}})
+    es.update(index='group_task',doc_type='text',id='ceshijiu_1553067916',body={'doc':{'progress':0}})
 
     # es.delete(index='event_information',doc_type='text',id='ceshishijianliu_1552978686')
 
