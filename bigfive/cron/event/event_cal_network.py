@@ -114,8 +114,10 @@ def get_event_userlist_important(event_id, userlist, map_type='retweeted'):
         # print(event_id)
         es.update(index = "event_information",doc_type = "text",id = event_id,body = {"doc":{"userlist_important":uid_list}})
         return uid_list
-        
-    return userlist
+    else:
+        es.update(index = "event_information",doc_type = "text",id = event_id,body = {"doc":{"userlist_important":[]}})
+        return []
+
 
 
 if __name__ == '__main__':

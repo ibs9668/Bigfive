@@ -37,6 +37,15 @@ def user_ranking(uid_list,username_list,date):
         agreeableness_index = personality_dic[uid]['agreeableness_index']
         conscientiousness_index = personality_dic[uid]['conscientiousness_index']
 
+        machiavellianism_label = personality_dic[uid]['machiavellianism_label']
+        narcissism_label = personality_dic[uid]['narcissism_label']
+        psychopathy_label = personality_dic[uid]['psychopathy_label']
+        extroversion_label = personality_dic[uid]['extroversion_label']
+        nervousness_label = personality_dic[uid]['nervousness_label']
+        openn_label = personality_dic[uid]['openn_label']
+        agreeableness_label = personality_dic[uid]['agreeableness_label']
+        conscientiousness_label = personality_dic[uid]['conscientiousness_label']
+
         #画像计算值
         liveness_index = attribute_dic[uid]['activity_normalization']
         importance_index = attribute_dic[uid]['importance_normalization']
@@ -44,33 +53,33 @@ def user_ranking(uid_list,username_list,date):
         influence_index = attribute_dic[uid]['influence_normalization']
 
         dic = {
-            'machiavellianism_index':machiavellianism_index,
-            'narcissism_index':narcissism_index,
-            'psychopathy_index':psychopathy_index,
-            'extroversion_index':extroversion_index,
-            'nervousness_index':nervousness_index,
-            'openn_index':openn_index,
-            'agreeableness_index':agreeableness_index,
-            'conscientiousness_index':conscientiousness_index,
+            'machiavellianism_index':int(machiavellianism_index * 20),
+            'narcissism_index':int(narcissism_index * 20),
+            'psychopathy_index':int(psychopathy_index * 20),
+            'extroversion_index':int(extroversion_index * 20),
+            'nervousness_index':int(nervousness_index * 20),
+            'openn_index':int(openn_index * 20),
+            'agreeableness_index':int(agreeableness_index * 20),
+            'conscientiousness_index':int(conscientiousness_index * 20),
 
-            'liveness_index':liveness_index,
-            'importance_index':importance_index,
-            'sensitive_index':sensitive_index,
-            'influence_index':influence_index,
+            'liveness_index':int(liveness_index),
+            'importance_index':int(importance_index),
+            'sensitive_index':int(sensitive_index),
+            'influence_index':int(influence_index),
 
             'liveness_star':get_attribute_star(liveness_index),
             'importance_star':get_attribute_star(importance_index),
             'sensitive_star':get_attribute_star(sensitive_index),
             'influence_star':get_attribute_star(influence_index),
 
-            'machiavellianism_label':get_user_personality_label(machiavellianism_index,'machiavellianism_index'),
-            'narcissism_label':get_user_personality_label(narcissism_index,'narcissism_index'),
-            'psychopathy_label':get_user_personality_label(psychopathy_index,'psychopathy_index'),
-            'extroversion_label':get_user_personality_label(extroversion_index,'extroversion_index'),
-            'nervousness_label':get_user_personality_label(nervousness_index,'nervousness_index'),
-            'openn_label':get_user_personality_label(openn_index,'openn_index'),
-            'agreeableness_label':get_user_personality_label(agreeableness_index,'agreeableness_index'),
-            'conscientiousness_label':get_user_personality_label(conscientiousness_index,'conscientiousness_index'),
+            'machiavellianism_label':get_user_personality_label(machiavellianism_label),
+            'narcissism_label':get_user_personality_label(narcissism_label),
+            'psychopathy_label':get_user_personality_label(psychopathy_label),
+            'extroversion_label':get_user_personality_label(extroversion_label),
+            'nervousness_label':get_user_personality_label(nervousness_label),
+            'openn_label':get_user_personality_label(openn_label),
+            'agreeableness_label':get_user_personality_label(agreeableness_label),
+            'conscientiousness_label':get_user_personality_label(conscientiousness_label),
 
             'uid':uid,
             'username':username
@@ -79,18 +88,30 @@ def user_ranking(uid_list,username_list,date):
 
 #通过调用模型中的预测函数获取当天的模型预测情况并存入数据库，可指定时间窗口
 def cal_user_personality(uid_list, start_date, end_date):
-    per_predict = predict_personality(uid_list,start_date,end_date)   #从model调用预测函数
-    timestamp = date2ts(date)
+    start_time = date2ts(start_date)
+    end_time = date2ts(end_date)
+    per_label, per_score = predict_personality(uid_list,start_time,end_time)   #从model调用预测函数
+    timestamp = date2ts(end_date)
     for idx in range(len(uid_list)):
-        uid = per_predict[0][idx]
-        extroversion_index = per_predict[1][idx]
-        agreeableness_index = per_predict[2][idx]
-        conscientiousness_index = per_predict[3][idx]
-        nervousness_index = per_predict[4][idx]
-        openn_index = per_predict[5][idx]
-        machiavellianism_index = per_predict[6][idx]
-        narcissism_index = per_predict[7][idx]
-        psychopathy_index = per_predict[8][idx]
+        uid = per_score[0][idx]
+
+        extroversion_index = per_score[1][idx]
+        agreeableness_index = per_score[2][idx]
+        conscientiousness_index = per_score[3][idx]
+        nervousness_index = per_score[4][idx]
+        openn_index = per_score[5][idx]
+        machiavellianism_index = per_score[6][idx]
+        narcissism_index = per_score[7][idx]
+        psychopathy_index = per_score[8][idx]
+
+        extroversion_label = int(per_label[1][idx])
+        agreeableness_label = int(per_label[2][idx])
+        conscientiousness_label = int(per_label[3][idx])
+        nervousness_label = int(per_label[4][idx])
+        openn_label = int(per_label[5][idx])
+        machiavellianism_label = int(per_label[6][idx])
+        narcissism_label = int(per_label[7][idx])
+        psychopathy_label = int(per_label[8][idx])
 
         dic = {
             'extroversion_index':extroversion_index,
@@ -101,28 +122,42 @@ def cal_user_personality(uid_list, start_date, end_date):
             'machiavellianism_index':machiavellianism_index,
             'narcissism_index':narcissism_index,
             'psychopathy_index':psychopathy_index,
+
+            'extroversion_label':extroversion_label,
+            'agreeableness_label':agreeableness_label,
+            'conscientiousness_label':conscientiousness_label,
+            'nervousness_label':nervousness_label,
+            'openn_label':openn_label,
+            'machiavellianism_label':machiavellianism_label,
+            'narcissism_label':narcissism_label,
+            'psychopathy_label':psychopathy_label,
+            
             'uid':uid,
             'timestamp':timestamp,
-            'date':date
+            'date':end_date
         }
 
         es.index(index=USER_PERSONALITY,doc_type='text',body=dic,id=uid + '_' + str(timestamp))
 
-#利用阈值字典给出人格的标签
-def get_user_personality_label(personality_index, personality_name):
-    threshold = PERSONALITY_DIC[personality_name]['threshold']
-    if personality_index < threshold[0]:
-        personality_label = 0
-    elif personality_index > threshold[1]:
-        personality_label = 2
-    else:
-        personality_label = 1
+#对模型直接输出的结果进行转换，便于数据库存取
+def get_user_personality_label(personality_label_old):
+    if personality_label_old == -1:
+        personality_label_new = 0
+    elif personality_label_old == 0:
+        personality_label_new = 1
+    elif personality_label_old == 1:
+        personality_label_new = 2
 
-    return personality_label
+    return personality_label_new
 
 #利用阈值给出星级（实际上直接平均分为5级）
 def get_attribute_star(attribute_index):
-    return int(attribute_index / 20) + 1
+    star = int(attribute_index / 20) + 1
+    if star > 5:
+        star = 5
+    if star < 0:
+        star = 0
+    return star
 
 #----------------------------------------------------------------
 #群体计算

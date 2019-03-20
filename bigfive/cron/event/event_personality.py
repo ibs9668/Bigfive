@@ -104,9 +104,11 @@ def get_event_personality(event_id, event_mapping_name, user_list, start_date, e
                     "aggs":{"sentiment_aggs":{"terms":{"field":"sentiment"}}}
         }
 
-        event_result_high = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_high)["aggregations"]["sentiment_aggs"]["buckets"]
-        es_result = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_high)["hits"]["hits"]
+        res = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_high)
+        event_result_high = res["aggregations"]["sentiment_aggs"]["buckets"]
+        es_result = res["hits"]["hits"]
 
+        mid_list = []
         if es_result != []:
             event_content = [i["_source"] for i in es_result]
             mid_list = [i["mid"] for i in sorted(event_content,key = operator.itemgetter("timestamp"),reverse = True)[:5]]
@@ -132,9 +134,11 @@ def get_event_personality(event_id, event_mapping_name, user_list, start_date, e
                     "aggs":{"sentiment_aggs":{"terms":{"field":"sentiment"}}}
         }
 
-        event_result_low = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_low)["aggregations"]["sentiment_aggs"]["buckets"]
-        es_result_1 = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_high)["hits"]["hits"]
+        res = es.search(index=event_mapping_name,doc_type="text",body=event_query_body_low)
+        event_result_low = res["aggregations"]["sentiment_aggs"]["buckets"]
+        es_result_1 = res["hits"]["hits"]
 
+        mid_list_1 = []
         if es_result_1 != []:
             event_content = [i["_source"] for i in es_result_1]
             mid_list_1 = [i["mid"] for i in sorted(event_content,key = operator.itemgetter("timestamp"),reverse = True)[:5]]

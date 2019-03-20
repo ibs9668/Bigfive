@@ -2,13 +2,13 @@ import sys
 sys.path.append('../../')
 import os
 import time
-from scws_utils import fenci, load_black_words
+from scws_utils import fc, load_black_words
 
 CUT_BLACK_WORDS = 'usedfiles/black.txt'
 EXTRA_BLACK_LIST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), CUT_BLACK_WORDS)
 
-fc = fenci()
-fc.init_fenci()
+#只有单独运行时才在这里初始化分词工具
+# fc = fenci()
 
 cx_dict_utils = set(['Ag','a','an','Ng','n','nr','ns','nt','nz','Vg','v','vd','vn','@','j']) # 关键词词性词典, 保留名词、动词、形容词
 cx_dict_noun_utils = set(['Ng','n','nr','ns','nt','nz']) # 关键词词性词典, 保留名词

@@ -8,7 +8,7 @@ def main():
 	query_body = {
 		'query':{
 			'term':{
-				'progress':0
+				'progress':0   #未计算
 			}
 		},
 		'sort':{
@@ -27,9 +27,13 @@ def main():
 		group_name = task['_source']['group_name']
 		create_time = task['_source']['create_time']
 		create_time = 1480176000
-		es.update(index=GROUP_TASK,doc_type='text',id=task_id,body={'doc':{'progress':1}})
-		group_main(args_dict,keyword,remark,group_name,create_time)
-		es.update(index=GROUP_TASK,doc_type='text',id=task_id,body={'doc':{'progress':2}})
+		es.update(index=GROUP_TASK,doc_type='text',id=task_id,body={'doc':{'progress':1}})   #计算中
+		cal_status = group_main(args_dict,keyword,remark,group_name,create_time)
+		if cal_status:
+			es.update(index=GROUP_TASK,doc_type='text',id=task_id,body={'doc':{'progress':2}})   #计算完成
+		else:
+			print("计算失败，没有满足条件的用户。。。")
+			es.update(index=GROUP_TASK,doc_type='text',id=task_id,body={'doc':{'progress':3}})   #计算失败
 
 if __name__ == '__main__':
 	main()

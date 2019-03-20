@@ -55,6 +55,8 @@ https://github.com/xyanyue/python3_scws
 然后使用setup.py直接安装，注意需要找好python3的include包的文件夹并在scws.c的头文件中改好，然后再运行命令编译和导入
 上面的安装部分稍微有点莫名奇妙，总之这个东西比较玄学，可以多试试，但是最简单的还是造好setup.py了
 
+ע�⣺�����漰���ִʹ��ߵĳ�ʼ�����̣���ʼ��ֻ���ʼ��һ�Σ���γ�ʼ�����ᱨ��������ʾ�����debug������⣬����ʹ�õ�ʱ��ҪС�ġ�
+
 
 libsvm：
 一、下载：
