@@ -25,9 +25,9 @@ def main():
 		keywords = task['_source']['keywords']
 		start_date = task['_source']['start_date']
 		end_date = task['_source']['end_date']
-		es.update(index=POLITICS_INFORMATION,doc_type='text',id=task_id,body={'doc':{'progress':1}})
+		# es.update(index=POLITICS_INFORMATION,doc_type='text',id=task_id,body={'doc':{'progress':1}})
 		politics_main(keywords, politics_id, start_date, end_date)
-		es.update(index=POLITICS_INFORMATION,doc_type='text',id=task_id,body={'doc':{'progress':2}})
+		# es.update(index=POLITICS_INFORMATION,doc_type='text',id=task_id,body={'doc':{'progress':2}})
 
 if __name__ == '__main__':
 	main()

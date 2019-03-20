@@ -9,9 +9,6 @@ sys.path.append('politics')
 sys.path.append('event/event_river')
 from xpinyin import Pinyin
 #注意：分词工具只需要初始化一次即可，多次初始化会出现线程问题！
-from scws_utils import fenci, load_black_words
-fc = fenci()
-fc.init_fenci()
 
 from config import *
 from time_utils import *
@@ -66,15 +63,15 @@ def group_main(args_dict, keyword, remark, group_name, create_time):
 def event_main(keywords, event_id, start_date, end_date):
     print('Start creating event...')
     event_mapping_name = 'event_%s' % event_id
-    create_event_mapping(event_mapping_name)
-    userlist = event_create(event_mapping_name, keywords, start_date, end_date)
-    es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
+    # create_event_mapping(event_mapping_name)
+    # userlist = event_create(event_mapping_name, keywords, start_date, end_date)
+    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
 
-    print('Start text analyze...')
-    get_text_analyze(event_id, event_mapping_name)
+    # print('Start text analyze...')
+    # get_text_analyze(event_id, event_mapping_name)
     
     print('Start event portrait...')
-    # userlist = es.get(index='event_information',doc_type='text',id=event_id)['_source']['userlist']
+    userlist = es.get(index='event_information',doc_type='text',id=event_id)['_source']['userlist']
     event_portrait(event_id, event_mapping_name, userlist, start_date, end_date)
 
     print('Successfully create event...')
@@ -84,7 +81,7 @@ def politics_main(keywords, politics_id, start_date, end_date):
     politics_mapping_name = 'politics_%s' % politics_id
     create_politics_mapping(politics_mapping_name)
     userlist = politics_create(politics_mapping_name, keywords, start_date, end_date)
-    es.update(index=politics_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=politics_id)
+    es.update(index=POLITICS_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=politics_id)
     
     print('Start politics portrait...')
     # userlist = es.get(index='politics_information',doc_type='text',id=politics_id)['_source']['userlist']
@@ -179,8 +176,8 @@ if __name__ == '__main__':
     #         username_list.append(hit['_source']['username'])
     #     user_ranking(uid_list, username_list, '2016-11-27')
 
-    # es.update(index='politics_information',doc_type='text',id='ceshizhengceyi_1552982747',body={'doc':{'progress':0}})
+    es.update(index='politics_information',doc_type='text',id='ceshizhengceyi_1552983497',body={'doc':{'progress':0}})
 
-    # es.delete(index='politics_information',doc_type='text',id='ceshizhengceyi_1552982747')
+    # es.delete(index='event_information',doc_type='text',id='ceshishijianliu_1552978686')
 
     pass

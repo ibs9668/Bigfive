@@ -6,7 +6,7 @@ import csv
 import time
 import heapq
 import numpy as np
-from scws_utils import *
+from scws_utils import fc, load_black_words, load_single_word_whitelist
 
 ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 INPUT_FOLDER = os.path.join(ABS_PATH, 'cluto')
@@ -14,7 +14,6 @@ VCLUTO = os.path.join(ABS_PATH, 'cluto-2.1.2/Linux-i686/vcluster')
 
 # 只有单独运行时才在这里初始化分词工具
 # fc = fenci()
-# fc.init_fenci()
 
 class TopkHeap(object):
     def __init__(self, k):
@@ -125,7 +124,7 @@ def kmeans(feature,k,name):
     return results
 
 def word_net(weibo,k_cluster):#词频词网
-
+    single_word_whitelist = load_single_word_whitelist()
     black = load_black_words()
     cx_dict = set(['Ag','a','an','Ng','n','nr','ns','nt','nz','Vg','v','vd','vn','@','j'])
     n = 0

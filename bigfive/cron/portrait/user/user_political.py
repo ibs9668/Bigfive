@@ -39,8 +39,6 @@ DOMAIN_DICT = load_word()
 def get_word_count_dict(uid_weibo):
 
     uid_word_dict = dict()
-    fc = fenci()
-    fc.init_fenci()
     words = fc.get_text_fc(uid_weibo.decode(encoding='utf-8'))
     for word in words:
         if word in uid_word_dict.keys():

@@ -7,17 +7,16 @@ import sys
 import random
 from libsvm.python.svmutil import *
 sys.path.append('../../')
-from scws_utils import fenci
 sys.path.append('../../../')
 from time_utils import *
 from word_cut import word_net
 from text_classify import text_net
+from scws_utils import fc
 
 ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 
 # 只有单独运行时才在这里初始化分词工具
 # fc = fenci()
-# fc.init_fenci()
 
 def file(filepath):
     with open(filepath) as f:

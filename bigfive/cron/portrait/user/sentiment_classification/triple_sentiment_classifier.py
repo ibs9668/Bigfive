@@ -6,16 +6,14 @@ import time
 import csv
 import sys
 from gensim import corpora
-#sys.path.append('../../../../')
+sys.path.append('../../../')
 from sentiment_classification.utils import *
 from sentiment_classification.flow_psy import flow_psychology_classfiy
+from scws_utils import fc
 
 
 AB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
-#只有单独运行时才在这里初始化分词工具
-# fc = fenci()
-# fc.init_fenci()
 
 emotions_words = load_emotion_words()
 emotions_words = [e for e in emotions_words]

@@ -152,7 +152,12 @@ def get_user_personality_label(personality_label_old):
 
 #利用阈值给出星级（实际上直接平均分为5级）
 def get_attribute_star(attribute_index):
-    return int(attribute_index / 20) + 1
+    star = int(attribute_index / 20) + 1
+    if star > 5:
+        star = 5
+    if star < 0:
+        star = 0
+    return star
 
 #----------------------------------------------------------------
 #群体计算
