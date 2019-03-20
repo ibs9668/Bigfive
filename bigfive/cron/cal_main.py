@@ -33,7 +33,7 @@ def user_main(uid_list,username_list, start_date, end_date):
     print('Start calculating user portrait...')
     for uid in uid_list:
         print(uid)
-        user_portrait(uid, end_date)
+        user_portrait(uid,start_date, end_date)
     
     print('Start calculating user ranking...')
     user_ranking(uid_list, username_list, end_date)
