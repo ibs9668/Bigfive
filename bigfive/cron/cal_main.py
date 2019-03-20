@@ -33,7 +33,7 @@ def user_main(uid_list,username_list, start_date, end_date):
     print('Start calculating user portrait...')
     for uid in uid_list:
         print(uid)
-        user_portrait(uid,start_date, end_date)
+        user_portrait(uid, end_date)
     
     print('Start calculating user ranking...')
     user_ranking(uid_list, username_list, end_date)
@@ -63,15 +63,15 @@ def group_main(args_dict, keyword, remark, group_name, create_time):
 def event_main(keywords, event_id, start_date, end_date):
     print('Start creating event...')
     event_mapping_name = 'event_%s' % event_id
-    # create_event_mapping(event_mapping_name)
-    # userlist = event_create(event_mapping_name, keywords, start_date, end_date)
-    # es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
+    create_event_mapping(event_mapping_name)
+    userlist = event_create(event_mapping_name, keywords, start_date, end_date)
+    es.update(index=EVENT_INFORMATION,doc_type='text',body={'doc':{'userlist':userlist}},id=event_id)
 
-    # print('Start text analyze...')
-    # get_text_analyze(event_id, event_mapping_name)
+    print('Start text analyze...')
+    get_text_analyze(event_id, event_mapping_name)
     
     print('Start event portrait...')
-    userlist = es.get(index='event_information',doc_type='text',id=event_id)['_source']['userlist']
+    # userlist = es.get(index='event_information',doc_type='text',id=event_id)['_source']['userlist']
     event_portrait(event_id, event_mapping_name, userlist, start_date, end_date)
 
     print('Successfully create event...')
