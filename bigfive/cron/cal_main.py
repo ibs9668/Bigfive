@@ -118,13 +118,13 @@ if __name__ == '__main__':
     # event_main(keywords, event_id, start_date, end_date)
 
 
-    # politics_name = "测试政策一"
+    # politics_name = "测试政策二"
     # politics_pinyin = Pinyin().get_pinyin(politics_name, '')
     # create_time = int(time.time())
     # create_date = ts2date(create_time)
     # start_date = '2016-11-13'
     # end_date = '2016-11-27'
-    # keywords = "股市"
+    # keywords = "个税"
     # progress = 0
     # politics_id = politics_pinyin + "_" + str(create_time)
     # dic = {
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     #         username_list.append(hit['_source']['username'])
     #     user_ranking(uid_list, username_list, '2016-11-27')
 
-    es.update(index='politics_information',doc_type='text',id='ceshizhengceyi_1552983497',body={'doc':{'progress':0}})
+    es.update(index='event_information',doc_type='text',id='ceshishijianqi_1553059605',body={'doc':{'progress':0}})
 
     # es.delete(index='event_information',doc_type='text',id='ceshishijianliu_1552978686')
 
