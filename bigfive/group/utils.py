@@ -93,7 +93,7 @@ def delete_by_id(index, doc_type, id):
     """通过es的_id删除一条记录"""
     if index == 'task':
         r = es.get(index='group_task', doc_type=doc_type, id=id)
-        if r['_source']['progress'] != 0:
+        if r['_source']['progress'] not in  [0,3]:
             raise ValueError('progress is not 0')
         es.delete(index='group_task', doc_type=doc_type, id=id)
     elif index == 'info':
